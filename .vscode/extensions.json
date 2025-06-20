@@ -1,17 +1,10 @@
 {
     "recommendations": [
-      // Python & Flask Core
       "ms-python.python",
       "ms-python.vscode-pylance",
       "cstrap.flask-snippets",
-  
-      // Jinja Template Support
       "wholroyd.jinja",
-  
-      // Frontend Styling
       "ecmel.vscode-html-css",
-  
-      // Git & PRs
       "eamodio.gitlens",
       "github.vscode-pull-request-github"
     ]
