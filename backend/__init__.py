@@ -15,7 +15,7 @@ def create_app():
     """
     app = Flask(__name__)
 
-    from .views import site
+    from backend.routes.main import site
     app.register_blueprint(site)
 
     return app
