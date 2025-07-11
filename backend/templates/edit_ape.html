@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="container mt-4">
+  <h2>Edit Ape</h2>
+  <form method="post">
+    <div class="mb-3">
+      <label for="ape_name" class="form-label">Ape Name</label>
+      <input type="text" class="form-control" name="ape_name" id="ape_name" value="{{ ape.ape_name }}" required>
+    </div>
+    <div class="mb-3">
+      <label for="age" class="form-label">Age</label>
+      <input type="number" class="form-control" name="age" id="age" value="{{ ape.age }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a href="{{ url_for('site.index') }}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}
