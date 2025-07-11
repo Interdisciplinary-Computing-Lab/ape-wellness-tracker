@@ -5,6 +5,7 @@ This module sets up the core Flask application using the application factory pat
 """
 
 from flask import Flask
+from backend.extensions import db
 
 def create_app():
     """
@@ -14,8 +15,16 @@ def create_app():
         app (Flask): The configured Flask application instance.
     """
     app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+
+    db.init_app(app)
 
     from backend.routes.main import site
     app.register_blueprint(site)
+
+    with app.app_context():
+        db.create_all()
 
     return app
