@@ -3,116 +3,130 @@
 {% block body %}
 <div class="content">
     <h1>Data Input:</h1>
+
+    <!-- Ape Input Form -->
     <h2>Ape Input</h2>
-        <form action="/add_ape" method="POST">
-            <label for="Input Ape"></label><br>
-            <input type="text",
-            name="Input Ape",
-            id="input_ape",
-            maxlength="30" /> <br>
-            <label for="Submit"></label><br>
-            <input type="submit", 
-            value="Add Ape", 
-            id="btn_add_ape"/> <br>
-        </form>
+    <form action="{{ url_for('site.add_ape') }}" method="POST">
+        <label for="input_ape">Ape Name</label><br>
+        <input type="text" name="ape_name" id="input_ape" maxlength="90" required><br>
+
+        <label for="input_age">Age</label><br>
+        <input type="number" name="age" id="input_age" min="0" required><br><br>
+
+        <input type="submit" value="Add Ape" id="btn_add_ape">
+    </form>
+
+    <!-- Recipe Input Form -->
     <h2>Recipes Input</h2>
-         <form action="/add_recipe" method="POST">
-            <label for="Input Recipe Name">Input Recipe Name</label>
-            <input type="text", name="Recipe Name", id="input_recipe" /> <br>
-            <label for="Input Description">Input Description</label>
-            <input type="text", name="Description", id="input_desc" /> <br>
-            <label for="Input Calories">Input Calories</label>
-            <input type="number",
-             name="Calories",
-              id="input_cal",
-              min="0"/> <br>
-            <input type="submit", value="Add Recipe", id="btn_add_rec" />
-        </form>
+    <form action="{{ url_for('site.add_recipe') }}" method="POST">
+        <label for="input_recipe">Recipe Name</label><br>
+        <input type="text" name="meal_name" id="input_recipe" required><br>
 
+        <label for="input_desc">Description</label><br>
+        <input type="text" name="description" id="input_desc"><br>
+
+        <label for="input_cal">Calories</label><br>
+        <input type="number" name="calories" id="input_cal" min="0" required><br><br>
+
+        <input type="submit" value="Add Recipe" id="btn_add_rec">
+    </form>
+
+    <!-- Meal Input Form -->
     <h2>Meals Input</h2>
-         <form action="/add_meal" method="POST">
-            <label for="Select Ape">Select Ape</label>
-            <select name="Select Ape">
-                {% for ape in apes %}
-                <option value="{{ape.ape_name}}">{{ape.ape_name}}</option>
-                {% endfor %}
-            </select>
-            <label for="Select Meal">Select Meal</label>
-            <select name="Select Meal">
-                {% for recipe in recipes %}
-                <option value="{{recipe.meal_name}}">{{recipe.meal_name}}</option>
-                {% endfor %}
-            </select>
-            <br>
-            <label for="Date">Input Date</label>
-            <input type="date", name="Date", id="input_date" /> <br>
-            <input type="submit", value="Add Meal", id="btn_add_meal" />
+    <form action="{{ url_for('site.add_meal') }}" method="POST">
+        <label for="select_ape">Select Ape</label><br>
+        <select name="ape_id" id="select_ape" required>
+            {% for ape in apes %}
+            <option value="{{ ape.id }}">{{ ape.ape_name }}</option>
+            {% endfor %}
+        </select><br><br>
 
-        </form>
+        <label for="select_meal">Select Meal</label><br>
+        <select name="recipe_id" id="select_meal" required>
+            {% for recipe in recipes %}
+            <option value="{{ recipe.id }}">{{ recipe.meal_name }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label for="input_date">Date</label><br>
+        <input type="date" name="date" id="input_date" required><br><br>
+
+        <input type="submit" value="Add Meal" id="btn_add_meal">
+    </form>
+
     <hr>
-    <h1>Data Tables</h1>    
+
+    <h1>Data Tables</h1>
+
+    <!-- Apes Table -->
     <h2>Apes</h2>
-    {% if apes | length < 1%}
-    <p>No apes have been entered into the database!</p>
-        {% else %}
+    {% if apes|length < 1 %}
+        <p>No apes have been entered into the database!</p>
+    {% else %}
         <table>
             <tr>
-                <th>Ape_Name</th>
+                <th>Ape Name</th>
+                <th>Age</th>
             </tr>
             {% for ape in apes %}
             <tr>
-                <td>{{ape.ape_name}}</td>
+                <td>{{ ape.ape_name }}</td>
+                <td>{{ ape.age }}</td>
             </tr>
             {% endfor %}
         </table>
-        {% endif %}
+    {% endif %}
+
     <hr>
+
+    <!-- Recipes Table -->
     <h2>Recipes</h2>
-        {% if recipes | length < 1%}
-    <p>No recipes have been entered into the database!</p>
-        {% else %}
+    {% if recipes|length < 1 %}
+        <p>No recipes have been entered into the database!</p>
+    {% else %}
         <table>
             <tr>
-                <th>Recipe_Name</th>
+                <th>Recipe Name</th>
                 <th>Description</th>
                 <th>Calories</th>
             </tr>
             {% for recipe in recipes %}
             <tr>
-                <td>{{recipe.meal_name}}</td>
-                <td>{{recipe.description}}</td>
-                <td>{{recipe.calories}}</td>
+                <td>{{ recipe.meal_name }}</td>
+                <td>{{ recipe.description }}</td>
+                <td>{{ recipe.calories }}</td>
             </tr>
             {% endfor %}
         </table>
-        {% endif %}
+    {% endif %}
+
     <hr>
 
+    <!-- Meals Table -->
     <h2>Meals</h2>
-    <p>This shows the resulting data from a query across all 3 tables</p>
-        {% if meals | length < 1%}
-    <p>No meals have been entered into the database!</p>
-        {% else %}
+    <p>This shows the resulting data from a query across all 3 tables:</p>
+    {% if meals|length < 1 %}
+        <p>No meals have been entered into the database!</p>
+    {% else %}
         <table>
             <tr>
                 <th>Date</th>
-                <th>Ape_Name</th>
-                <th>Meal_Name</th>
+                <th>Ape Name</th>
+                <th>Meal Name</th>
                 <th>Calories</th>
             </tr>
             {% for meal in meals %}
             <tr>
-                <td>{{meal.date}}</td>
-                <td>{{meal.ape_name}}</td>
-                <td>{{meal.meal_name}}</td>
-                <td>{{meal.calories}}</td>
+                <tr>
+                    <td>{{ meal.date.strftime("%Y-%m-%d") }}</td>
+                    <td>{{ meal.ape.ape_name }}</td>
+                    <td>{{ meal.recipe.meal_name }}</td>
+                    <td>{{ meal.recipe.calories }}</td>
+                </tr>
+
             </tr>
             {% endfor %}
         </table>
-        {% endif %}
-    <hr>
+    {% endif %}
 </div>
-
-
-
-{%endblock%}
+{% endblock %}

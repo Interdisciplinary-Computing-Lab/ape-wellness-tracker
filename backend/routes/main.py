@@ -21,9 +21,6 @@ site = Blueprint('site', __name__)
 def index():
     """
     Render the homepage with lists of all apes, recipes, and meals.
-
-    Returns:
-        Rendered index.html template with apes, recipes, and meals data.
     """
     apes = Apes.query.all()
     recipes = Recipe.query.all()
@@ -40,13 +37,14 @@ def index():
 def add_ape():
     """
     Handle submission for adding a new ape to the database.
-
-    Returns:
-        Redirects to the homepage after processing the form.
     """
-    ape_name = request.form.get("Input Ape")
-    if ape_name:
-        new_ape = Apes(ape_name=ape_name)
+    ape_name = request.form.get("ape_name")
+    age = request.form.get("age")
+
+    print("FORM DATA:", request.form)
+
+    if ape_name and age:
+        new_ape = Apes(ape_name=ape_name, age=int(age))
         add_to_db(new_ape, "ape")
     else:
         print("Need to fill in all forms.")
@@ -57,18 +55,19 @@ def add_ape():
 def add_recipe():
     """
     Handle submission for adding a new recipe to the database.
-
-    Returns:
-        Redirects to the homepage after processing the form.
     """
-    meal_name = request.form.get("Recipe Name")
-    description = request.form.get("Description")
-    calories = request.form.get("Calories")
+    meal_name = request.form.get("meal_name")
+    description = request.form.get("description")
+    calories = request.form.get("calories")
 
-    if all([meal_name, calories]):
-        new_recipe = Recipe(meal_name=meal_name,
-                            description=description,
-                            calories=calories)
+    print("FORM DATA:", request.form)
+
+    if meal_name and calories:
+        new_recipe = Recipe(
+            meal_name=meal_name,
+            description=description,
+            calories=int(calories)
+        )
         add_to_db(new_recipe, "recipe")
     else:
         print("Need to fill in all forms.")
@@ -79,35 +78,33 @@ def add_recipe():
 def add_meal():
     """
     Handle submission for adding a new meal to the database.
-
-    Returns:
-        Redirects to the homepage after processing the form.
     """
-    meal_name = request.form.get("Select Meal")
-    ape_name = request.form.get("Select Ape")
-    new_meal = Meals(meal_name=meal_name, ape_name=ape_name)
+    ape_id = request.form.get("ape_id")
+    recipe_id = request.form.get("recipe_id")
+    date_str = request.form.get("date")
 
-    if request.form.get("Date"):
-        date = datetime.strptime(request.form["Date"], "%Y-%m-%d")
-        new_meal.date = date
+    print("FORM DATA:", request.form)
 
-    if all([meal_name, ape_name]):
-        add_to_db(new_meal, "meal")
-    else:
-        print("Need to fill in meal and ape forms.")
+    if not all([ape_id, recipe_id, date_str]):
+        print("Need to fill in all forms.")
+        return redirect(url_for('site.index'))
+
+    date = datetime.strptime(date_str, "%Y-%m-%d")
+
+    new_meal = Meals(
+        ape_id=int(ape_id),
+        recipe_id=int(recipe_id),
+        date=date
+    )
+
+    add_to_db(new_meal, "meal")
     return redirect(url_for('site.index'))
+
 
 @site.route('/apes/<int:ape_id>/edit', methods=['GET', 'POST'])
 def edit_ape(ape_id):
     """
     Display and handle the form for editing an existing ape.
-
-    Args:
-        ape_id (int): The ID of the ape to edit.
-
-    Returns:
-        GET: Renders the edit_ape.html template with the ape data.
-        POST: Updates the ape and redirects to the homepage.
     """
     ape = Apes.query.get_or_404(ape_id)
     if request.method == 'POST':
@@ -117,17 +114,11 @@ def edit_ape(ape_id):
         return redirect(url_for('site.index'))
     return render_template('edit_ape.html', ape=ape)
 
+
 @site.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
 def edit_recipe(recipe_id):
     """
     Display and handle the form for editing an existing recipe.
-
-    Args:
-        recipe_id (int): The ID of the recipe to edit.
-
-    Returns:
-        GET: Renders the edit_recipe.html template with the recipe data.
-        POST: Updates the recipe and redirects to the homepage.
     """
     recipe = Recipe.query.get_or_404(recipe_id)
     if request.method == 'POST':
@@ -138,17 +129,11 @@ def edit_recipe(recipe_id):
         return redirect(url_for('site.index'))
     return render_template('edit_recipe.html', recipe=recipe)
 
+
 @site.route('/meals/<int:meal_id>/edit', methods=['GET', 'POST'])
 def edit_meal(meal_id):
     """
     Display and handle the form for editing an existing meal.
-
-    Args:
-        meal_id (int): The ID of the meal to edit.
-
-    Returns:
-        GET: Renders the edit_meal.html template with the meal data.
-        POST: Updates the meal and redirects to the homepage.
     """
     meal = Meals.query.get_or_404(meal_id)
     if request.method == 'POST':
@@ -159,48 +144,33 @@ def edit_meal(meal_id):
         return redirect(url_for('site.index'))
     return render_template('edit_meal.html', meal=meal)
 
+
 @site.route('/apes/<int:ape_id>/delete', methods=['POST'])
 def delete_ape(ape_id):
     """
     Delete an ape from the database.
-
-    Args:
-        ape_id (int): The ID of the ape to delete.
-
-    Returns:
-        Redirects to the homepage after deletion.
     """
     ape = Apes.query.get_or_404(ape_id)
     db.session.delete(ape)
     db.session.commit()
     return redirect(url_for('site.index'))
 
+
 @site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
 def delete_recipe(recipe_id):
     """
     Delete a recipe from the database.
-
-    Args:
-        recipe_id (int): The ID of the recipe to delete.
-
-    Returns:
-        Redirects to the homepage after deletion.
     """
     recipe = Recipe.query.get_or_404(recipe_id)
     db.session.delete(recipe)
     db.session.commit()
     return redirect(url_for('site.index'))
 
+
 @site.route('/meals/<int:meal_id>/delete', methods=['POST'])
 def delete_meal(meal_id):
     """
     Delete a meal from the database.
-
-    Args:
-        meal_id (int): The ID of the meal to delete.
-
-    Returns:
-        Redirects to the homepage after deletion.
     """
     meal = Meals.query.get_or_404(meal_id)
     db.session.delete(meal)
