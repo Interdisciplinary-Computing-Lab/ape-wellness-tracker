@@ -10,7 +10,7 @@
 # Install dependencies
 pip install -r requirements.txt
 
-# (Optional) Enable debug mode
+# Enable debug mode
 $env:FLASK_ENV="development"
 
 # Run the Flask server
@@ -41,7 +41,7 @@ source .venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# (Optional) Enable debug mode
+# Enable debug mode
 export FLASK_ENV=development
 
 # Run the Flask server
