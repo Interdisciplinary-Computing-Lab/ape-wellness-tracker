@@ -1,1 +1,63 @@
-python -m flask --app backend:create_app run
+# Ape Wellness Tracker - Core Terminal Commands
+
+# ===========================
+# ✅ WINDOWS (PowerShell)
+# ===========================
+
+# Activate virtual environment
+.venv\Scripts\Activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# (Optional) Enable debug mode
+$env:FLASK_ENV="development"
+
+# Run the Flask server
+flask --app backend:create_app run
+
+# Run on a different port
+flask --app backend:create_app run --port=5050
+
+# Open Flask shell
+flask --app backend:create_app shell
+
+# Remove local database
+Remove-Item .\database.db
+
+# Clean __pycache__ folders
+Get-ChildItem -Recurse -Include "__pycache__" | Remove-Item -Recurse -Force
+
+# Deactivate virtual environment
+deactivate
+
+# ===========================
+# ✅ macOS / Linux (zsh or bash)
+# ===========================
+
+# Activate virtual environment
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# (Optional) Enable debug mode
+export FLASK_ENV=development
+
+# Run the Flask server
+flask --app backend:create_app run
+
+# Run on a different port
+flask --app backend:create_app run --port=5050
+
+# Open Flask shell
+flask --app backend:create_app shell
+
+# Remove local database
+rm database.db
+
+# Clean __pycache__ folders
+find . -type d -name "__pycache__" -exec rm -r {} +
+
+# Deactivate virtual environment
+deactivate

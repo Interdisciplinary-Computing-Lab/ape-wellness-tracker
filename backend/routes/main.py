@@ -12,12 +12,13 @@ from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals
 from backend.helpers import add_to_db, query_db
 from datetime import datetime
+from flask_security import login_required, roles_required
 
 # Blueprint for site-wide routes
 site = Blueprint('site', __name__)
 
-
 @site.route("/")
+@login_required
 def index():
     """
     Render the homepage with lists of all apes, recipes, and meals.
@@ -34,6 +35,7 @@ def index():
 
 
 @site.route('/add_ape', methods=['POST'])
+@login_required
 def add_ape():
     """
     Handle submission for adding a new ape to the database.
@@ -52,6 +54,7 @@ def add_ape():
 
 
 @site.route('/add_recipe', methods=['POST'])
+@login_required
 def add_recipe():
     """
     Handle submission for adding a new recipe to the database.
@@ -75,6 +78,7 @@ def add_recipe():
 
 
 @site.route('/add_meal', methods=['POST'])
+@login_required
 def add_meal():
     """
     Handle submission for adding a new meal to the database.
@@ -102,6 +106,7 @@ def add_meal():
 
 
 @site.route('/apes/<int:ape_id>/edit', methods=['GET', 'POST'])
+@roles_required("Admin")
 def edit_ape(ape_id):
     """
     Display and handle the form for editing an existing ape.
@@ -116,6 +121,7 @@ def edit_ape(ape_id):
 
 
 @site.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
+@roles_required("Admin")
 def edit_recipe(recipe_id):
     """
     Display and handle the form for editing an existing recipe.
@@ -131,6 +137,7 @@ def edit_recipe(recipe_id):
 
 
 @site.route('/meals/<int:meal_id>/edit', methods=['GET', 'POST'])
+@roles_required("Admin")
 def edit_meal(meal_id):
     """
     Display and handle the form for editing an existing meal.
@@ -146,6 +153,7 @@ def edit_meal(meal_id):
 
 
 @site.route('/apes/<int:ape_id>/delete', methods=['POST'])
+@roles_required("Admin")
 def delete_ape(ape_id):
     """
     Delete an ape from the database.
@@ -157,6 +165,7 @@ def delete_ape(ape_id):
 
 
 @site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
+@roles_required("Admin")
 def delete_recipe(recipe_id):
     """
     Delete a recipe from the database.
@@ -168,6 +177,7 @@ def delete_recipe(recipe_id):
 
 
 @site.route('/meals/<int:meal_id>/delete', methods=['POST'])
+@roles_required("Admin")
 def delete_meal(meal_id):
     """
     Delete a meal from the database.
