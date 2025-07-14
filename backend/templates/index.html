@@ -67,11 +67,18 @@
             <tr>
                 <th>Ape Name</th>
                 <th>Age</th>
+                <th>Actions</th>
             </tr>
             {% for ape in apes %}
             <tr>
                 <td>{{ ape.ape_name }}</td>
                 <td>{{ ape.age }}</td>
+                <td>
+                    <a href="{{ url_for('site.edit_ape', ape_id=ape.id) }}">Edit</a>
+                    <form action="{{ url_for('site.delete_ape', ape_id=ape.id) }}" method="POST" style="display:inline;">
+                      <button type="submit">Delete</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </table>
@@ -89,12 +96,19 @@
                 <th>Recipe Name</th>
                 <th>Description</th>
                 <th>Calories</th>
+                <th>Actions</th>
             </tr>
             {% for recipe in recipes %}
             <tr>
                 <td>{{ recipe.meal_name }}</td>
                 <td>{{ recipe.description }}</td>
                 <td>{{ recipe.calories }}</td>
+                <td>
+                    <a href="{{ url_for('site.edit_recipe', recipe_id=recipe.id) }}">Edit</a>
+                    <form action="{{ url_for('site.delete_recipe', recipe_id=recipe.id) }}" method="POST" style="display:inline;">
+                      <button type="submit">Delete</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </table>
@@ -114,16 +128,20 @@
                 <th>Ape Name</th>
                 <th>Meal Name</th>
                 <th>Calories</th>
+                <th>Actions</th>
             </tr>
             {% for meal in meals %}
             <tr>
-                <tr>
-                    <td>{{ meal.date.strftime("%Y-%m-%d") }}</td>
-                    <td>{{ meal.ape.ape_name }}</td>
-                    <td>{{ meal.recipe.meal_name }}</td>
-                    <td>{{ meal.recipe.calories }}</td>
-                </tr>
-
+                <td>{{ meal.date.strftime("%Y-%m-%d") }}</td>
+                <td>{{ meal.ape.ape_name }}</td>
+                <td>{{ meal.recipe.meal_name }}</td>
+                <td>{{ meal.recipe.calories }}</td>
+                <td>
+                    <a href="{{ url_for('site.edit_meal', meal_id=meal.id) }}">Edit</a>
+                    <form action="{{ url_for('site.delete_meal', meal_id=meal.id) }}" method="POST" style="display:inline;">
+                      <button type="submit">Delete</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </table>
