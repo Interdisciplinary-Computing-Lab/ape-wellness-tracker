@@ -3,11 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Ape Wellness Tracker</title>
 </head>
 <body>
-    {% block body %}
+    <header>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('security.logout') }}">Log Out</a>
+        {% else %}
+            <a href="{{ url_for('security.login') }}">Log In</a>
+            <a href="{{ url_for('security.register') }}">Register</a>
+        {% endif %}
+    </header>
 
+    {% block body %}
     {% endblock %}
 </body>
 </html>

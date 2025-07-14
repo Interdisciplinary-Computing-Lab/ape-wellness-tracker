@@ -12,7 +12,7 @@ from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals
 from backend.helpers import add_to_db, query_db
 from datetime import datetime
-from flask_security import login_required, roles_required
+from flask_security import login_required, roles_required, current_user
 
 # Blueprint for site-wide routes
 site = Blueprint('site', __name__)
