@@ -1,150 +1,350 @@
-{% extends "base.html" %}
-
+{% extends 'adminlte_base.html' %}
+{% block title %}Dashboard - Ape Wellness Tracker{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 {% block body %}
-<div class="content">
-    <h1>Data Input:</h1>
+<!-- Info boxes -->
+<div class="row">
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box">
+            <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Total Apes</span>
+                <span class="info-box-number">7</span>
+                <div class="progress">
+                    <div class="progress-bar style="width: 70%"></div>
+                </div>
+                <span class="progress-description">
+                    70ncrease in 30 days
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box">
+            <span class="info-box-icon bg-success"><i class="fas fa-utensils"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Meals Today</span>
+                <span class="info-box-number">47</span>
+                <div class="progress">
+                    <div class="progress-bar style="width: 40%"></div>
+                </div>
+                <span class="progress-description">
+                    40ncrease in 30 days
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box">
+            <span class="info-box-icon bg-warning"><i class="fas fa-calendar-alt"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Active Today</span>
+                <span class="info-box-number">8</span>
+                <div class="progress">
+                    <div class="progress-bar style="width: 20%"></div>
+                </div>
+                <span class="progress-description">
+                    20ncrease in 30 days
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box">
+            <span class="info-box-icon bg-danger"><i class="fas fa-exclamation-triangle"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Alerts</span>
+                <span class="info-box-number">3</span>
+                <div class="progress">
+                    <div class="progress-bar style="width: 70%"></div>
+                </div>
+                <span class="progress-description">
+                    70ncrease in 30 days
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <!-- Ape Input Form -->
-    <h2>Ape Input</h2>
-    <form action="{{ url_for('site.add_ape') }}" method="POST">
-        <label for="input_ape">Ape Name</label><br>
-        <input type="text" name="ape_name" id="input_ape" maxlength="90" required><br>
+<div class="row">
+    <!-- Data Input Forms -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-plus-circle mr-2"></i>
+                </h3>
+            </div>
+            <div class="card-body">              <!-- Ape Input Form -->
+                <h4 class="mb-3">Add New Ape</h4>
+                <form action="{{ url_for('site.add_ape') }}" method="POST" class="mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="input_ape">Ape Name</label>
+                                <input type="text" class="form-control" name="ape_name" id="input_ape" maxlength="90" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="input_age">Age</label>
+                                <input type="number" class="form-control" name="age" id="input_age" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus mr-2"></i>Add Ape
+                    </button>
+                </form>
 
-        <label for="input_age">Age</label><br>
-        <input type="number" name="age" id="input_age" min="0" required><br><br>
+                <!-- Recipe Input Form -->
+                <h4 class="mb-3">Add New Recipe</h4>
+                <form action="{{ url_for('site.add_recipe') }}" method="POST" class="mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="input_recipe">Recipe Name</label>
+                                <input type="text" class="form-control" name="meal_name" id="input_recipe" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="input_cal">Calories</label>
+                                <input type="number" class="form-control" name="calories" id="input_cal" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label for="input_desc">Description</label>
+                                <input type="text" class="form-control" name="description" id="input_desc">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success mt-3">
+                        <i class="fas fa-plus mr-2"></i>
+                    </button>
+                </form>
 
-        <input type="submit" value="Add Ape" id="btn_add_ape">
-    </form>
+                <!-- Meal Input Form -->
+                <h4 class="mb-3">Add New Meal</h4>
+                <form action="{{ url_for('site.add_meal') }}" method="POST">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="select_ape">Select Ape</label>
+                                <select class="form-control" name="ape_id" id="select_ape" required>
+                                    <option value="">Choose ape...</option>
+                                    {% for ape in apes %}
+                                    <option value="{{ ape.id }}">{{ ape.ape_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="select_meal">Select Meal</label>
+                                <select class="form-control" name="recipe_id" id="select_meal" required>
+                                    <option value="">Choose meal...</option>
+                                    {% for recipe in recipes %}
+                                    <option value="{{ recipe.id }}">{{ recipe.meal_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="input_date">Date</label>
+                                <input type="date" class="form-control" name="date" id="input_date" required>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-info mt-3">
+                        <i class="fas fa-plus mr-2"></i>Add Meal
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
-    <!-- Recipe Input Form -->
-    <h2>Recipes Input</h2>
-    <form action="{{ url_for('site.add_recipe') }}" method="POST">
-        <label for="input_recipe">Recipe Name</label><br>
-        <input type="text" name="meal_name" id="input_recipe" required><br>
+    <!-- Data Overview -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-table mr-2"></i>Data Overview
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-4">
+                    <div class="col-4">
+                        <div class="bg-primary text-white rounded p-3">
+                            <h4>{{ apes|length }}</h4>
+                            <small>Apes</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-success text-white rounded p-3">
+                            <h4>{{ recipes|length }}</h4>
+                            <small>Recipes</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-info text-white rounded p-3">
+                            <h4>{{ meals|length }}</h4>
+                            <small>Meals</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <label for="input_desc">Description</label><br>
-        <input type="text" name="description" id="input_desc"><br>
-
-        <label for="input_cal">Calories</label><br>
-        <input type="number" name="calories" id="input_cal" min="0" required><br><br>
-
-        <input type="submit" value="Add Recipe" id="btn_add_rec">
-    </form>
-
-    <!-- Meal Input Form -->
-    <h2>Meals Input</h2>
-    <form action="{{ url_for('site.add_meal') }}" method="POST">
-        <label for="select_ape">Select Ape</label><br>
-        <select name="ape_id" id="select_ape" required>
-            {% for ape in apes %}
-            <option value="{{ ape.id }}">{{ ape.ape_name }}</option>
-            {% endfor %}
-        </select><br><br>
-
-        <label for="select_meal">Select Meal</label><br>
-        <select name="recipe_id" id="select_meal" required>
-            {% for recipe in recipes %}
-            <option value="{{ recipe.id }}">{{ recipe.meal_name }}</option>
-            {% endfor %}
-        </select><br><br>
-
-        <label for="input_date">Date</label><br>
-        <input type="date" name="date" id="input_date" required><br><br>
-
-        <input type="submit" value="Add Meal" id="btn_add_meal">
-    </form>
-
-    <hr>
-
-    <h1>Data Tables</h1>
-
+<!-- Data Tables Section -->
+<div class="row">
     <!-- Apes Table -->
-    <h2>Apes</h2>
-    {% if apes|length < 1 %}
-        <p>No apes have been entered into the database!</p>
-    {% else %}
-        <table>
-            <tr>
-                <th>Ape Name</th>
-                <th>Age</th>
-                <th>Actions</th>
-            </tr>
-            {% for ape in apes %}
-            <tr>
-                <td>{{ ape.ape_name }}</td>
-                <td>{{ ape.age }}</td>
-                <td>
-                    <a href="{{ url_for('site.edit_ape', ape_id=ape.id) }}">Edit</a>
-                    <form action="{{ url_for('site.delete_ape', ape_id=ape.id) }}" method="POST" style="display:inline;">
-                      <button type="submit">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
-
-    <hr>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-users mr-2"></i>Apes
+                </h3>
+            </div>
+            <div class="card-body">
+                {% if apes|length < 1 %}
+                    <p class="text-muted">No apes have been entered into the database!</p>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Ape Name</th>
+                                    <th>Age</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ape in apes %}
+                                <tr>
+                                    <td>{{ ape.ape_name }}</td>
+                                    <td>{{ ape.age }}</td>
+                                    <td>
+                                        <a href="{{ url_for('site.edit_ape', ape_id=ape.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ url_for('site.delete_ape', ape_id=ape.id) }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
     <!-- Recipes Table -->
-    <h2>Recipes</h2>
-    {% if recipes|length < 1 %}
-        <p>No recipes have been entered into the database!</p>
-    {% else %}
-        <table>
-            <tr>
-                <th>Recipe Name</th>
-                <th>Description</th>
-                <th>Calories</th>
-                <th>Actions</th>
-            </tr>
-            {% for recipe in recipes %}
-            <tr>
-                <td>{{ recipe.meal_name }}</td>
-                <td>{{ recipe.description }}</td>
-                <td>{{ recipe.calories }}</td>
-                <td>
-                    <a href="{{ url_for('site.edit_recipe', recipe_id=recipe.id) }}">Edit</a>
-                    <form action="{{ url_for('site.delete_recipe', recipe_id=recipe.id) }}" method="POST" style="display:inline;">
-                      <button type="submit">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
-
-    <hr>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-utensils mr-2"></i>Recipes
+                </h3>
+            </div>
+            <div class="card-body">
+                {% if recipes|length < 1 %}
+                    <p class="text-muted">No recipes have been entered into the database!</p>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Recipe Name</th>
+                                    <th>Description</th>
+                                    <th>Calories</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for recipe in recipes %}
+                                <tr>
+                                    <td>{{ recipe.meal_name }}</td>
+                                    <td>{{ recipe.description }}</td>
+                                    <td>{{ recipe.calories }}</td>
+                                    <td>
+                                        <a href="{{ url_for('site.edit_recipe', recipe_id=recipe.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ url_for('site.delete_recipe', recipe_id=recipe.id) }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
     <!-- Meals Table -->
-    <h2>Meals</h2>
-    <p>This shows the resulting data from a query across all 3 tables:</p>
-    {% if meals|length < 1 %}
-        <p>No meals have been entered into the database!</p>
-    {% else %}
-        <table>
-            <tr>
-                <th>Date</th>
-                <th>Ape Name</th>
-                <th>Meal Name</th>
-                <th>Calories</th>
-                <th>Actions</th>
-            </tr>
-            {% for meal in meals %}
-            <tr>
-                <td>{{ meal.date.strftime("%Y-%m-%d") }}</td>
-                <td>{{ meal.ape.ape_name }}</td>
-                <td>{{ meal.recipe.meal_name }}</td>
-                <td>{{ meal.recipe.calories }}</td>
-                <td>
-                    <a href="{{ url_for('site.edit_meal', meal_id=meal.id) }}">Edit</a>
-                    <form action="{{ url_for('site.delete_meal', meal_id=meal.id) }}" method="POST" style="display:inline;">
-                      <button type="submit">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-alt mr-2"></i>Meals
+                </h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Shows the resulting data from a query across all 3 tables:</p>
+                {% if meals|length < 1 %}
+                    <p class="text-muted">No meals have been entered into the database!</p>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Ape Name</th>
+                                    <th>Meal Name</th>
+                                    <th>Calories</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for meal in meals %}
+                                <tr>
+                                    <td>{{ meal.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ meal.ape.ape_name }}</td>
+                                    <td>{{ meal.recipe.meal_name }}</td>
+                                    <td>{{ meal.recipe.calories }}</td>
+                                    <td>
+                                        <a href="{{ url_for('site.edit_meal', meal_id=meal.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ url_for('site.delete_meal', meal_id=meal.id) }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -186,3 +186,31 @@ def delete_meal(meal_id):
     db.session.delete(meal)
     db.session.commit()
     return redirect(url_for('site.index'))
+
+
+@site.route('/log_feeding')
+@login_required
+def log_feeding():
+    """
+    Display the log feeding page for adding nutrition data.
+    """
+    # In a real application, you would fetch available apes and food items
+    # For now, we'll use placeholder data
+    return render_template('log_feeding.html')
+
+
+@site.route('/apes/<int:ape_id>/profile')
+@login_required
+def ape_profile_page(ape_id):
+    """
+    Display the profile page for a specific ape.
+    """
+    ape = Apes.query.get_or_404(ape_id)
+    return render_template('ape_profile.html', ape=ape)
+
+
+@site.route('/apes')
+@login_required
+def all_apes():
+    apes = Apes.query.all()
+    return render_template('all_apes.html', apes=apes)

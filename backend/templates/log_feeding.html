@@ -1,294 +1,430 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log New Feeding - Ape Wellness Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/log_feeding.css') }}" rel="stylesheet">
-</head>
-<body>
-    <!-- Header -->
-    <header class="bg-primary text-white py-3">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1 class="mb-0">
-                    <i class="fas fa-utensils me-2"></i>
-                    Log New Feeding
-                </h1>
-                <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#navigationMenu">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Navigation Menu -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="navigationMenu">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Navigation</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.index') }}">
-                        <i class="fas fa-home me-2"></i>Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="{{ url_for('main.log_feeding') }}">
-                        <i class="fas fa-utensils me-2"></i>Log Feeding
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.ape_profile') }}">
-                        <i class="fas fa-user me-2"></i>Ape Profile
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="fas fa-users me-2"></i>All Apes
-                    </a>
-                </li>
-            </ul>
-        </div>
+{% extends 'adminlte_base.html' %}
+{% block title %}Log Feeding - Ape Wellness Tracker{% endblock %}
+{% block page_title %}Log Feeding{% endblock %}
+{% block body %}
+<!-- Active Apes Section -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Active Apes</h3>
     </div>
-
-    <div class="container py-4">
-        <!-- Active Apes Section -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0">Active Apes</h3>
-            </div>
-            <div class="card-body">
-                <div class="ape-selection-container">
-                    <div class="d-flex align-items-center overflow-auto">
-                        <div class="ape-avatar active me-3" data-ape-id="kanzi">
-                            <div class="avatar-circle bg-primary text-white">
-                                <span>K</span>
-                            </div>
-                            <small class="d-block text-center mt-1">Kanzi</small>
-                        </div>
-                        <div class="ape-avatar active me-3" data-ape-id="ape2">
-                            <div class="avatar-circle bg-primary text-white">
-                                <span>A2</span>
-                            </div>
-                            <small class="d-block text-center mt-1">Ape 2</small>
-                        </div>
-                        <div class="ape-avatar me-3" data-ape-id="ape3">
-                            <div class="avatar-circle bg-secondary text-white">
-                                <span>A3</span>
-                            </div>
-                            <small class="d-block text-center mt-1">Ape 3</small>
-                        </div>
-                        <div class="ape-avatar me-3" data-ape-id="ape4">
-                            <div class="avatar-circle bg-secondary text-white">
-                                <span>A4</span>
-                            </div>
-                            <small class="d-block text-center mt-1">Ape 4</small>
-                        </div>
-                        <div class="ape-avatar me-3" data-ape-id="api">
-                            <div class="avatar-circle bg-secondary text-white">
-                                <span>Api</span>
-                            </div>
-                            <small class="d-block text-center mt-1">Api</small>
-                        </div>
-                        <div class="ape-avatar me-3">
-                            <div class="avatar-circle bg-light text-dark">
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                            <small class="d-block text-center mt-1">More</small>
-                        </div>
-                    </div>
+    <div class="card-body">
+        <div class="ape-selection-container">
+            <div class="d-flex align-items-center overflow-auto">
+                <div class="ape-avatar me-3" data-ape-id="maisha">
+                    <img src="{{ url_for('static', filename='images/maisha.jpg') }}" class="avatar-circle" alt="MAISHA">
+                    <small class="d-block text-center mt-1">MAISHA</small>
                 </div>
-                <small class="text-muted mt-2 d-block">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Select one or many apes to add the same nutrition data to each ape's profile
-                </small>
+                <div class="ape-avatar me-3" data-ape-id="teco">
+                    <img src="{{ url_for('static', filename='images/teco.jpg') }}" class="avatar-circle" alt="TECO">
+                    <small class="d-block text-center mt-1">TECO</small>
+                </div>
+                <div class="ape-avatar me-3" data-ape-id="nyota">
+                    <img src="{{ url_for('static', filename='images/nyota.jpg') }}" class="avatar-circle" alt="NYOTA">
+                    <small class="d-block text-center mt-1">NYOTA</small>
+                </div>
+                <div class="ape-avatar me-3" data-ape-id="clara">
+                    <img src="{{ url_for('static', filename='images/clara.jpg') }}" class="avatar-circle" alt="CLARA">
+                    <small class="d-block text-center mt-1">CLARA</small>
+                </div>
+                <div class="ape-avatar me-3" data-ape-id="mali">
+                    <img src="{{ url_for('static', filename='images/mali.jpg') }}" class="avatar-circle" alt="MALI">
+                    <small class="d-block text-center mt-1">MALI</small>
+                </div>
+                <div class="ape-avatar me-3" data-ape-id="elikya">
+                    <img src="{{ url_for('static', filename='images/elikya.jpg') }}" class="avatar-circle" alt="ELIKYA">
+                    <small class="d-block text-center mt-1">ELIKYA</small>
+                </div>
             </div>
         </div>
+        <small class="text-muted mt-2 d-block">
+            <i class="fas fa-info-circle mr-1"></i>            Select one or many apes to add the same nutrition data to each apesprofile
+        </small>
+    </div>
+</div>
 
-        <!-- Quick Add Section -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0">Quick Add</h3>
-            </div>
-            <div class="card-body">
-                <div class="quick-add-container">
-                    <div class="row g-3">
-                        <div class="col-3 col-md-2">
-                            <button class="btn btn-outline-success quick-add-btn w-100" data-food="banana" data-calories="105">
-                                <i class="fas fa-banana me-1"></i>
-                                <small class="d-block">Banana</small>
-                            </button>
-                        </div>
-                        <div class="col-3 col-md-2">
-                            <button class="btn btn-outline-success quick-add-btn w-100" data-food="cabbage" data-calories="22">
-                                <i class="fas fa-leaf me-1"></i>
-                                <small class="d-block">Cabbage</small>
-                            </button>
-                        </div>
-                        <div class="col-3 col-md-2">
-                            <button class="btn btn-outline-success quick-add-btn w-100" data-food="carrot" data-calories="41">
-                                <i class="fas fa-carrot me-1"></i>
-                                <small class="d-block">Carrot</small>
-                            </button>
-                        </div>
-                        <div class="col-3 col-md-2">
-                            <button class="btn btn-outline-success quick-add-btn w-100" data-food="egg" data-calories="78">
-                                <i class="fas fa-egg me-1"></i>
-                                <small class="d-block">Egg</small>
-                            </button>
-                        </div>
-                    </div>
+<!-- Quick Add Section -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Quick Add</h3>
+    </div>
+    <div class="card-body">
+        <div class="quick-add-container">
+            <div class="row">
+                <div class="col-3 col-md-2">
+                    <button class="btn btn-outline-success quick-add-btn w-100" data-food="banana" data-calories="105">
+                        <i class="fas fa-banana mr-1"></i>
+                        <small class="d-block">Banana</small>
+                    </button>
                 </div>
-                <small class="text-muted mt-2 d-block">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Click to add QTY: 1 of an item to the current feeding table
-                </small>
+                <div class="col-3 col-md-2">
+                    <button class="btn btn-outline-success quick-add-btn w-100" data-food="cabbage" data-calories="22">
+                        <i class="fas fa-leaf mr-1"></i>
+                        <small class="d-block">Cabbage</small>
+                    </button>
+                </div>
+                <div class="col-3 col-md-2">
+                    <button class="btn btn-outline-success quick-add-btn w-100" data-food="carrot" data-calories="41">
+                        <i class="fas fa-carrot mr-1"></i>
+                        <small class="d-block">Carrot</small>
+                    </button>
+                </div>
+                <div class="col-3 col-md-2">
+                    <button class="btn btn-outline-success quick-add-btn w-100" data-food="egg" data-calories="78">
+                        <i class="fas fa-egg mr-1"></i>
+                        <small class="d-block">Egg</small>
+                    </button>
+                </div>
             </div>
         </div>
+        <small class="text-muted mt-2 d-block">
+            <i class="fas fa-info-circle mr-1"></i>
+            Click to add QTY: 1 of an item to the current feeding table
+        </small>
+    </div>
+</div>
 
-        <!-- Add Food Section -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0">Add Food</h3>
-            </div>
-            <div class="card-body">
-                <form id="addFoodForm">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="foodSelect" class="form-label">Food Item</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-success text-white">
-                                    <i class="fas fa-plus"></i>
-                                </span>
-                                <select class="form-select" id="foodSelect" required>
-                                    <option value="">Select food item...</option>
-                                    <option value="apple">Apple</option>
-                                    <option value="banana">Banana</option>
-                                    <option value="cabbage">Cabbage</option>
-                                    <option value="carrot">Carrot</option>
-                                    <option value="egg">Egg</option>
-                                    <option value="orange">Orange</option>
-                                    <option value="pear">Pear</option>
-                                    <option value="tomato">Tomato</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="quantityInput" class="form-label">QTY</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="quantityInput" 
-                                       value="1" min="1" max="99" required>
-                                <button class="btn btn-outline-secondary" type="button" id="decreaseQty">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <button class="btn btn-outline-secondary" type="button" id="increaseQty">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="caloriesInput" class="form-label">Cals</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="caloriesInput" 
-                                       value="42" min="0" max="999" required>
-                                <button class="btn btn-outline-secondary" type="button" id="decreaseCals">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <button class="btn btn-outline-secondary" type="button" id="increaseCals">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
+<!-- Add Food Section -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Add Food</h3>
+    </div>
+    <div class="card-body">
+        <form id="addFoodForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="foodSelect" class="form-label">Food Item</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-success text-white">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                        <select class="form-control" id="foodSelect" required>
+                            <option value="">Select food item...</option>
+                            <option value="apple">Apple</option>
+                            <option value="banana">Banana</option>
+                            <option value="cabbage">Cabbage</option>
+                            <option value="carrot">Carrot</option>
+                            <option value="egg">Egg</option>
+                            <option value="orange">Orange</option>
+                            <option value="pear">Pear</option>
+                            <option value="tomato">Tomato</option>
+                        </select>
                     </div>
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Add to Feeding
+                </div>
+                <div class="col-md-3">
+                    <label for="quantityInput" class="form-label">QTY</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="quantityInput" 
+                               value="1" min="1" max="99" required>
+                        <button class="btn btn-outline-secondary" type="button" id="decreaseQty">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" id="increaseQty">
+                            <i class="fas fa-plus"></i>
                         </button>
                     </div>
-                </form>
+                </div>
+                <div class="col-md-3">
+                    <label for="caloriesInput" class="form-label">Cals</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="caloriesInput" 
+                               value="42" min="0" max="999" required>
+                        <button class="btn btn-outline-secondary" type="button" id="decreaseCals">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" id="increaseCals">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Add to Feeding
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        <!-- Current Feeding Section -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0">Current Feeding</h3>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped" id="currentFeedingTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Food</th>
-                                <th>Cals Per</th>
-                                <th>QTY</th>
-                                <th>Total</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="feedingTableBody">
-                            <tr>
-                                <td>Egg</td>
-                                <td>78</td>
-                                <td>1</td>
-                                <td>78</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger remove-item" data-index="0">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Banana</td>
-                                <td>105</td>
-                                <td>2</td>
-                                <td>210</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger remove-item" data-index="1">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Cabbage</td>
-                                <td>22</td>
-                                <td>1</td>
-                                <td>22</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger remove-item" data-index="2">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tfoot class="table-primary">
-                            <tr>
-                                <td colspan="3" class="fw-bold">Total Calories</td>
-                                <td colspan="2" class="fw-bold" id="totalCalories">310</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <button class="btn btn-outline-secondary" id="clearAllBtn">
-                        <i class="fas fa-trash me-2"></i>Clear All
-                    </button>
-                    <button class="btn btn-success" id="saveFeedingBtn">
-                        <i class="fas fa-save me-2"></i>Save Feeding
-                    </button>
-                </div>
-            </div>
+<!-- Current Feeding Section -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Current Feeding</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped" id="currentFeedingTable">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Food</th>
+                        <th>Cals Per</th>
+                        <th>QTY</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="feedingTableBody">
+                    <tr>
+                        <td>Egg</td>
+                        <td>78</td>
+                        <td>1</td>
+                        <td>78</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger remove-item" data-index="0">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Banana</td>
+                        <td>105</td>
+                        <td>2</td>
+                        <td>210</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger remove-item" data-index="1">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Cabbage</td>
+                        <td>22</td>
+                        <td>1</td>
+                        <td>22</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger remove-item" data-index="2">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot class="table-primary">
+                    <tr>
+                        <td colspan="3" class="font-weight-bold">Total Calories</td>
+                        <td colspan="2" class="font-weight-bold" id="totalCalories">310</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <button class="btn btn-outline-secondary" id="clearAllBtn">
+                <i class="fas fa-trash mr-2"></i>Clear All
+            </button>
+            <button class="btn btn-success" id="saveFeedingBtn">
+                <i class="fas fa-save mr-2"></i>Save Feeding
+            </button>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/log_feeding.js') }}"></script>
-</body>
-</html> 
+{% block extra_css %}
+<style>
+.ape-avatar {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ape-avatar:hover {
+    transform: scale(1.05);
+}
+
+.ape-avatar.active .avatar-circle {
+    border: 3px solid #7289da; /* AdminLTE primary color */
+}
+
+.avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin: 0 auto;
+}
+
+.quick-add-btn {
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.quick-add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quick-add-btn i {
+    font-size: 1.5em;
+    margin-bottom: 0.25rem;
+}
+
+.quick-add-btn small {
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Ape Selection
+document.querySelectorAll('.ape-avatar').forEach(avatar => {
+    avatar.addEventListener('click', function() {
+        if (this.dataset.apeId) {
+            this.classList.toggle('active');
+        }
+    });
+});
+
+// Quick Add Buttons
+document.querySelectorAll('.quick-add-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const food = this.dataset.food;
+        const calories = parseInt(this.dataset.calories);
+        addToFeedingTable(food, calories, 1);
+        updateTotalCalories();
+    });
+});
+
+// Quantity Controls
+document.getElementById('decreaseQty').addEventListener('click', function() {
+    const input = document.getElementById('quantityInput');
+    if (input.value > 1) {
+        input.value--;
+    }
+});
+
+document.getElementById('increaseQty').addEventListener('click', function() {
+    const input = document.getElementById('quantityInput');
+    input.value++;
+});
+
+// Calories Controls
+document.getElementById('decreaseCals').addEventListener('click', function() {
+    const input = document.getElementById('caloriesInput');
+    if (input.value > 0) {
+        input.value--;
+    }
+});
+
+document.getElementById('increaseCals').addEventListener('click', function() {
+    const input = document.getElementById('caloriesInput');
+    input.value++;
+});
+
+// Add Food Form
+document.getElementById('addFoodForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const food = document.getElementById('foodSelect').value;
+    const quantity = parseInt(document.getElementById('quantityInput').value);
+    const calories = parseInt(document.getElementById('caloriesInput').value);
+    
+    if (food && quantity && calories) {
+        addToFeedingTable(food, calories, quantity);
+        updateTotalCalories();
+        this.reset();
+        document.getElementById('quantityInput').value = 1;
+        document.getElementById('caloriesInput').value = 42;
+    }
+});
+
+// Remove Items
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-item')) {
+        const index = e.target.closest('tr').dataset.index;
+        document.getElementById('feedingTableBody').children[index].remove();
+        updateTotalCalories();
+    }
+});
+
+// Clear All
+document.getElementById('clearAllBtn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to clear all items?')) {
+        document.getElementById('feedingTableBody').innerHTML = '';
+        updateTotalCalories();
+    }
+});
+
+// Save Feeding
+document.getElementById('saveFeedingBtn').addEventListener('click', function() {
+    const selectedApes = document.querySelectorAll('.ape-avatar.active[data-ape-id]');
+    if (selectedApes.length === 0) {
+        alert('Please select at least one ape.');
+        return;
+    }
+    
+    const feedingData = {
+        apes: Array.from(selectedApes).map(ape => ape.dataset.apeId),
+        items: getFeedingItems(),
+        totalCalories: getTotalCalories()
+    };
+    
+    console.log('Saving feeding data:', feedingData);
+    alert('Feeding saved successfully!');
+    
+    // Clear the table after saving
+    document.getElementById('feedingTableBody').innerHTML = '';
+    updateTotalCalories();
+});
+
+function addToFeedingTable(food, caloriesPer, quantity) {
+    const tbody = document.getElementById('feedingTableBody');
+    const total = caloriesPer * quantity;
+    const index = tbody.children.length;
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${food}</td>
+        <td>${caloriesPer}</td>
+        <td>${quantity}</td>
+        <td>${total}</td>
+        <td>
+            <button class="btn btn-sm btn-outline-danger remove-item" data-index="${index}">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    `;
+    row.dataset.index = index; // Add data-index attribute
+    tbody.appendChild(row);
+}
+
+function updateTotalCalories() {
+    const total = getTotalCalories();
+    document.getElementById('totalCalories').textContent = total;
+}
+
+function getTotalCalories() {
+    const rows = document.querySelectorAll('#feedingTableBody tr');
+    let total = 0;
+    rows.forEach(row => {
+        const cells = row.children;
+        if (cells.length >= 4) {
+            total += parseInt(cells[3].textContent) || 0;
+        }
+    });
+    return total;
+}
+
+function getFeedingItems() {
+    const items = [];
+    const rows = document.querySelectorAll('#feedingTableBody tr');
+    rows.forEach(row => {
+        const cells = row.children;
+        if (cells.length >= 4) {
+            items.push({
+                food: cells[0].textContent,
+                caloriesPer: parseInt(cells[1].textContent),
+                quantity: parseInt(cells[2].textContent),
+                total: parseInt(cells[3].textContent)
+            });
+        }
+    });
+    return items;
+}
+</script>
+{% endblock %} 

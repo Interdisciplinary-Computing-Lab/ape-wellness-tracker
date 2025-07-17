@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Ape Wellness Tracker{% endblock %}</title>
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- AdminLTE -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <!-- Left navbar links -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+        </ul>
+        <!-- Right navbar links -->
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <i class="far fa-bell"></i>
+                    <span class="badge badge-warning navbar-badge">3</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                    <span class="dropdown-item dropdown-header">3 Notifications</span>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-envelope mr-2"></i> New feeding logged
+                        <span class="float-right text-muted text-sm">3 mins</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-users mr-2"></i> New ape added
+                        <span class="float-right text-muted text-sm">12 hours</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-file mr-2"></i> New recipe created
+                        <span class="float-right text-muted text-sm">2 days</span>
+                    </a>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <!-- /.navbar -->
+
+    <!-- Main Sidebar Container -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <!-- Brand Logo -->
+        <a href="{{ url_for('site.index') }}" class="brand-link">
+            <i class="fas fa-monkey brand-image img-circle elevation-3" style="opacity: .8"></i>
+            <span class="brand-text font-weight-light">Ape Wellness</span>
+        </a>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Sidebar user panel (optional) -->
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                <div class="image">
+                    <i class="fas fa-user-circle img-circle elevation-2"></i>
+                </div>
+                <div class="info">
+                    <a href="#" class="d-block">{{ current_user.email if current_user.is_authenticated else 'Guest' }}</a>
+                </div>
+            </div>
+            <!-- Sidebar Menu -->
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    <li class="nav-item">
+                        <a href="{{ url_for('site.index') }}" class="nav-link {% if request.endpoint == 'site.index' %}active{% endif %}">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+                    {#
+                    <li class="nav-item">
+                        <a href="{{ url_for('site.ape_profile') }}" class="nav-link {% if request.endpoint == 'site.ape_profile' %}active{% endif %}">
+                            <i class="nav-icon fas fa-user"></i>
+                            <p>Ape Profile</p>
+                        </a>
+                    </li>
+                    #}
+                    <li class="nav-item">
+                        <a href="{{ url_for('site.log_feeding') }}" class="nav-link {% if request.endpoint == 'site.log_feeding' %}active{% endif %}">
+                            <i class="nav-icon fas fa-utensils"></i>
+                            <p>Log Feeding</p>
+                        </a>
+                    </li>
+                    <li class="nav-header">MANAGEMENT</li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('site.all_apes') }}" class="nav-link {% if request.endpoint == 'site.all_apes' %}active{% endif %}">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>All Apes</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>Apes</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-utensils"></i>
+                            <p>Recipes</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-calendar-alt"></i>
+                            <p>Meals</p>
+                        </a>
+                    </li>
+                    <li class="nav-header">REPORTS</li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-chart-bar"></i>
+                            <p>Analytics</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-file-alt"></i>
+                            <p>Reports</p>
+                        </a>
+                    </li>
+                    <li class="nav-header">ACCOUNT</li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-sign-out-alt"></i>
+                            <p>Logout</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <!-- /.sidebar-menu -->
+        </div>
+        <!-- /.sidebar -->
+    </aside>
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">{% block page_title %}Dashboard{% endblock %}</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{{ url_for('site.index') }}">Home</a></li>
+                            {% block breadcrumb %}{% endblock %}
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.content-header -->
+        <!-- Main content -->
+        <div class="content">
+            <div class="container-fluid">
+                {% block body %}{% endblock %}
+            </div>
+        </div>
+        <!-- /.content -->
+    </div>
+    <!-- /.content-wrapper -->
+    <!-- Control Sidebar -->
+    <aside class="control-sidebar control-sidebar-dark">
+        <div class="p-3">
+            <h5>Quick Actions</h5>
+            <p>Quick access to common tasks.</p>
+            <a href="{{ url_for('site.log_feeding') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Log Feeding
+            </a>
+        </div>
+    </aside>
+    <!-- /.control-sidebar -->
+    <!-- Main Footer -->
+    <footer class="main-footer">
+        <div class="float-right d-none d-sm-inline">
+            Ape Wellness Tracker
+        </div>
+        <strong>&copy; 2024 Ape Wellness Tracker.</strong> All rights reserved.
+    </footer>
+</div>
+<!-- ./wrapper -->
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- AdminLTE App -->
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html> 

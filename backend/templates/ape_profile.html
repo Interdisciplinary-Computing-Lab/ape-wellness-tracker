@@ -1,253 +1,235 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ape Profile Page - Ape Wellness Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/ape_profile.css') }}" rel="stylesheet">
-</head>
-<body>
-    <!-- Header -->
-    <header class="bg-primary text-white py-3">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1 class="mb-0">
-                    <i class="fas fa-monkey me-2"></i>
-                    Ape Profile Page
-                </h1>
-                <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#navigationMenu">
-                    <i class="fas fa-bars"></i>
+{% extends 'adminlte_base.html' %}
+{% block title %}{{ ape.ape_name }} - Ape Wellness Tracker{% endblock %}
+{% block page_title %}{{ ape.ape_name }}{% endblock %}
+{% block body %}
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Profile Data Section -->
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3 text-center">
+                        <div class="ape-avatar mb-3">
+                            <img src="{{ url_for('static', filename='images/' + ape.ape_name|lower + '.jpg') }}" 
+                                 alt="{{ ape.ape_name }}" 
+                                 class="img-fluid rounded-circle border border-3" style="width: 120px; height: 120px; object-fit: cover;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h2 class="card-title mb-2">{{ ape.ape_name }}</h2>
+                        <p class="text-muted mb-1"><strong>Species:</strong> Bonobo</p>
+                        <p class="text-muted mb-1"><strong>Age:</strong> {{ ape.age }}</p>
+                        <!-- Status Buttons -->
+                        <div class="status-buttons">
+                            <span class="badge badge-warning me-2 py-2">BAR</span>
+                            <span class="badge badge-success me-2 py-2">GA</span>
+                            <span class="badge badge-info me-2 py-2">NBM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nutrition/Feeding Log Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Todays Calories: 310</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Pie Chart -->
+                    <div class="col-md-4 text-center">
+                        <div class="pie-chart-container">
+                            <canvas id="nutritionPieChart" width="150" height="150"></canvas>
+                            <div class="chart-legend mt-3">
+                                <div class="d-flex justify-content-center align-items-center mb-2">
+                                    <div class="legend-color bg-success me-2" style="width: 20px; height: 20px;"></div>
+                                    <span>Fruit</span>
+                                </div>
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <div class="legend-color bg-warning me-2" style="width: 20px; height: 20px;"></div>
+                                    <span>Protein</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Nutrition Table -->
+                    <div class="col-md-8">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Food</th>
+                                        <th>Cals Per</th>
+                                        <th>QTY</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Egg</td>
+                                        <td>78</td>
+                                        <td>1</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Banana</td>
+                                        <td>105</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cabbage</td>
+                                        <td>22</td>
+                                        <td>1</td>
+                                    </tr>
+                                    <tr class="table-primary font-weight-bold">
+                                        <td>Total Calories</td>
+                                        <td colspan="2">310</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes/Observations Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Notes/Observations</h3>
+            </div>
+            <div class="card-body">              <!-- Note Input Form -->
+                <form id="noteForm">
+                    <div class="form-group">
+                        <textarea class="form-control" id="noteTextarea" rows="4" 
+                                  placeholder="Enter your observations here..."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane mr-2"></i>Post
+                        </button>
+                        <div class="status-selector">
+                            <label class="form-label mr-2">Update Status:</label>
+                            <select class="form-control form-control-sm d-inline-block w-auto">
+                                <option value="">No Change</option>
+                                <option value="BAR">BAR</option>
+                                <option value="GA">GA</option>
+                                <option value="NBM">NBM</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Recent Notes Display -->
+                <div class="mt-4">
+                    <h5>Recent Notes</h5>
+                    <div id="recentNotes">
+                        <div class="note-item border-left border-primary pl-3 mb-3">
+                            <p class="mb-1">Kanzi participated in a research task for 20 minutes</p>
+                            <small class="text-muted">
+                                <i class="fas fa-user mr-1"></i>Added by: Tech 1 
+                                <i class="fas fa-calendar mr-1 ml-2"></i>Jan 4th @ 10am
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar - Optional Profile Cards -->
+    <div class="col-lg-4">     <!-- Swelling Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Swelling</h5>
+            </div>
+            <div class="card-body">
+                <div class="swelling-slider-container">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Level:</span>
+                        <span id="swellingLevel" class="font-weight-bold">1</span>
+                    </div>
+                    <input type="range" class="form-control-range" id="swellingSlider"                   min="0" max="3" value="1" step="1">
+                    <div class="d-flex justify-content-between mt-1">
+                        <small class="text-muted">0</small>
+                        <small class="text-muted">1</small>
+                        <small class="text-muted">2</small>
+                        <small class="text-muted">3</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Cards Placeholder -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Additional Metrics</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Additional cards can be added here based on specific ape needs, 
+                    such as sex-specific or individual tracking requirements.
+                </p>
+                <button class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-plus mr-1"></i>
                 </button>
             </div>
         </div>
-    </header>
-
-    <!-- Navigation Menu -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="navigationMenu">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Navigation</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.index') }}">
-                        <i class="fas fa-home me-2"></i>Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.log_feeding') }}">
-                        <i class="fas fa-utensils me-2"></i>Log Feeding
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="fas fa-users me-2"></i>All Apes
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="fas fa-chart-bar me-2"></i>Reports
-                    </a>
-                </li>
-            </ul>
-        </div>
     </div>
+</div>
+{% endblock %}
 
-    <div class="container-fluid py-4">
-        <div class="row">
-            <!-- Main Content -->
-            <div class="col-lg-8">
-                <!-- Profile Data Section -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-3 text-center">
-                                <div class="ape-avatar mb-3">
-                                    <img src="{{ url_for('static', filename='images/bonobo-placeholder.jpg') }}" 
-                                         alt="Kanzi Bonobo" 
-                                         class="img-fluid rounded-circle border border-3 border-primary"
-                                         style="width: 120px; height: 120px; object-fit: cover;">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <h2 class="card-title mb-2">Kanzi Bonobo</h2>
-                                <p class="text-muted mb-1"><strong>Age:</strong> 43</p>
-                                <p class="text-muted mb-3"><strong>Weight:</strong> 113lbs</p>
-                                
-                                <!-- Status Buttons -->
-                                <div class="status-buttons">
-                                    <span class="badge bg-warning text-dark me-2 px-3 py-2">BAR</span>
-                                    <span class="badge bg-success me-2 px-3 py-2">GA</span>
-                                    <span class="badge bg-info me-2 px-3 py-2">NBM</span>
-                                </div>
-                            </div>
-                            <div class="col-md-3 text-end">
-                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#navigationMenu">
-                                    <i class="fas fa-bars"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Pie Chart for Nutrition
+const ctx = document.getElementById('nutritionPieChart').getContext('2d');
+const nutritionChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: ['Fruit', 'Protein'],
+        datasets: [{
+            data: [210, 100],
+            backgroundColor: ['#28a745', '#ffc107'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
 
-                <!-- Nutrition/Feeding Log Section -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h3 class="card-title mb-0">Today's Calories: 310</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- Pie Chart -->
-                            <div class="col-md-4 text-center">
-                                <div class="pie-chart-container">
-                                    <canvas id="nutritionPieChart" width="150" height="150"></canvas>
-                                    <div class="chart-legend mt-3">
-                                        <div class="d-flex justify-content-center align-items-center mb-2">
-                                            <div class="legend-color bg-success me-2" style="width: 20px; height: 20px;"></div>
-                                            <span>Fruit</span>
-                                        </div>
-                                        <div class="d-flex justify-content-center align-items-center">
-                                            <div class="legend-color bg-warning me-2" style="width: 20px; height: 20px;"></div>
-                                            <span>Protein</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Nutrition Table -->
-                            <div class="col-md-8">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th>Food</th>
-                                                <th>Cals Per</th>
-                                                <th>QTY</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>Egg</td>
-                                                <td>78</td>
-                                                <td>1</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Banana</td>
-                                                <td>105</td>
-                                                <td>2</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Cabbage</td>
-                                                <td>22</td>
-                                                <td>1</td>
-                                            </tr>
-                                            <tr class="table-primary fw-bold">
-                                                <td>Total Calories</td>
-                                                <td colspan="2">310</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+// Swelling Slider
+document.getElementById('swellingSlider').addEventListener('input', function() {
+    document.getElementById('swellingLevel').textContent = this.value;
+});
 
-                <!-- Notes/Observations Section -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h3 class="card-title mb-0">Notes/Observations</h3>
-                    </div>
-                    <div class="card-body">
-                        <!-- Note Input Form -->
-                        <form id="noteForm">
-                            <div class="mb-3">
-                                <textarea class="form-control" id="noteTextarea" rows="4" 
-                                          placeholder="Enter your observations here..."></textarea>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane me-2"></i>Post
-                                </button>
-                                <div class="status-selector">
-                                    <label class="form-label me-2">Update Status:</label>
-                                    <select class="form-select form-select-sm d-inline-block w-auto">
-                                        <option value="">No Change</option>
-                                        <option value="BAR">BAR</option>
-                                        <option value="GA">GA</option>
-                                        <option value="NBM">NBM</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </form>
-
-                        <!-- Recent Notes Display -->
-                        <div class="mt-4">
-                            <h5>Recent Notes</h5>
-                            <div id="recentNotes">
-                                <div class="note-item border-start border-primary ps-3 mb-3">
-                                    <p class="mb-1">Kanzi participated in a research task for 20 minutes</p>
-                                    <small class="text-muted">
-                                        <i class="fas fa-user me-1"></i>Added by: Tech 1 
-                                        <i class="fas fa-calendar me-1 ms-2"></i>Jan 4th @ 10am
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sidebar - Optional Profile Cards -->
-            <div class="col-lg-4">
-                <!-- Swelling Card -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Swelling</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="swelling-slider-container">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Level:</span>
-                                <span id="swellingLevel" class="fw-bold">1</span>
-                            </div>
-                            <input type="range" class="form-range" id="swellingSlider" 
-                                   min="0" max="3" value="1" step="1">
-                            <div class="d-flex justify-content-between mt-1">
-                                <small class="text-muted">0</small>
-                                <small class="text-muted">1</small>
-                                <small class="text-muted">2</small>
-                                <small class="text-muted">3</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Additional Cards Placeholder -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Additional Metrics</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted small">
-                            Additional cards can be added here based on specific ape needs, 
-                            such as sex-specific or individual tracking requirements.
-                        </p>
-                        <button class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-plus me-1"></i>Add Metric
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS and Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{{ url_for('static', filename='js/ape_profile.js') }}"></script>
-</body>
-</html> 
+// Note Form
+document.getElementById('noteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const noteText = document.getElementById('noteTextarea').value;
+    if (noteText.trim()) {
+        // Add note to recent notes
+        const noteItem = document.createElement('div');
+        noteItem.className = 'note-item border-left border-primary pl-3 mb-3';
+        noteItem.innerHTML = `
+            <p class="mb-1">${noteText}</p>
+            <small class="text-muted">
+                <i class="fas fa-user mr-1"></i>Added by: Current User 
+                <i class="fas fa-calendar mr-1 ml-2"></i>${new Date().toLocaleDateString()} @ ${new Date().toLocaleTimeString()}
+            </small>
+        `;
+        document.getElementById('recentNotes').prepend(noteItem);
+        document.getElementById('noteTextarea').value = '';
+    }
+});
+</script>
+{% endblock %} 
