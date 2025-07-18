@@ -1,0 +1,247 @@
+{% extends "adminlte_base.html" %}
+
+{% block title %}Dashboard - Ape Wellness Tracker{% endblock %}
+
+{% block body %}
+            <!-- Birthday Alerts -->
+            {% set birthday_apes = apes|selectattr('is_birthday_today')|list %}
+            {% if birthday_apes %}
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h5><i class="icon fas fa-birthday-cake"></i> Happy Birthday! 🎉</h5>
+                Today is the birthday of: 
+                {% for ape in birthday_apes %}
+                    <strong>{{ ape.ape_name }}</strong>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Quick Stats -->
+            <div class="row">
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>{{ apes|length }}</h3>
+                            <p>Total Apes</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <a href="{{ url_for('site.all_apes') }}" class="small-box-footer">
+                            View All <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>{{ total_meals_today }}</h3>
+                            <p>Meals Today</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <a href="{{ url_for('site.log_feeding') }}" class="small-box-footer">
+                            Log Feeding <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ total_calories_today }}</h3>
+                            <p>Calories Today</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <a href="{{ url_for('site.log_feeding') }}" class="small-box-footer">
+                            View Details <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3>{{ recipes|length }}</h3>
+                            <p>Food Items</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-apple-alt"></i>
+                        </div>
+                        <a href="{{ url_for('site.manage_foods') }}" class="small-box-footer">
+                            Manage Foods <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ape Profiles Grid -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-users mr-1"></i>
+                                Ape Profiles
+                            </h3>
+                            <div class="card-tools">
+                                <a href="{{ url_for('site.create_ape') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus mr-1"></i>Add New Ape
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for ape in apes %}
+                                <div class="col-lg-4 col-md-6 mb-4">
+                                    <div class="card card-outline card-primary h-100">
+                                        <div class="card-body text-center position-relative">
+                                            <!-- Birthday Badge -->
+                                            {% if ape.is_birthday_today %}
+                                            <div class="position-absolute" style="top: 10px; right: 10px; z-index: 10;">
+                                                <span class="badge badge-warning badge-lg">
+                                                    <i class="fas fa-birthday-cake"></i> Birthday!
+                                                </span>
+                                            </div>
+                                            {% elif ape.days_until_birthday <= 7 %}
+                                            <div class="position-absolute" style="top: 10px; right: 10px; z-index: 10;">
+                                                <span class="badge badge-info badge-sm">
+                                                    <i class="fas fa-calendar"></i> {{ ape.days_until_birthday }}d
+                                                </span>
+                                            </div>
+                                            {% endif %}
+
+                                            <!-- Ape Image -->
+                                            <div class="mb-3">
+                                                {% if ape.ape_name.upper() == 'MAISHA' %}
+                                                    <img src="{{ url_for('static', filename='images/maisha.jpg') }}" 
+                                                         alt="{{ ape.ape_name }}" 
+                                                         class="img-circle elevation-2" 
+                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                {% elif ape.ape_name.upper() == 'TECO' %}
+                                                    <img src="{{ url_for('static', filename='images/teco.jpg') }}" 
+                                                         alt="{{ ape.ape_name }}" 
+                                                         class="img-circle elevation-2" 
+                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                {% elif ape.ape_name.upper() == 'NYOTA' %}
+                                                    <img src="{{ url_for('static', filename='images/nyota.jpg') }}" 
+                                                         alt="{{ ape.ape_name }}" 
+                                                         class="img-circle elevation-2" 
+                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                {% elif ape.ape_name.upper() == 'CLARA' %}
+                                                    <img src="{{ url_for('static', filename='images/clara.jpg') }}" 
+                                                         alt="{{ ape.ape_name }}" 
+                                                         class="img-circle elevation-2" 
+                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                {% elif ape.ape_name.upper() == 'MALI' %}
+                                                    <img src="{{ url_for('static', filename='images/mali.jpg') }}" 
+                                                         alt="{{ ape.ape_name }}" 
+                                                         class="img-circle elevation-2" 
+                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                {% elif ape.ape_name.upper() == 'ELIKYA' %}
+                                                    <img src="{{ url_for('static', filename='images/elikya.jpg') }}" 
+                                                         alt="{{ ape.ape_name }}" 
+                                                         class="img-circle elevation-2" 
+                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                {% else %}
+                                                    <img src="{{ url_for('static', filename='images/default-ape.jpg') }}" 
+                                                         alt="{{ ape.ape_name }}" 
+                                                         class="img-circle elevation-2" 
+                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                {% endif %}
+                                            </div>
+
+                                            <h5 class="card-title">{{ ape.ape_name }}</h5>
+                                            <p class="text-muted small">
+                                                {% if ape.mother %}
+                                                    Born to {{ ape.mother }}
+                                                {% endif %}
+                                            </p>
+
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <small class="text-muted">Age</small>
+                                                    <div class="font-weight-bold">{{ ape.age }} years</div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted">Weight</small>
+                                                    <div class="font-weight-bold">{{ ape.weight or 'N/A' }} kg</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <small class="text-muted">
+                                                    Birthday: {{ ape.birthday.strftime('%B %d') }}
+                                                </small>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <a href="{{ url_for('site.ape_profile_page', ape_id=ape.id) }}" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-user mr-1"></i>View Profile
+                                                </a>
+                                                <a href="{{ url_for('site.log_feeding') }}" 
+                                                   class="btn btn-success btn-sm">
+                                                    <i class="fas fa-plus mr-1"></i>Log Feeding
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-history mr-1"></i>
+                                Recent Activity
+                            </h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-striped table-sm">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Ape</th>
+                                            <th>Food</th>
+                                            <th>Calories</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for meal in recent_meals %}
+                                        <tr>
+                                            <td>{{ meal.date.strftime('%m/%d %I:%M %p') }}</td>
+                                            <td>
+                                                <a href="{{ url_for('site.ape_profile_page', ape_id=meal.ape.id) }}">
+                                                    {{ meal.ape.ape_name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-info">{{ meal.recipe.meal_name }}</span>
+                                            </td>
+                                            <td>{{ meal.recipe.calories }} cal</td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">
+                                                No recent activity.
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+{% endblock %} 

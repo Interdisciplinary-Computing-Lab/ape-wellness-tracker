@@ -12,4 +12,13 @@ from backend import create_app
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import sys
+    port = 5000
+    if '--port' in sys.argv:
+        try:
+            port_index = sys.argv.index('--port')
+            port = int(sys.argv[port_index + 1])
+        except (ValueError, IndexError):
+            print("Invalid port number. Using default port 5000.")
+    
+    app.run(debug=True, port=port)

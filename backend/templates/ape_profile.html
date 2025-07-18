@@ -1,235 +1,398 @@
-{% extends 'adminlte_base.html' %}
-{% block title %}{{ ape.ape_name }} - Ape Wellness Tracker{% endblock %}
-{% block page_title %}{{ ape.ape_name }}{% endblock %}
+{% extends "adminlte_base.html" %}
+
+{% block title %}{{ ape.ape_name }} - Profile{% endblock %}
+
 {% block body %}
-<div class="row">
-    <!-- Main Content -->
-    <div class="col-lg-8">
-        <!-- Profile Data Section -->
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-3 text-center">
-                        <div class="ape-avatar mb-3">
-                            <img src="{{ url_for('static', filename='images/' + ape.ape_name|lower + '.jpg') }}" 
-                                 alt="{{ ape.ape_name }}" 
-                                 class="img-fluid rounded-circle border border-3" style="width: 120px; height: 120px; object-fit: cover;">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h2 class="card-title mb-2">{{ ape.ape_name }}</h2>
-                        <p class="text-muted mb-1"><strong>Species:</strong> Bonobo</p>
-                        <p class="text-muted mb-1"><strong>Age:</strong> {{ ape.age }}</p>
-                        <!-- Status Buttons -->
-                        <div class="status-buttons">
-                            <span class="badge badge-warning me-2 py-2">BAR</span>
-                            <span class="badge badge-success me-2 py-2">GA</span>
-                            <span class="badge badge-info me-2 py-2">NBM</span>
+            <!-- Birthday Alert -->
+            {% if ape.is_birthday_today %}
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h5><i class="icon fas fa-birthday-cake"></i> Happy Birthday, {{ ape.ape_name }}! 🎉</h5>
+                Today is {{ ape.ape_name }}'s birthday! They are now {{ ape.age }} years old.
+            </div>
+            {% elif ape.days_until_birthday <= 7 %}
+            <div class="alert alert-info alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h5><i class="icon fas fa-calendar"></i> Birthday Coming Soon!</h5>
+                {{ ape.ape_name }}'s birthday is in {{ ape.days_until_birthday }} days ({{ ape.birthday.strftime('%B %d') }}).
+            </div>
+            {% endif %}
+
+            <div class="row">
+                <!-- Profile Card -->
+                <div class="col-md-4">
+                    <div class="card card-primary card-outline">
+                        <div class="card-body box-profile">
+                            <div class="text-center">
+                                {% if ape.ape_name.upper() == 'MAISHA' %}
+                                    <img class="profile-user-img img-fluid img-circle" src="{{ url_for('static', filename='images/maisha.jpg') }}" alt="{{ ape.ape_name }}">
+                                {% elif ape.ape_name.upper() == 'TECO' %}
+                                    <img class="profile-user-img img-fluid img-circle" src="{{ url_for('static', filename='images/teco.jpg') }}" alt="{{ ape.ape_name }}">
+                                {% elif ape.ape_name.upper() == 'NYOTA' %}
+                                    <img class="profile-user-img img-fluid img-circle" src="{{ url_for('static', filename='images/nyota.jpg') }}" alt="{{ ape.ape_name }}">
+                                {% elif ape.ape_name.upper() == 'CLARA' %}
+                                    <img class="profile-user-img img-fluid img-circle" src="{{ url_for('static', filename='images/clara.jpg') }}" alt="{{ ape.ape_name }}">
+                                {% elif ape.ape_name.upper() == 'MALI' %}
+                                    <img class="profile-user-img img-fluid img-circle" src="{{ url_for('static', filename='images/mali.jpg') }}" alt="{{ ape.ape_name }}">
+                                {% elif ape.ape_name.upper() == 'ELIKYA' %}
+                                    <img class="profile-user-img img-fluid img-circle" src="{{ url_for('static', filename='images/elikya.jpg') }}" alt="{{ ape.ape_name }}">
+                                {% else %}
+                                    <img class="profile-user-img img-fluid img-circle" src="{{ url_for('static', filename='images/default-ape.jpg') }}" alt="{{ ape.ape_name }}">
+                                {% endif %}
+                                
+                                {% if ape.is_birthday_today %}
+                                <div class="position-absolute" style="top: 10px; right: 10px;">
+                                    <span class="badge badge-warning badge-lg">
+                                        <i class="fas fa-birthday-cake"></i> Birthday!
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <h3 class="profile-username text-center">{{ ape.ape_name }}</h3>
+                            <p class="text-muted text-center">
+                                {% if ape.mother %}
+                                    Born to {{ ape.mother }}
+                                {% endif %}
+                            </p>
+
+                            <ul class="list-group list-group-unbordered mb-3">
+                                <li class="list-group-item">
+                                    <b>Age</b> <a class="float-right">{{ ape.age }} years old</a>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Birthday</b> <a class="float-right">{{ ape.birthday.strftime('%B %d, %Y') }}</a>
+                                </li>
+                                {% if ape.weight %}
+                                <li class="list-group-item">
+                                    <b>Weight</b> <a class="float-right">{{ ape.weight }} kg</a>
+                                </li>
+                                {% endif %}
+                                <li class="list-group-item">
+                                    <b>Total Meals</b> <a class="float-right">{{ ape.meals|length }}</a>
+                                </li>
+                            </ul>
+
+                            <a href="{{ url_for('site.log_feeding') }}" class="btn btn-primary btn-block">
+                                <b>Log Feeding</b>
+                            </a>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Nutrition/Feeding Log Section -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Todays Calories: 310</h3>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <!-- Pie Chart -->
-                    <div class="col-md-4 text-center">
-                        <div class="pie-chart-container">
-                            <canvas id="nutritionPieChart" width="150" height="150"></canvas>
-                            <div class="chart-legend mt-3">
-                                <div class="d-flex justify-content-center align-items-center mb-2">
-                                    <div class="legend-color bg-success me-2" style="width: 20px; height: 20px;"></div>
-                                    <span>Fruit</span>
+                <!-- Charts Section -->
+                <div class="col-md-8">
+                    <!-- Pie Charts Row -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-chart-pie mr-1"></i>
+                                        Food Categories (All Time)
+                                    </h3>
                                 </div>
-                                <div class="d-flex justify-content-center align-items-center">
-                                    <div class="legend-color bg-warning me-2" style="width: 20px; height: 20px;"></div>
-                                    <span>Protein</span>
+                                <div class="card-body">
+                                    <canvas id="foodCategoryChart" style="height: 250px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-fire mr-1"></i>
+                                        Calorie Distribution
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="calorieDistributionChart" style="height: 250px;"></canvas>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Nutrition Table -->
-                    <div class="col-md-8">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead class="thead-dark">
-                                    <tr>
-                                        <th>Food</th>
-                                        <th>Cals Per</th>
-                                        <th>QTY</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Egg</td>
-                                        <td>78</td>
-                                        <td>1</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Banana</td>
-                                        <td>105</td>
-                                        <td>2</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Cabbage</td>
-                                        <td>22</td>
-                                        <td>1</td>
-                                    </tr>
-                                    <tr class="table-primary font-weight-bold">
-                                        <td>Total Calories</td>
-                                        <td colspan="2">310</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+
+
+
+                    <!-- Activity Feed -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-history mr-1"></i>
+                                Recent Activity
+                            </h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-striped table-sm">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Time</th>
+                                            <th>Food</th>
+                                            <th>Category</th>
+                                            <th>Calories</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set recent_meals = ape.meals|sort(attribute='date', reverse=true) %}
+                                        {% if recent_meals %}
+                                            {% for meal in recent_meals[:20] %}
+                                            <tr>
+                                                <td>{{ meal.date.strftime('%m/%d/%Y') }}</td>
+                                                <td>{{ meal.date.strftime('%I:%M %p') }}</td>
+                                                <td>
+                                                    <span class="badge badge-info">{{ meal.recipe.meal_name }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-secondary">{{ meal.recipe.food_category or 'Other' }}</span>
+                                                </td>
+                                                <td>{{ meal.recipe.calories }} cal</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">
+                                                    No feeding activity recorded yet.
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nutrition Summary -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-pie mr-1"></i>
+                                Nutrition Summary (All Time)
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            {% set recent_meals = ape.meals|list %}
+                            {% if recent_meals %}
+                                {% set total_calories = recent_meals|sum(attribute='recipe.calories') %}
+                                {% set avg_calories = (total_calories / recent_meals|length)|round(1) %}
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="info-box">
+                                            <span class="info-box-icon bg-info"><i class="fas fa-utensils"></i></span>
+                                            <div class="info-box-content">
+                                                <span class="info-box-text">Total Meals</span>
+                                                <span class="info-box-number">{{ recent_meals|length }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="info-box">
+                                            <span class="info-box-icon bg-success"><i class="fas fa-fire"></i></span>
+                                            <div class="info-box-content">
+                                                <span class="info-box-text">Total Calories</span>
+                                                <span class="info-box-number">{{ total_calories }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="info-box">
+                                            <span class="info-box-icon bg-warning"><i class="fas fa-chart-line"></i></span>
+                                            <div class="info-box-content">
+                                                <span class="info-box-text">Avg per Meal</span>
+                                                <span class="info-box-number">{{ avg_calories }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">No feeding activity recorded yet.</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+{% endblock %}
 
-        <!-- Notes/Observations Section -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Notes/Observations</h3>
-            </div>
-            <div class="card-body">              <!-- Note Input Form -->
-                <form id="noteForm">
-                    <div class="form-group">
-                        <textarea class="form-control" id="noteTextarea" rows="4" 
-                                  placeholder="Enter your observations here..."></textarea>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane mr-2"></i>Post
-                        </button>
-                        <div class="status-selector">
-                            <label class="form-label mr-2">Update Status:</label>
-                            <select class="form-control form-control-sm d-inline-block w-auto">
-                                <option value="">No Change</option>
-                                <option value="BAR">BAR</option>
-                                <option value="GA">GA</option>
-                                <option value="NBM">NBM</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
+{% block extra_css %}
+<style>
+.ape-avatar {
+    transition: all 0.3s ease;
+}
 
-                <!-- Recent Notes Display -->
-                <div class="mt-4">
-                    <h5>Recent Notes</h5>
-                    <div id="recentNotes">
-                        <div class="note-item border-left border-primary pl-3 mb-3">
-                            <p class="mb-1">Kanzi participated in a research task for 20 minutes</p>
-                            <small class="text-muted">
-                                <i class="fas fa-user mr-1"></i>Added by: Tech 1 
-                                <i class="fas fa-calendar mr-1 ml-2"></i>Jan 4th @ 10am
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+.ape-avatar:hover {
+    transform: scale(1.05);
+}
 
-    <!-- Sidebar - Optional Profile Cards -->
-    <div class="col-lg-4">     <!-- Swelling Card -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Swelling</h5>
-            </div>
-            <div class="card-body">
-                <div class="swelling-slider-container">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Level:</span>
-                        <span id="swellingLevel" class="font-weight-bold">1</span>
-                    </div>
-                    <input type="range" class="form-control-range" id="swellingSlider"                   min="0" max="3" value="1" step="1">
-                    <div class="d-flex justify-content-between mt-1">
-                        <small class="text-muted">0</small>
-                        <small class="text-muted">1</small>
-                        <small class="text-muted">2</small>
-                        <small class="text-muted">3</small>
-                    </div>
-                </div>
-            </div>
-        </div>
+.status-buttons .badge {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
 
-        <!-- Additional Cards Placeholder -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Additional Metrics</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">
-                    Additional cards can be added here based on specific ape needs, 
-                    such as sex-specific or individual tracking requirements.
-                </p>
-                <button class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-plus mr-1"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+.quick-stats .stat-item {
+    text-align: center;
+}
+
+.quick-stats .stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.quick-stats .stat-label {
+    font-size: 0.75rem;
+}
+
+.metric-card {
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.timeline-item {
+    margin-bottom: 1rem;
+}
+
+.timeline-item .time {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.timeline-item .timeline-header {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.timeline-item .timeline-body {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+@media (max-width: 768px) {
+    .quick-stats {
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .metric-card {
+        margin-bottom: 1rem;
+    }
+}
+
+
+</style>
 {% endblock %}
 
 {% block extra_js %}
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-// Pie Chart for Nutrition
-const ctx = document.getElementById('nutritionPieChart').getContext('2d');
-const nutritionChart = new Chart(ctx, {
-    type: 'pie',
-    data: {
-        labels: ['Fruit', 'Protein'],
-        datasets: [{
-            data: [210, 100],
-            backgroundColor: ['#28a745', '#ffc107'],
-            borderWidth: 2,
-            borderColor: '#fff'
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false
+// Chart data from backend
+const pieChartData = {{ pie_chart_data|tojson }};
+
+// Initialize pie charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+});
+
+function initializeCharts() {
+    // Food Category Distribution Chart
+    const foodCategoryCtx = document.getElementById('foodCategoryChart').getContext('2d');
+    new Chart(foodCategoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: pieChartData.labels,
+            datasets: [{
+                data: pieChartData.counts,
+                backgroundColor: pieChartData.colors,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} meals (${percentage}%)`;
+                        }
+                    }
+                }
             }
         }
-    }
-});
+    });
 
-// Swelling Slider
-document.getElementById('swellingSlider').addEventListener('input', function() {
-    document.getElementById('swellingLevel').textContent = this.value;
-});
+    // Calorie Distribution Chart
+    const calorieCtx = document.getElementById('calorieDistributionChart').getContext('2d');
+    new Chart(calorieCtx, {
+        type: 'pie',
+        data: {
+            labels: pieChartData.labels,
+            datasets: [{
+                data: pieChartData.calories,
+                backgroundColor: pieChartData.colors,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} calories (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 
-// Note Form
-document.getElementById('noteForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const noteText = document.getElementById('noteTextarea').value;
-    if (noteText.trim()) {
-        // Add note to recent notes
-        const noteItem = document.createElement('div');
-        noteItem.className = 'note-item border-left border-primary pl-3 mb-3';
-        noteItem.innerHTML = `
-            <p class="mb-1">${noteText}</p>
-            <small class="text-muted">
-                <i class="fas fa-user mr-1"></i>Added by: Current User 
-                <i class="fas fa-calendar mr-1 ml-2"></i>${new Date().toLocaleDateString()} @ ${new Date().toLocaleTimeString()}
-            </small>
-        `;
-        document.getElementById('recentNotes').prepend(noteItem);
-        document.getElementById('noteTextarea').value = '';
+
+
+// Keyboard shortcuts for this page
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + L to log feeding for this ape
+    if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+        e.preventDefault();
+        window.location.href = "{{ url_for('site.log_feeding') }}?ape={{ ape.id }}";
     }
+    // Ctrl/Cmd + E to edit ape
+    if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        window.location.href = "{{ url_for('site.edit_ape', ape_id=ape.id) }}";
+    }
+
 });
 </script>
 {% endblock %} 

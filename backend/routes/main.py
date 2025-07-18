@@ -7,31 +7,44 @@ Each route is responsible for handling the corresponding CRUD operations
 and rendering the appropriate templates.
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals
 from backend.helpers import add_to_db, query_db
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_security import login_required, roles_required, current_user
 
 # Blueprint for site-wide routes
 site = Blueprint('site', __name__)
 
-@site.route("/")
+@site.route('/')
+@site.route('/dashboard')
 @login_required
-def index():
-    """
-    Render the homepage with lists of all apes, recipes, and meals.
-    """
+def dashboard():
+    """Display the main dashboard"""
+    # Get all apes
     apes = Apes.query.all()
+    
+    # Get all recipes
     recipes = Recipe.query.all()
-    meals = Meals.query.all()
-    return render_template(
-        "index.html",
-        apes=apes,
-        recipes=recipes,
-        meals=meals
-    )
+    
+    # Get recent meals (last 20)
+    recent_meals = Meals.query.order_by(Meals.date.desc()).limit(20).all()
+    
+    # Calculate today's statistics
+    from datetime import datetime, timedelta
+    today = datetime.now().date()
+    today_meals = Meals.query.filter(Meals.date >= today).all()
+    total_meals_today = len(today_meals)
+    total_calories_today = sum(meal.recipe.calories for meal in today_meals)
+    
+    return render_template('dashboard.html',
+                         apes=apes,
+                         recipes=recipes,
+                         recent_meals=recent_meals,
+                         total_meals_today=total_meals_today,
+                         total_calories_today=total_calories_today,
+                         today_date=datetime.now().strftime('%Y-%m-%d'))
 
 
 @site.route('/add_ape', methods=['POST'])
@@ -46,11 +59,47 @@ def add_ape():
     print("FORM DATA:", request.form)
 
     if ape_name and age:
-        new_ape = Apes(ape_name=ape_name, age=int(age))
+        # Convert age to birthday (approximate)
+        from datetime import datetime, timedelta
+        today = datetime.now().date()
+        birthday = today - timedelta(days=int(age) * 365)
+        new_ape = Apes(ape_name=ape_name, birthday=birthday)
         add_to_db(new_ape, "ape")
     else:
         print("Need to fill in all forms.")
-    return redirect(url_for('site.index'))
+    return redirect(url_for('site.dashboard'))
+
+
+@site.route('/create_ape', methods=['GET', 'POST'])
+@login_required
+def create_ape():
+    """
+    Display and handle the form for creating a new ape.
+    """
+    if request.method == 'POST':
+        ape_name = request.form.get("ape_name")
+        birthday_str = request.form.get("birthday")
+        weight = request.form.get("weight")
+        mother = request.form.get("mother")
+        
+        if ape_name and birthday_str:
+            try:
+                from datetime import datetime
+                birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
+                new_ape = Apes(
+                    ape_name=ape_name, 
+                    birthday=birthday,
+                    weight=float(weight) if weight else None,
+                    mother=mother if mother else None
+                )
+                add_to_db(new_ape, "ape")
+                return redirect(url_for('site.all_apes'))
+            except ValueError:
+                flash('Invalid birthday format. Please use YYYY-MM-DD.', 'error')
+        else:
+            flash('Please fill in all required fields.', 'error')
+    
+    return render_template('create_ape.html')
 
 
 @site.route('/add_recipe', methods=['POST'])
@@ -74,7 +123,7 @@ def add_recipe():
         add_to_db(new_recipe, "recipe")
     else:
         print("Need to fill in all forms.")
-    return redirect(url_for('site.index'))
+    return redirect(url_for('site.dashboard'))
 
 
 @site.route('/add_meal', methods=['POST'])
@@ -91,7 +140,7 @@ def add_meal():
 
     if not all([ape_id, recipe_id, date_str]):
         print("Need to fill in all forms.")
-        return redirect(url_for('site.index'))
+        return redirect(url_for('site.dashboard'))
 
     date = datetime.strptime(date_str, "%Y-%m-%d")
 
@@ -102,7 +151,7 @@ def add_meal():
     )
 
     add_to_db(new_meal, "meal")
-    return redirect(url_for('site.index'))
+    return redirect(url_for('site.dashboard'))
 
 
 @site.route('/apes/<int:ape_id>/edit', methods=['GET', 'POST'])
@@ -114,9 +163,20 @@ def edit_ape(ape_id):
     ape = Apes.query.get_or_404(ape_id)
     if request.method == 'POST':
         ape.ape_name = request.form['ape_name']
-        ape.age = int(request.form['age'])
-        db.session.commit()
-        return redirect(url_for('site.index'))
+        birthday_str = request.form['birthday']
+        weight = request.form.get('weight')
+        mother = request.form.get('mother')
+        
+        try:
+            from datetime import datetime
+            ape.birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
+            ape.weight = float(weight) if weight else None
+            ape.mother = mother if mother else None
+            db.session.commit()
+            return redirect(url_for('site.ape_profile_page', ape_id=ape.id))
+        except ValueError:
+            flash('Invalid birthday format. Please use YYYY-MM-DD.', 'error')
+    
     return render_template('edit_ape.html', ape=ape)
 
 
@@ -132,7 +192,7 @@ def edit_recipe(recipe_id):
         recipe.description = request.form['description']
         recipe.calories = int(request.form['calories'])
         db.session.commit()
-        return redirect(url_for('site.index'))
+        return redirect(url_for('site.dashboard'))
     return render_template('edit_recipe.html', recipe=recipe)
 
 
@@ -143,13 +203,16 @@ def edit_meal(meal_id):
     Display and handle the form for editing an existing meal.
     """
     meal = Meals.query.get_or_404(meal_id)
+    apes = Apes.query.all()
+    recipes = Recipe.query.all()
+    
     if request.method == 'POST':
         meal.ape_id = int(request.form['ape_id'])
         meal.recipe_id = int(request.form['recipe_id'])
         meal.date = datetime.strptime(request.form['date'], '%Y-%m-%d')
         db.session.commit()
-        return redirect(url_for('site.index'))
-    return render_template('edit_meal.html', meal=meal)
+        return redirect(url_for('site.dashboard'))
+    return render_template('edit_meal.html', meal=meal, apes=apes, recipes=recipes)
 
 
 @site.route('/apes/<int:ape_id>/delete', methods=['POST'])
@@ -161,19 +224,10 @@ def delete_ape(ape_id):
     ape = Apes.query.get_or_404(ape_id)
     db.session.delete(ape)
     db.session.commit()
-    return redirect(url_for('site.index'))
+    return redirect(url_for('site.dashboard'))
 
 
-@site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
-@roles_required("Admin")
-def delete_recipe(recipe_id):
-    """
-    Delete a recipe from the database.
-    """
-    recipe = Recipe.query.get_or_404(recipe_id)
-    db.session.delete(recipe)
-    db.session.commit()
-    return redirect(url_for('site.index'))
+
 
 
 @site.route('/meals/<int:meal_id>/delete', methods=['POST'])
@@ -185,7 +239,7 @@ def delete_meal(meal_id):
     meal = Meals.query.get_or_404(meal_id)
     db.session.delete(meal)
     db.session.commit()
-    return redirect(url_for('site.index'))
+    return redirect(url_for('site.dashboard'))
 
 
 @site.route('/log_feeding')
@@ -194,19 +248,181 @@ def log_feeding():
     """
     Display the log feeding page for adding nutrition data.
     """
-    # In a real application, you would fetch available apes and food items
-    # For now, we'll use placeholder data
-    return render_template('log_feeding.html')
+    # Get URL parameters for pre-filled data
+    pre_filled_food = request.args.get('food', '')
+    pre_filled_calories = request.args.get('calories', '')
+    pre_filled_ape = request.args.get('ape', '')
+    
+    # Get all apes for selection
+    apes = Apes.query.all()
+    
+    return render_template('log_feeding.html', 
+                         apes=apes,
+                         pre_filled_food=pre_filled_food,
+                         pre_filled_calories=pre_filled_calories,
+                         pre_filled_ape=pre_filled_ape)
 
 
-@site.route('/apes/<int:ape_id>/profile')
+@site.route('/save_feeding', methods=['POST'])
+@login_required
+def save_feeding():
+    """
+    Handle feeding log submissions from the JavaScript interface.
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data received'}), 400
+        
+        ape_ids = data.get('ape_ids', [])
+        feeding_items = data.get('feeding_items', [])
+        feeding_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
+        
+        if not ape_ids:
+            return jsonify({'success': False, 'error': 'No apes selected'}), 400
+        
+        if not feeding_items:
+            return jsonify({'success': False, 'error': 'No food items added'}), 400
+        
+        # Convert date string to datetime
+        try:
+            feeding_datetime = datetime.strptime(feeding_date, '%Y-%m-%d')
+        except ValueError:
+            feeding_datetime = datetime.now()
+        
+        saved_meals = []
+        total_calories = 0
+        
+        # For each food item, create a recipe if it doesn't exist, then create meals for each ape
+        for item in feeding_items:
+            food_name = item.get('name', '').strip()
+            calories = item.get('calories', 0)
+            quantity = item.get('quantity', 1)
+            
+            if not food_name or calories <= 0:
+                continue
+            
+            # Check if recipe exists, create if not
+            recipe = Recipe.query.filter_by(meal_name=food_name).first()
+            if not recipe:
+                # Determine food category based on name
+                food_name_lower = food_name.lower()
+                food_category = 'Other'
+                
+                # Simple category detection
+                if any(fruit in food_name_lower for fruit in ['banana', 'apple', 'orange', 'grapes', 'mango', 'papaya', 'watermelon', 'strawberries', 'blueberries', 'pineapple']):
+                    food_category = 'Fruits'
+                elif any(veg in food_name_lower for veg in ['carrot', 'broccoli', 'spinach', 'lettuce', 'cucumber', 'tomato', 'pepper', 'potato', 'kale', 'cauliflower']):
+                    food_category = 'Vegetables'
+                elif any(protein in food_name_lower for protein in ['chicken', 'fish', 'egg', 'bean', 'nut', 'seed', 'tofu', 'yogurt', 'cheese', 'lentil']):
+                    food_category = 'Protein'
+                elif any(grain in food_name_lower for grain in ['rice', 'bread', 'pasta', 'oat', 'quinoa', 'corn', 'wheat']):
+                    food_category = 'Grains'
+                elif any(treat in food_name_lower for treat in ['honey', 'chocolate', 'cookie', 'ice cream', 'smoothie', 'popcorn']):
+                    food_category = 'Treats'
+                
+                recipe = Recipe(
+                    meal_name=food_name,
+                    description=f"Quick added: {food_name}",
+                    calories=calories,
+                    food_category=food_category
+                )
+                add_to_db(recipe, "recipe")
+            
+            # Create meals for each selected ape
+            for ape_id in ape_ids:
+                meal = Meals(
+                    ape_id=int(ape_id),
+                    recipe_id=recipe.id,
+                    date=feeding_datetime
+                )
+                add_to_db(meal, "meal")
+                saved_meals.append({
+                    'ape_id': ape_id,
+                    'recipe_name': food_name,
+                    'calories': calories * quantity
+                })
+                total_calories += calories * quantity
+        
+        return jsonify({
+            'success': True,
+            'message': f'Feeding logged successfully for {len(ape_ids)} ape(s)',
+            'saved_meals': saved_meals,
+            'total_calories': total_calories,
+            'ape_count': len(ape_ids)
+        })
+        
+    except Exception as e:
+        print(f"Error saving feeding: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to save feeding data'}), 500
+
+
+
+
+
+@site.route('/ape/<int:ape_id>')
 @login_required
 def ape_profile_page(ape_id):
-    """
-    Display the profile page for a specific ape.
-    """
+    """Display individual ape profile page"""
     ape = Apes.query.get_or_404(ape_id)
-    return render_template('ape_profile.html', ape=ape)
+    
+    # Get recent meals for this ape (last 20)
+    recent_meals = Meals.query.filter_by(ape_id=ape_id)\
+                              .order_by(Meals.date.desc())\
+                              .limit(20)\
+                              .all()
+    
+    # Calculate nutrition summary for last 7 days
+    from datetime import datetime, timedelta
+    seven_days_ago = datetime.now() - timedelta(days=7)
+    recent_meals_week = Meals.query.filter(
+        Meals.ape_id == ape_id,
+        Meals.date >= seven_days_ago
+    ).all()
+    
+    total_calories_week = sum(meal.recipe.calories for meal in recent_meals_week)
+    avg_calories_per_meal = total_calories_week / len(recent_meals_week) if recent_meals_week else 0
+    
+    # Prepare chart data for pie charts
+    from collections import defaultdict
+    from sqlalchemy import func
+    
+    # Food category distribution (all time)
+    category_data = db.session.query(
+        Recipe.food_category,
+        func.count(Meals.id).label('count'),
+        func.sum(Recipe.calories).label('total_calories')
+    ).join(Meals).filter(Meals.ape_id == ape_id)\
+     .group_by(Recipe.food_category)\
+     .all()
+    
+    pie_chart_data = {
+        'labels': [cat.food_category or 'Other' for cat in category_data],
+        'counts': [cat.count for cat in category_data],
+        'calories': [cat.total_calories for cat in category_data],
+        'colors': ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF']
+    }
+    
+    # Monthly calorie trends for Superset (SQLite compatible)
+    monthly_trends = db.session.query(
+        func.strftime('%Y-%m', Meals.date).label('month'),
+        func.sum(Recipe.calories).label('total_calories'),
+        func.count(Meals.id).label('meal_count')
+    ).join(Recipe).filter(Meals.ape_id == ape_id)\
+     .group_by(func.strftime('%Y-%m', Meals.date))\
+     .order_by(func.strftime('%Y-%m', Meals.date))\
+     .all()
+    
+    return render_template('ape_profile.html', 
+                         ape=ape,
+                         recent_meals=recent_meals,
+                         recent_meals_week=recent_meals_week,
+                         total_calories_week=total_calories_week,
+                         avg_calories_per_meal=avg_calories_per_meal,
+                         pie_chart_data=pie_chart_data,
+                         now=datetime.now(),
+                         timedelta=timedelta)
 
 
 @site.route('/apes')
@@ -214,3 +430,85 @@ def ape_profile_page(ape_id):
 def all_apes():
     apes = Apes.query.all()
     return render_template('all_apes.html', apes=apes)
+
+
+@site.route('/manage_foods')
+@login_required
+def manage_foods():
+    """Display food management page"""
+    recipes = Recipe.query.all()
+    return render_template('manage_foods.html', recipes=recipes)
+
+
+@site.route('/api/recipes', methods=['POST'])
+@login_required
+def create_recipe():
+    """Create a new recipe via API"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('meal_name') or not data.get('calories'):
+            return jsonify({'success': False, 'message': 'Food name and calories are required'})
+        
+        # Create new recipe
+        new_recipe = Recipe(
+            meal_name=data['meal_name'],
+            calories=int(data['calories']),
+            food_category=data.get('food_category', 'Other'),
+            description=data.get('description', '')
+        )
+        
+        db.session.add(new_recipe)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Food item created successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@site.route('/api/recipes/<int:recipe_id>', methods=['PUT'])
+@login_required
+def update_recipe(recipe_id):
+    """Update an existing recipe via API"""
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
+        data = request.get_json()
+        
+        # Update fields
+        if data.get('meal_name'):
+            recipe.meal_name = data['meal_name']
+        if data.get('calories'):
+            recipe.calories = int(data['calories'])
+        if data.get('food_category'):
+            recipe.food_category = data['food_category']
+        if data.get('description') is not None:
+            recipe.description = data['description']
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Food item updated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@site.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
+@login_required
+def delete_recipe(recipe_id):
+    """Delete a recipe via API"""
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
+        
+        # Check if recipe is used in any meals
+        if recipe.meals:
+            return jsonify({'success': False, 'message': 'Cannot delete food item that is used in existing meals'})
+        
+        db.session.delete(recipe)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Food item deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})

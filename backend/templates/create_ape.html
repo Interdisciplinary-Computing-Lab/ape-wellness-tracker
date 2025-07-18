@@ -1,0 +1,149 @@
+{% extends 'adminlte_base.html' %}
+{% block title %}Create New Ape - Ape Wellness Tracker{% endblock %}
+{% block page_title %}Create New Ape{% endblock %}
+{% block body %}
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-plus-circle mr-2"></i>Add New Ape
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="form-group">
+                        <label for="ape_name">Ape Name</label>
+                        <input type="text" class="form-control form-control-lg" name="ape_name" id="ape_name" 
+                               placeholder="e.g., MAISHA" required maxlength="50">
+                        <small class="form-text text-muted">Enter the ape's name in uppercase</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="birthday">Birthday</label>
+                        <input type="date" class="form-control form-control-lg" name="birthday" id="birthday" 
+                               required>
+                        <small class="form-text text-muted">Enter the ape's birthday</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" class="form-control" name="weight" id="weight" 
+                               placeholder="42.5" min="0" max="200" step="0.1">
+                        <small class="form-text text-muted">Enter the ape's weight in kilograms (optional)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="mother">Mother's Name</label>
+                        <input type="text" class="form-control" name="mother" id="mother" 
+                               placeholder="e.g., Matata" maxlength="50">
+                        <small class="form-text text-muted">Enter the mother's name if known (optional)</small>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus mr-2"></i>Create Ape
+                        </button>
+                        <a href="{{ url_for('site.all_apes') }}" class="btn btn-outline-secondary btn-lg ml-2">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle mr-2"></i>Information
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="info-section">
+                    <h5>Adding a New Bonobo</h5>
+                    <p class="text-muted">When adding a new ape to the system:</p>
+                    <ul class="text-muted">
+                        <li>Use the ape's official name in uppercase</li>
+                        <li>Enter the exact birthday for accurate age calculation</li>
+                        <li>Weight and mother information are optional</li>
+                        <li>The ape will be automatically assigned a profile</li>
+                        <li>You can start logging feeding data immediately</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        <strong>Tip:</strong> Make sure to upload a photo of the ape to the 
+                        <code>backend/static/images/</code> folder with the filename 
+                        <code>ape_name_lowercase.jpg</code>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{{ url_for('site.all_apes') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-users mr-1"></i>View All Apes
+                        </a>
+                        <a href="{{ url_for('site.log_feeding') }}" class="btn btn-outline-success btn-sm ml-2">
+                            <i class="fas fa-utensils mr-1"></i>Log Feeding
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.info-section ul {
+    padding-left: 1.2rem;
+}
+
+.info-section li {
+    margin-bottom: 0.5rem;
+}
+
+.alert {
+    border-left: 4px solid #17a2b8;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-focus on the first field
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('ape_name').focus();
+});
+
+// Auto-uppercase the ape name
+document.getElementById('ape_name').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const apeName = document.getElementById('ape_name').value.trim();
+    const birthday = document.getElementById('birthday').value;
+    const weight = document.getElementById('weight').value;
+    
+    if (!apeName) {
+        e.preventDefault();
+        alert('Please enter an ape name');
+        document.getElementById('ape_name').focus();
+        return;
+    }
+    
+    if (!birthday) {
+        e.preventDefault();
+        alert('Please enter a birthday');
+        document.getElementById('birthday').focus();
+        return;
+    }
+    
+    if (weight && (weight < 0 || weight > 200)) {
+        e.preventDefault();
+        alert('Please enter a valid weight (0-200 kg)');
+        document.getElementById('weight').focus();
+        return;
+    }
+});
+</script>
+{% endblock %} 

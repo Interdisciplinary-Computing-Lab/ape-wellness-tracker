@@ -60,7 +60,7 @@
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <!-- Brand Logo -->
-        <a href="{{ url_for('site.index') }}" class="brand-link">
+        <a href="{{ url_for('site.dashboard') }}" class="brand-link">
             <i class="fas fa-monkey brand-image img-circle elevation-3" style="opacity: .8"></i>
             <span class="brand-text font-weight-light">Ape Wellness</span>
         </a>
@@ -79,19 +79,11 @@
             <nav class="mt-2">
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-item">
-                        <a href="{{ url_for('site.index') }}" class="nav-link {% if request.endpoint == 'site.index' %}active{% endif %}">
+                        <a href="{{ url_for('site.dashboard') }}" class="nav-link {% if request.endpoint == 'site.dashboard' %}active{% endif %}">
                             <i class="nav-icon fas fa-tachometer-alt"></i>
                             <p>Dashboard</p>
                         </a>
                     </li>
-                    {#
-                    <li class="nav-item">
-                        <a href="{{ url_for('site.ape_profile') }}" class="nav-link {% if request.endpoint == 'site.ape_profile' %}active{% endif %}">
-                            <i class="nav-icon fas fa-user"></i>
-                            <p>Ape Profile</p>
-                        </a>
-                    </li>
-                    #}
                     <li class="nav-item">
                         <a href="{{ url_for('site.log_feeding') }}" class="nav-link {% if request.endpoint == 'site.log_feeding' %}active{% endif %}">
                             <i class="nav-icon fas fa-utensils"></i>
@@ -106,21 +98,15 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-users"></i>
-                            <p>Apes</p>
+                        <a href="{{ url_for('site.create_ape') }}" class="nav-link {% if request.endpoint == 'site.create_ape' %}active{% endif %}">
+                            <i class="nav-icon fas fa-plus-circle"></i>
+                            <p>Add New Ape</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-utensils"></i>
-                            <p>Recipes</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-calendar-alt"></i>
-                            <p>Meals</p>
+                        <a href="{{ url_for('site.manage_foods') }}" class="nav-link {% if request.endpoint == 'site.manage_foods' %}active{% endif %}">
+                            <i class="nav-icon fas fa-apple-alt"></i>
+                            <p>Manage Foods</p>
                         </a>
                     </li>
                     <li class="nav-header">REPORTS</li>
@@ -138,7 +124,7 @@
                     </li>
                     <li class="nav-header">ACCOUNT</li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
+                        <a href="{{ url_for_security('logout') }}" class="nav-link">
                             <i class="nav-icon fas fa-sign-out-alt"></i>
                             <p>Logout</p>
                         </a>
@@ -161,7 +147,7 @@
                     </div>
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{ url_for('site.index') }}">Home</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('site.dashboard') }}">Home</a></li>
                             {% block breadcrumb %}{% endblock %}
                         </ol>
                     </div>
@@ -183,9 +169,27 @@
         <div class="p-3">
             <h5>Quick Actions</h5>
             <p>Quick access to common tasks.</p>
-            <a href="{{ url_for('site.log_feeding') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i> Log Feeding
-            </a>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('site.log_feeding') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Log Feeding
+                </a>
+                <a href="{{ url_for('site.all_apes') }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-users"></i> View Apes
+                </a>
+                <a href="{{ url_for('site.manage_foods') }}" class="btn btn-info btn-sm">
+                    <i class="fas fa-apple-alt"></i> Manage Foods
+                </a>
+                <button class="btn btn-warning btn-sm" onclick="showKeyboardShortcuts()">
+                    <i class="fas fa-keyboard"></i> Shortcuts
+                </button>
+            </div>
+            <hr>
+            <h6>Keyboard Shortcuts</h6>
+            <small class="text-muted">
+                <div><kbd>Ctrl/Cmd</kbd> + <kbd>F</kbd> - Log Feeding</div>
+                <div><kbd>Ctrl/Cmd</kbd> + <kbd>A</kbd> - All Apes</div>
+                <div><kbd>Ctrl/Cmd</kbd> + <kbd>Q</kbd> - Quick Add</div>
+            </small>
         </div>
     </aside>
     <!-- /.control-sidebar -->
@@ -198,12 +202,39 @@
     </footer>
 </div>
 <!-- ./wrapper -->
+
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- Bootstrap 4 -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <!-- AdminLTE App -->
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+
+<script>
+function showKeyboardShortcuts() {
+    alert('Keyboard Shortcuts:\n\n' +
+          'Ctrl/Cmd + F: Log Feeding\n' +
+          'Ctrl/Cmd + A: All Apes\n' +
+          'Ctrl/Cmd + Q: Quick Add\n' +
+          'Ctrl/Cmd + S: Save (on feeding page)\n' +
+          'Ctrl/Cmd + C: Clear All (on feeding page)');
+}
+
+// Global keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + F for feeding log
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        window.location.href = "{{ url_for('site.log_feeding') }}";
+    }
+    // Ctrl/Cmd + A for all apes
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        window.location.href = "{{ url_for('site.all_apes') }}";
+    }
+});
+</script>
+
 {% block extra_js %}{% endblock %}
 </body>
 </html> 

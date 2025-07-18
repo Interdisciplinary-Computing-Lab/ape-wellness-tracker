@@ -1,6 +1,6 @@
 from flask import Flask
 from backend.extensions import db
-from backend.security import security, user_datastore
+from backend.security import init_security
 from backend.routes.main import site
 
 def create_app():
@@ -15,7 +15,7 @@ def create_app():
     app.config["SECURITY_SEND_REGISTER_EMAIL"] = False
 
     db.init_app(app)
-    security.init_app(app, user_datastore)
+    init_security(app)
 
     app.register_blueprint(site)
 

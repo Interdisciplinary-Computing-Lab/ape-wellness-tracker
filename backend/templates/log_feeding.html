@@ -2,218 +2,424 @@
 {% block title %}Log Feeding - Ape Wellness Tracker{% endblock %}
 {% block page_title %}Log Feeding{% endblock %}
 {% block body %}
-<!-- Active Apes Section -->
+<!-- Quick Status Bar -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Fieldwork Mode:</strong> Quick logging for real-time data collection
+            </div>
+            <div>
+                <span class="badge badge-light mr-2">Selected: <span id="selectedCount">0</span> apes</span>
+                <span class="badge badge-success">Total: {{ apes|length }} apes</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Apes Section with Bulk Selection -->
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Active Apes</h3>
+        <h3 class="card-title">
+            <i class="fas fa-users mr-2"></i>Select Apes
+        </h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool btn-sm" onclick="selectAllApes()">
+                <i class="fas fa-check-double"></i> Select All
+            </button>
+            <button type="button" class="btn btn-tool btn-sm" onclick="clearSelection()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
     </div>
     <div class="card-body">
         <div class="ape-selection-container">
-            <div class="d-flex align-items-center overflow-auto">
-                <div class="ape-avatar me-3" data-ape-id="maisha">
-                    <img src="{{ url_for('static', filename='images/maisha.jpg') }}" class="avatar-circle" alt="MAISHA">
-                    <small class="d-block text-center mt-1">MAISHA</small>
+            <div class="row">
+                {% for ape in apes %}
+                <div class="col-md-2 col-sm-4 col-6 mb-3">
+                    <div class="ape-avatar text-center" data-ape-id="{{ ape.id }}" onclick="toggleApeSelection(this, {{ ape.id }})">
+                        <div class="position-relative">
+                            <img src="{{ url_for('static', filename='images/' + ape.ape_name|lower + '.jpg') }}" 
+                                 class="avatar-circle" alt="{{ ape.ape_name }}">
+                            <div class="selection-indicator">
+                                <i class="fas fa-check-circle text-success"></i>
+                            </div>
+                        </div>
+                        <small class="d-block text-center mt-1 font-weight-bold">{{ ape.ape_name }}</small>
+                        <small class="text-muted">{{ ape.age }}y</small>
+                    </div>
                 </div>
-                <div class="ape-avatar me-3" data-ape-id="teco">
-                    <img src="{{ url_for('static', filename='images/teco.jpg') }}" class="avatar-circle" alt="TECO">
-                    <small class="d-block text-center mt-1">TECO</small>
-                </div>
-                <div class="ape-avatar me-3" data-ape-id="nyota">
-                    <img src="{{ url_for('static', filename='images/nyota.jpg') }}" class="avatar-circle" alt="NYOTA">
-                    <small class="d-block text-center mt-1">NYOTA</small>
-                </div>
-                <div class="ape-avatar me-3" data-ape-id="clara">
-                    <img src="{{ url_for('static', filename='images/clara.jpg') }}" class="avatar-circle" alt="CLARA">
-                    <small class="d-block text-center mt-1">CLARA</small>
-                </div>
-                <div class="ape-avatar me-3" data-ape-id="mali">
-                    <img src="{{ url_for('static', filename='images/mali.jpg') }}" class="avatar-circle" alt="MALI">
-                    <small class="d-block text-center mt-1">MALI</small>
-                </div>
-                <div class="ape-avatar me-3" data-ape-id="elikya">
-                    <img src="{{ url_for('static', filename='images/elikya.jpg') }}" class="avatar-circle" alt="ELIKYA">
-                    <small class="d-block text-center mt-1">ELIKYA</small>
-                </div>
+                {% endfor %}
             </div>
         </div>
-        <small class="text-muted mt-2 d-block">
-            <i class="fas fa-info-circle mr-1"></i>            Select one or many apes to add the same nutrition data to each apesprofile
-        </small>
     </div>
 </div>
 
-<!-- Quick Add Section -->
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Quick Add</h3>
-    </div>
-    <div class="card-body">
-        <div class="quick-add-container">
-            <div class="row">
-                <div class="col-3 col-md-2">
-                    <button class="btn btn-outline-success quick-add-btn w-100" data-food="banana" data-calories="105">
-                        <i class="fas fa-banana mr-1"></i>
-                        <small class="d-block">Banana</small>
-                    </button>
+<!-- Quick Food Entry -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-utensils mr-2"></i>Quick Food Entry
+                </h3>
+            </div>
+            <div class="card-body">
+                <!-- Common Foods Grid -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="mb-3">Quick Add Foods</h6>
+                        
+                        <!-- Fruits Section -->
+                        <div class="mb-3">
+                            <small class="text-muted font-weight-bold">🍌 Fruits</small>
+                            <div class="row">
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="banana" data-calories="105" data-name="Banana" data-category="Fruits">
+                                        <i class="fas fa-banana mb-1"></i>
+                                        <div class="d-block small">Banana</div>
+                                        <small class="text-muted">105 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="apple" data-calories="95" data-name="Apple" data-category="Fruits">
+                                        <i class="fas fa-apple-alt mb-1"></i>
+                                        <div class="d-block small">Apple</div>
+                                        <small class="text-muted">95 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="grapes" data-calories="62" data-name="Grapes" data-category="Fruits">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Grapes</div>
+                                        <small class="text-muted">62 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="blueberries" data-calories="85" data-name="Blueberries" data-category="Fruits">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Blueberries</div>
+                                        <small class="text-muted">85 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="watermelon" data-calories="30" data-name="Watermelon" data-category="Fruits">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Watermelon</div>
+                                        <small class="text-muted">30 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="papaya" data-calories="43" data-name="Papaya" data-category="Fruits">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Papaya</div>
+                                        <small class="text-muted">43 cal</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Vegetables Section -->
+                        <div class="mb-3">
+                            <small class="text-muted font-weight-bold">🥕 Vegetables</small>
+                            <div class="row">
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="carrot" data-calories="41" data-name="Carrot" data-category="Vegetables">
+                                        <i class="fas fa-carrot mb-1"></i>
+                                        <div class="d-block small">Carrot</div>
+                                        <small class="text-muted">41 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="sweet potato" data-calories="103" data-name="Sweet Potato" data-category="Vegetables">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Sweet Potato</div>
+                                        <small class="text-muted">103 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="cucumber" data-calories="16" data-name="Cucumber" data-category="Vegetables">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Cucumber</div>
+                                        <small class="text-muted">16 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="bell pepper" data-calories="31" data-name="Bell Pepper" data-category="Vegetables">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Bell Pepper</div>
+                                        <small class="text-muted">31 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="kale" data-calories="33" data-name="Kale" data-category="Vegetables">
+                                        <i class="fas fa-leaf mb-1"></i>
+                                        <div class="d-block small">Kale</div>
+                                        <small class="text-muted">33 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="broccoli" data-calories="34" data-name="Broccoli" data-category="Vegetables">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Broccoli</div>
+                                        <small class="text-muted">34 cal</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Protein & Grains Section -->
+                        <div class="mb-3">
+                            <small class="text-muted font-weight-bold">🥚 Protein & Grains</small>
+                            <div class="row">
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="boiled egg" data-calories="78" data-name="Boiled Egg" data-category="Protein">
+                                        <i class="fas fa-egg mb-1"></i>
+                                        <div class="d-block small">Egg</div>
+                                        <small class="text-muted">78 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="cooked rice" data-calories="130" data-name="Cooked Rice" data-category="Grains">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Rice</div>
+                                        <small class="text-muted">130 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="oatmeal" data-calories="68" data-name="Oatmeal" data-category="Grains">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Oatmeal</div>
+                                        <small class="text-muted">68 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="lentils" data-calories="116" data-name="Lentils" data-category="Protein">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Lentils</div>
+                                        <small class="text-muted">116 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="almonds" data-calories="164" data-name="Almonds" data-category="Protein">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Almonds</div>
+                                        <small class="text-muted">164 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="peanuts" data-calories="166" data-name="Peanuts" data-category="Protein">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Peanuts</div>
+                                        <small class="text-muted">166 cal</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Enrichment Treats Section -->
+                        <div class="mb-3">
+                            <small class="text-muted font-weight-bold">🎉 Enrichment Treats</small>
+                            <div class="row">
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-info w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="fruit smoothie" data-calories="120" data-name="Fruit Smoothie">
+                                        <i class="fas fa-glass-whiskey mb-1"></i>
+                                        <div class="d-block small">Smoothie</div>
+                                        <small class="text-muted">120 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-info w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="popcorn" data-calories="31" data-name="Popcorn">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Popcorn</div>
+                                        <small class="text-muted">31 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-info w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="dried apricots" data-calories="48" data-name="Dried Apricots">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Dried Apricots</div>
+                                        <small class="text-muted">48 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-info w-100 h-100 py-2 quick-food-btn" 
+                                            data-food="yogurt" data-calories="59" data-name="Yogurt">
+                                        <i class="fas fa-seedling mb-1"></i>
+                                        <div class="d-block small">Yogurt</div>
+                                        <small class="text-muted">59 cal</small>
+                                    </button>
+                                </div>
+                                <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                    <button class="btn btn-outline-secondary w-100 h-100 py-2" onclick="showCustomFoodModal()">
+                                        <i class="fas fa-plus mb-1"></i>
+                                        <div class="d-block small">Custom</div>
+                                        <small class="text-muted">Add new</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-3 col-md-2">
-                    <button class="btn btn-outline-success quick-add-btn w-100" data-food="cabbage" data-calories="22">
-                        <i class="fas fa-leaf mr-1"></i>
-                        <small class="d-block">Cabbage</small>
-                    </button>
-                </div>
-                <div class="col-3 col-md-2">
-                    <button class="btn btn-outline-success quick-add-btn w-100" data-food="carrot" data-calories="41">
-                        <i class="fas fa-carrot mr-1"></i>
-                        <small class="d-block">Carrot</small>
-                    </button>
-                </div>
-                <div class="col-3 col-md-2">
-                    <button class="btn btn-outline-success quick-add-btn w-100" data-food="egg" data-calories="78">
-                        <i class="fas fa-egg mr-1"></i>
-                        <small class="d-block">Egg</small>
-                    </button>
+
+                <!-- Custom Food Form -->
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="mb-3">Custom Food Entry</h6>
+                        <form id="customFoodForm" class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="customFoodName">Food Name</label>
+                                    <input type="text" class="form-control form-control-lg" id="customFoodName" 
+                                           placeholder="e.g., Sweet Potato" value="{{ pre_filled_food }}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="customQuantity">Quantity</label>
+                                    <div class="input-group input-group-lg">
+                                        <input type="number" class="form-control" id="customQuantity" value="1" min="1" max="99">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="adjustQuantity(-1)">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="adjustQuantity(1)">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="customCalories">Calories</label>
+                                    <div class="input-group input-group-lg">
+                                        <input type="number" class="form-control" id="customCalories" 
+                                               placeholder="100" min="0" max="999" value="{{ pre_filled_calories }}">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="adjustCalories(-10)">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="adjustCalories(10)">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <button type="button" class="btn btn-primary btn-lg w-100" onclick="addCustomFood()">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-        <small class="text-muted mt-2 d-block">
-            <i class="fas fa-info-circle mr-1"></i>
-            Click to add QTY: 1 of an item to the current feeding table
-        </small>
     </div>
-</div>
 
-<!-- Add Food Section -->
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Add Food</h3>
-    </div>
-    <div class="card-body">
-        <form id="addFoodForm">
-            <div class="row">
-                <div class="col-md-6">
-                    <label for="foodSelect" class="form-label">Food Item</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-success text-white">
-                            <i class="fas fa-plus"></i>
-                        </span>
-                        <select class="form-control" id="foodSelect" required>
-                            <option value="">Select food item...</option>
-                            <option value="apple">Apple</option>
-                            <option value="banana">Banana</option>
-                            <option value="cabbage">Cabbage</option>
-                            <option value="carrot">Carrot</option>
-                            <option value="egg">Egg</option>
-                            <option value="orange">Orange</option>
-                            <option value="pear">Pear</option>
-                            <option value="tomato">Tomato</option>
-                        </select>
-                    </div>
+    <!-- Current Feeding Summary -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-list mr-2"></i>Current Feeding
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool btn-sm" onclick="clearFeedingList()">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-                <div class="col-md-3">
-                    <label for="quantityInput" class="form-label">QTY</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" id="quantityInput" 
-                               value="1" min="1" max="99" required>
-                        <button class="btn btn-outline-secondary" type="button" id="decreaseQty">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary" type="button" id="increaseQty">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0" id="feedingSummaryTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Food</th>
+                                <th>Qty</th>
+                                <th>Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedingSummaryBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                        <tfoot class="table-primary">
+                            <tr>
+                                <td colspan="2" class="font-weight-bold">Total Calories</td>
+                                <td colspan="2" class="font-weight-bold" id="totalCalories">0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
-                <div class="col-md-3">
-                    <label for="caloriesInput" class="form-label">Cals</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" id="caloriesInput" 
-                               value="42" min="0" max="999" required>
-                        <button class="btn btn-outline-secondary" type="button" id="decreaseCals">
-                            <i class="fas fa-minus"></i>
+                
+                <div class="p-3">
+                    <div class="alert alert-warning" id="noApesSelected" style="display: none;">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Please select at least one ape
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-lg" id="saveFeedingBtn" onclick="saveFeeding()" disabled>
+                            <i class="fas fa-save mr-2"></i>Save Feeding
                         </button>
-                        <button class="btn btn-outline-secondary" type="button" id="increaseCals">
-                            <i class="fas fa-plus"></i>
+                        <button class="btn btn-outline-secondary" onclick="clearAll()">
+                            <i class="fas fa-eraser mr-2"></i>Clear All
                         </button>
                     </div>
                 </div>
             </div>
-            <div class="mt-3">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-plus mr-2"></i>Add to Feeding
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle mr-2"></i>Feeding Logged Successfully
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
                 </button>
             </div>
-        </form>
-    </div>
-</div>
-
-<!-- Current Feeding Section -->
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Current Feeding</h3>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-striped" id="currentFeedingTable">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>Food</th>
-                        <th>Cals Per</th>
-                        <th>QTY</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="feedingTableBody">
-                    <tr>
-                        <td>Egg</td>
-                        <td>78</td>
-                        <td>1</td>
-                        <td>78</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger remove-item" data-index="0">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Banana</td>
-                        <td>105</td>
-                        <td>2</td>
-                        <td>210</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger remove-item" data-index="1">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Cabbage</td>
-                        <td>22</td>
-                        <td>1</td>
-                        <td>22</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger remove-item" data-index="2">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-                <tfoot class="table-primary">
-                    <tr>
-                        <td colspan="3" class="font-weight-bold">Total Calories</td>
-                        <td colspan="2" class="font-weight-bold" id="totalCalories">310</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-        
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <button class="btn btn-outline-secondary" id="clearAllBtn">
-                <i class="fas fa-trash mr-2"></i>Clear All
-            </button>
-            <button class="btn btn-success" id="saveFeedingBtn">
-                <i class="fas fa-save mr-2"></i>Save Feeding
-            </button>
+            <div class="modal-body">
+                <p>Feeding data has been saved for <span id="savedApeCount">0</span> ape(s).</p>
+                <p class="mb-0">Total calories logged: <strong id="savedTotalCalories">0</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="window.location.reload()">Log Another</button>
+            </div>
         </div>
     </div>
 </div>
@@ -221,210 +427,352 @@
 
 {% block extra_css %}
 <style>
+/* Hide spinner arrows on number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
 .ape-avatar {
     cursor: pointer;
     transition: all 0.3s ease;
+    padding: 10px;
+    border-radius: 8px;
 }
 
 .ape-avatar:hover {
     transform: scale(1.05);
+    background-color: #f8f9fa;
 }
 
-.ape-avatar.active .avatar-circle {
-    border: 3px solid #7289da; /* AdminLTE primary color */
+.ape-avatar.selected {
+    background-color: #d4edda;
+    border: 2px solid #28a745;
+}
+
+.ape-avatar.selected .avatar-circle {
+    border: 3px solid #28a745;
+}
+
+.selection-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    display: none;
+}
+
+.ape-avatar.selected .selection-indicator {
+    display: block;
 }
 
 .avatar-circle {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    margin: 0 auto;
-}
-
-.quick-add-btn {
-    height: 80px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    object-fit: cover;
+    border: 2px solid #dee2e6;
     transition: all 0.3s ease;
 }
 
-.quick-add-btn:hover {
+.quick-food-btn {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+}
+
+.quick-food-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.quick-add-btn i {
-    font-size: 1.5em;
-    margin-bottom: 0.25rem;
+.quick-food-btn:active {
+    transform: translateY(0);
 }
 
-.quick-add-btn small {
-    font-size: 0.75rem;
+.table-sm td, .table-sm th {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .ape-avatar {
+        padding: 5px;
+    }
+    
+    .avatar-circle {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .quick-food-btn {
+        padding: 0.5rem !important;
+    }
+    
+    .quick-food-btn i {
+        font-size: 1.5rem !important;
+    }
 }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Ape Selection
-document.querySelectorAll('.ape-avatar').forEach(avatar => {
-    avatar.addEventListener('click', function() {
-        if (this.dataset.apeId) {
-            this.classList.toggle('active');
-        }
-    });
-});
+let selectedApes = new Set();
+let feedingItems = [];
 
-// Quick Add Buttons
-document.querySelectorAll('.quick-add-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const food = this.dataset.food;
-        const calories = parseInt(this.dataset.calories);
-        addToFeedingTable(food, calories, 1);
-        updateTotalCalories();
-    });
-});
-
-// Quantity Controls
-document.getElementById('decreaseQty').addEventListener('click', function() {
-    const input = document.getElementById('quantityInput');
-    if (input.value > 1) {
-        input.value--;
-    }
-});
-
-document.getElementById('increaseQty').addEventListener('click', function() {
-    const input = document.getElementById('quantityInput');
-    input.value++;
-});
-
-// Calories Controls
-document.getElementById('decreaseCals').addEventListener('click', function() {
-    const input = document.getElementById('caloriesInput');
-    if (input.value > 0) {
-        input.value--;
-    }
-});
-
-document.getElementById('increaseCals').addEventListener('click', function() {
-    const input = document.getElementById('caloriesInput');
-    input.value++;
-});
-
-// Add Food Form
-document.getElementById('addFoodForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const food = document.getElementById('foodSelect').value;
-    const quantity = parseInt(document.getElementById('quantityInput').value);
-    const calories = parseInt(document.getElementById('caloriesInput').value);
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelectedCount();
     
-    if (food && quantity && calories) {
-        addToFeedingTable(food, calories, quantity);
-        updateTotalCalories();
-        this.reset();
-        document.getElementById('quantityInput').value = 1;
-        document.getElementById('caloriesInput').value = 42;
+    // Pre-fill custom food if provided
+    {% if pre_filled_food %}
+    document.getElementById('customFoodName').value = '{{ pre_filled_food }}';
+    {% endif %}
+    {% if pre_filled_calories %}
+    document.getElementById('customCalories').value = '{{ pre_filled_calories }}';
+    {% endif %}
+    
+    // Pre-select ape if provided in URL
+    {% if pre_filled_ape %}
+    const apeId = parseInt('{{ pre_filled_ape }}');
+    if (apeId) {
+        const apeElement = document.querySelector(`[data-ape-id="${apeId}"]`);
+        if (apeElement) {
+            toggleApeSelection(apeElement, apeId);
+        }
     }
+    {% endif %}
 });
 
-// Remove Items
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.remove-item')) {
-        const index = e.target.closest('tr').dataset.index;
-        document.getElementById('feedingTableBody').children[index].remove();
-        updateTotalCalories();
+function toggleApeSelection(element, apeId) {
+    if (selectedApes.has(apeId)) {
+        selectedApes.delete(apeId);
+        element.classList.remove('selected');
+    } else {
+        selectedApes.add(apeId);
+        element.classList.add('selected');
     }
+    updateSelectedCount();
+    updateSaveButton();
+}
+
+function selectAllApes() {
+    selectedApes.clear();
+    document.querySelectorAll('.ape-avatar').forEach(function(element) {
+        const apeId = parseInt(element.getAttribute('data-ape-id'));
+        selectedApes.add(apeId);
+        element.classList.add('selected');
+    });
+    updateSelectedCount();
+    updateSaveButton();
+}
+
+function clearSelection() {
+    selectedApes.clear();
+    document.querySelectorAll('.ape-avatar').forEach(function(element) {
+        element.classList.remove('selected');
+    });
+    updateSelectedCount();
+    updateSaveButton();
+}
+
+function updateSelectedCount() {
+    document.getElementById('selectedCount').textContent = selectedApes.size;
+}
+
+function updateSaveButton() {
+    const saveBtn = document.getElementById('saveFeedingBtn');
+    const noApesAlert = document.getElementById('noApesSelected');
+    
+    if (selectedApes.size === 0) {
+        saveBtn.disabled = true;
+        noApesAlert.style.display = 'block';
+    } else {
+        saveBtn.disabled = false;
+        noApesAlert.style.display = 'none';
+    }
+}
+
+// Quick food buttons
+document.querySelectorAll('.quick-food-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        const food = this.getAttribute('data-food');
+        const calories = parseInt(this.getAttribute('data-calories'));
+        const name = this.getAttribute('data-name');
+        addFoodItem(name, calories, 1);
+    });
 });
 
-// Clear All
-document.getElementById('clearAllBtn').addEventListener('click', function() {
-    if (confirm('Are you sure you want to clear all items?')) {
-        document.getElementById('feedingTableBody').innerHTML = '';
-        updateTotalCalories();
-    }
-});
-
-// Save Feeding
-document.getElementById('saveFeedingBtn').addEventListener('click', function() {
-    const selectedApes = document.querySelectorAll('.ape-avatar.active[data-ape-id]');
-    if (selectedApes.length === 0) {
-        alert('Please select at least one ape.');
+function addCustomFood() {
+    const name = document.getElementById('customFoodName').value.trim();
+    const quantity = parseInt(document.getElementById('customQuantity').value);
+    const calories = parseInt(document.getElementById('customCalories').value);
+    
+    if (!name || !calories) {
+        alert('Please enter food name and calories');
         return;
     }
     
+    addFoodItem(name, calories, quantity);
+    
+    // Clear form
+    document.getElementById('customFoodName').value = '';
+    document.getElementById('customQuantity').value = '1';
+    document.getElementById('customCalories').value = '';
+}
+
+function addFoodItem(name, calories, quantity) {
+    const totalCalories = calories * quantity;
+    
+    // Check if item already exists
+    const existingIndex = feedingItems.findIndex(item => item.name === name);
+    if (existingIndex !== -1) {
+        feedingItems[existingIndex].quantity += quantity;
+        feedingItems[existingIndex].totalCalories = feedingItems[existingIndex].calories * feedingItems[existingIndex].quantity;
+    } else {
+        feedingItems.push({
+            name: name,
+            calories: calories,
+            quantity: quantity,
+            totalCalories: totalCalories
+        });
+    }
+    
+    updateFeedingSummary();
+}
+
+function updateFeedingSummary() {
+    const tbody = document.getElementById('feedingSummaryBody');
+    tbody.innerHTML = '';
+    
+    let totalCalories = 0;
+    
+    feedingItems.forEach(function(item, index) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.quantity}</td>
+            <td>${item.totalCalories}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeFoodItem(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+        totalCalories += item.totalCalories;
+    });
+    
+    document.getElementById('totalCalories').textContent = totalCalories;
+}
+
+function removeFoodItem(index) {
+    feedingItems.splice(index, 1);
+    updateFeedingSummary();
+}
+
+function clearFeedingList() {
+    feedingItems = [];
+    updateFeedingSummary();
+}
+
+function clearAll() {
+    clearSelection();
+    clearFeedingList();
+}
+
+function adjustQuantity(delta) {
+    const input = document.getElementById('customQuantity');
+    const newValue = Math.max(1, Math.min(99, parseInt(input.value) + delta));
+    input.value = newValue;
+}
+
+function adjustCalories(delta) {
+    const input = document.getElementById('customCalories');
+    const newValue = Math.max(0, parseInt(input.value || 0) + delta);
+    input.value = newValue;
+}
+
+function saveFeeding() {
+    if (selectedApes.size === 0) {
+        alert('Please select at least one ape');
+        return;
+    }
+    
+    if (feedingItems.length === 0) {
+        alert('Please add at least one food item');
+        return;
+    }
+    
+    // Show loading state
+    const saveBtn = document.getElementById('saveFeedingBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    saveBtn.disabled = true;
+    
+    // Prepare data for server
     const feedingData = {
-        apes: Array.from(selectedApes).map(ape => ape.dataset.apeId),
-        items: getFeedingItems(),
-        totalCalories: getTotalCalories()
+        ape_ids: Array.from(selectedApes),
+        feeding_items: feedingItems,
+        date: new Date().toISOString().split('T')[0]
     };
     
-    console.log('Saving feeding data:', feedingData);
-    alert('Feeding saved successfully!');
-    
-    // Clear the table after saving
-    document.getElementById('feedingTableBody').innerHTML = '';
-    updateTotalCalories();
+    // Send data to server
+    fetch('{{ url_for("site.save_feeding") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(feedingData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success modal with real data
+            document.getElementById('savedApeCount').textContent = data.ape_count;
+            document.getElementById('savedTotalCalories').textContent = data.total_calories;
+            $('#successModal').modal('show');
+            
+            // Clear the form after successful save
+            clearAll();
+            
+            console.log('Feeding saved successfully:', data);
+        } else {
+            alert('Error saving feeding: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to save feeding. Please try again.');
+    })
+    .finally(() => {
+        // Restore button state
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + S to save
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveFeeding();
+    }
+    // Ctrl/Cmd + A to select all apes
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        selectAllApes();
+    }
+    // Ctrl/Cmd + C to clear all
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+        clearAll();
+    }
 });
-
-function addToFeedingTable(food, caloriesPer, quantity) {
-    const tbody = document.getElementById('feedingTableBody');
-    const total = caloriesPer * quantity;
-    const index = tbody.children.length;
-    
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>${food}</td>
-        <td>${caloriesPer}</td>
-        <td>${quantity}</td>
-        <td>${total}</td>
-        <td>
-            <button class="btn btn-sm btn-outline-danger remove-item" data-index="${index}">
-                <i class="fas fa-times"></i>
-            </button>
-        </td>
-    `;
-    row.dataset.index = index; // Add data-index attribute
-    tbody.appendChild(row);
-}
-
-function updateTotalCalories() {
-    const total = getTotalCalories();
-    document.getElementById('totalCalories').textContent = total;
-}
-
-function getTotalCalories() {
-    const rows = document.querySelectorAll('#feedingTableBody tr');
-    let total = 0;
-    rows.forEach(row => {
-        const cells = row.children;
-        if (cells.length >= 4) {
-            total += parseInt(cells[3].textContent) || 0;
-        }
-    });
-    return total;
-}
-
-function getFeedingItems() {
-    const items = [];
-    const rows = document.querySelectorAll('#feedingTableBody tr');
-    rows.forEach(row => {
-        const cells = row.children;
-        if (cells.length >= 4) {
-            items.push({
-                food: cells[0].textContent,
-                caloriesPer: parseInt(cells[1].textContent),
-                quantity: parseInt(cells[2].textContent),
-                total: parseInt(cells[3].textContent)
-            });
-        }
-    });
-    return items;
-}
 </script>
 {% endblock %} 

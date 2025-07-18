@@ -1,19 +1,86 @@
-{% extends "base.html" %}
-
+{% extends 'adminlte_base.html' %}
+{% block title %}Edit {{ ape.ape_name }} - Ape Wellness Tracker{% endblock %}
+{% block page_title %}Edit {{ ape.ape_name }}{% endblock %}
 {% block body %}
-<div class="container mt-4">
-  <h2>Edit Ape</h2>
-  <form method="post">
-    <div class="mb-3">
-      <label for="ape_name" class="form-label">Ape Name</label>
-      <input type="text" class="form-control" name="ape_name" id="ape_name" value="{{ ape.ape_name }}" required>
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-edit mr-2"></i>Edit Ape Information
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="form-group">
+                        <label for="ape_name">Ape Name</label>
+                        <input type="text" class="form-control form-control-lg" name="ape_name" id="ape_name" 
+                               value="{{ ape.ape_name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="birthday">Birthday</label>
+                        <input type="date" class="form-control form-control-lg" name="birthday" id="birthday" 
+                               value="{{ ape.birthday.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" class="form-control" name="weight" id="weight" 
+                               value="{{ ape.weight or '' }}" min="0" max="200" step="0.1">
+                        <small class="form-text text-muted">Enter weight in kilograms (optional)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="mother">Mother's Name</label>
+                        <input type="text" class="form-control" name="mother" id="mother" 
+                               value="{{ ape.mother or '' }}" maxlength="50">
+                        <small class="form-text text-muted">Enter mother's name if known (optional)</small>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save mr-2"></i>Save Changes
+                        </button>
+                        <a href="{{ url_for('site.ape_profile_page', ape_id=ape.id) }}" class="btn btn-outline-secondary btn-lg ml-2">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-      <label for="age" class="form-label">Age</label>
-      <input type="number" class="form-control" name="age" id="age" value="{{ ape.age }}" required>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle mr-2"></i>Current Information
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <img src="{{ url_for('static', filename='images/' + ape.ape_name|lower + '.jpg') }}" 
+                             alt="{{ ape.ape_name }}" 
+                             class="img-fluid rounded-circle border" style="width: 100px; height: 100px; object-fit: cover;">
+                    </div>
+                    <div class="col-md-8">
+                        <h4>{{ ape.ape_name }}</h4>
+                        <p class="text-muted mb-1"><strong>Species:</strong> Bonobo</p>
+                        <p class="text-muted mb-1"><strong>Age:</strong> {{ ape.age }} years (born {{ ape.birthday.strftime('%B %d, %Y') }})</p>
+                        {% if ape.weight %}
+                        <p class="text-muted mb-1"><strong>Weight:</strong> {{ ape.weight }} kg</p>
+                        {% endif %}
+                        {% if ape.mother %}
+                        <p class="text-muted mb-1"><strong>Mother:</strong> {{ ape.mother }}</p>
+                        {% endif %}
+                        <p class="text-muted mb-1"><strong>Status:</strong> Active</p>
+                        <div class="mt-3">
+                            <a href="{{ url_for('site.ape_profile_page', ape_id=ape.id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye mr-1"></i>View Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-    <a href="{{ url_for('site.index') }}" class="btn btn-secondary">Cancel</a>
-  </form>
 </div>
 {% endblock %}

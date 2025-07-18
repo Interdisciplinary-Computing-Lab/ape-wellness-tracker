@@ -1,6 +1,7 @@
 from backend.extensions import db
 import sqlalchemy as sa
 from flask_security import UserMixin, RoleMixin
+from datetime import datetime, date
 
 class Apes(db.Model):
     """
@@ -8,12 +9,42 @@ class Apes(db.Model):
     Fields:
         id (int): Primary key.
         ape_name (str): Unique name of the ape.
-        age (int): Age of the ape.
+        birthday (date): Birthday of the ape.
+        weight (float): Current weight in kg.
+        mother (str): Mother's name if known.
     """
     __tablename__ = 'apes'
     id = db.Column(db.Integer, primary_key=True)
     ape_name = db.Column(db.String(90), unique=True, nullable=False)
-    age = db.Column(db.Integer, nullable=False)
+    birthday = db.Column(db.Date, nullable=False)
+    weight = db.Column(db.Float, nullable=True)  # in kg
+    mother = db.Column(db.String(90), nullable=True)
+    
+    @property
+    def age(self):
+        """Calculate age based on birthday"""
+        today = date.today()
+        age = today.year - self.birthday.year
+        if today < date(today.year, self.birthday.month, self.birthday.day):
+            age -= 1
+        return age
+    
+    @property
+    def is_birthday_today(self):
+        """Check if today is the ape's birthday"""
+        today = date.today()
+        return today.month == self.birthday.month and today.day == self.birthday.day
+    
+    @property
+    def days_until_birthday(self):
+        """Calculate days until next birthday"""
+        today = date.today()
+        next_birthday = date(today.year, self.birthday.month, self.birthday.day)
+        
+        if next_birthday < today:
+            next_birthday = date(today.year + 1, self.birthday.month, self.birthday.day)
+        
+        return (next_birthday - today).days
 
 class Recipe(db.Model):
     """
@@ -23,12 +54,14 @@ class Recipe(db.Model):
         meal_name (str): Unique name of the meal.
         description (str): Description of the meal.
         calories (int): Calorie count (must be non-negative).
+        food_category (str): Category of food (fruits, vegetables, protein, etc.).
     """
     __tablename__ = 'recipe'
     id = db.Column(db.Integer, primary_key=True)
     meal_name = db.Column(db.String(30), unique=True, nullable=False)
     description = db.Column(db.String)
     calories = db.Column(db.Integer, nullable=False)
+    food_category = db.Column(db.String(50), nullable=True, default='Other')
 
     # Example constraint: calories must be >=0
     __table_args__ = (
