@@ -86,6 +86,9 @@
                                 Ape Profiles
                             </h3>
                             <div class="card-tools">
+                                <button type="button" class="btn btn-outline-secondary btn-sm mr-2" onclick="resetHelpAlerts()">
+                                    <i class="fas fa-question-circle mr-1"></i>Reset Help
+                                </button>
                                 <a href="{{ url_for('site.create_ape') }}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-plus mr-1"></i>Add New Ape
                                 </a>
@@ -118,37 +121,37 @@
                                                     <img src="{{ url_for('static', filename='images/maisha.jpg') }}" 
                                                          alt="{{ ape.ape_name }}" 
                                                          class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
                                                 {% elif ape.ape_name.upper() == 'TECO' %}
                                                     <img src="{{ url_for('static', filename='images/teco.jpg') }}" 
                                                          alt="{{ ape.ape_name }}" 
                                                          class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
                                                 {% elif ape.ape_name.upper() == 'NYOTA' %}
                                                     <img src="{{ url_for('static', filename='images/nyota.jpg') }}" 
                                                          alt="{{ ape.ape_name }}" 
                                                          class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
                                                 {% elif ape.ape_name.upper() == 'CLARA' %}
                                                     <img src="{{ url_for('static', filename='images/clara.jpg') }}" 
                                                          alt="{{ ape.ape_name }}" 
                                                          class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
                                                 {% elif ape.ape_name.upper() == 'MALI' %}
                                                     <img src="{{ url_for('static', filename='images/mali.jpg') }}" 
                                                          alt="{{ ape.ape_name }}" 
                                                          class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
                                                 {% elif ape.ape_name.upper() == 'ELIKYA' %}
                                                     <img src="{{ url_for('static', filename='images/elikya.jpg') }}" 
                                                          alt="{{ ape.ape_name }}" 
                                                          class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
                                                 {% else %}
                                                     <img src="{{ url_for('static', filename='images/default-ape.jpg') }}" 
                                                          alt="{{ ape.ape_name }}" 
                                                          class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
                                                 {% endif %}
                                             </div>
 
@@ -220,14 +223,14 @@
                                     <tbody>
                                         {% for meal in recent_meals %}
                                         <tr>
-                                            <td>{{ meal.date.strftime('%m/%d %I:%M %p') }}</td>
+                                            <td>{{ meal.date.strftime('%m/%d/%Y %I:%M %p') }}</td>
                                             <td>
                                                 <a href="{{ url_for('site.ape_profile_page', ape_id=meal.ape.id) }}">
                                                     {{ meal.ape.ape_name }}
                                                 </a>
                                             </td>
                                             <td>
-                                                <span class="badge badge-info">{{ meal.recipe.meal_name }}</span>
+                                                <span class="badge {% if meal.recipe.food_category == 'Fruits' %}badge-success{% elif meal.recipe.food_category == 'Vegetables' %}{% elif meal.recipe.food_category == 'Grains & Starches' %}badge-warning{% elif meal.recipe.food_category == 'Protein Sources' %}badge-danger{% elif meal.recipe.food_category == 'Nuts & Seeds' %}badge-info{% elif meal.recipe.food_category == 'Dairy & Alternatives' %}badge-primary{% elif meal.recipe.food_category == 'Dried Fruits' %}badge-secondary{% elif meal.recipe.food_category == 'Enrichment Treats' %}badge-secondary{% elif meal.recipe.food_category == 'Mixed Meals & Combinations' %}badge-dark{% else %}badge-info{% endif %}" {% if meal.recipe.food_category == 'Vegetables' %}style="background-color: #20c997; color: white;"{% endif %}>{{ meal.recipe.meal_name }}</span>
                                             </td>
                                             <td>{{ meal.recipe.calories }} cal</td>
                                         </tr>
@@ -244,4 +247,19 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+<script>
+// Function to reset all help alerts
+function resetHelpAlerts() {
+    if (confirm('This will show all help notifications again. Continue?')) {
+        // Clear all help-related localStorage items
+        localStorage.removeItem('browseInfoDismissed');
+        localStorage.removeItem('managementInfoDismissed');
+        
+        // Show success message
+        alert('Help notifications have been reset. They will appear again when you visit the relevant pages.');
+    }
+}
+</script>
 {% endblock %} 

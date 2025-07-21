@@ -140,12 +140,54 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="quick_recipe_select">Meal</label>
+                                        <label for="quick_recipe_select">Food Item</label>
                                         <select class="form-control form-control-lg" name="recipe_id" id="quick_recipe_select" required>
-                                            <option value="">Select meal...</option>
-                                            {% for recipe in recipes %}
-                                            <option value="{{ recipe.id }}">{{ recipe.meal_name }}</option>
-                                            {% endfor %}
+                                            <option value="">Select food...</option>
+                                            <optgroup label="🍎 Fruits">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Fruits') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                            <optgroup label="🥕 Vegetables">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Vegetables') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                            <optgroup label="🥚 Protein Sources">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Protein Sources') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                            <optgroup label="🍞 Grains & Starches">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Grains & Starches') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                            <optgroup label="🌱 Nuts & Seeds">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Nuts & Seeds') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                            <optgroup label="🧀 Dairy & Alternatives">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Dairy & Alternatives') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                            <optgroup label="🍇 Dried Fruits">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Dried Fruits') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                            <optgroup label="🍦 Enrichment Treats">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Enrichment Treats') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                            <optgroup label="🍽️ Mixed Meals">
+                                                {% for recipe in recipes|selectattr('food_category', 'equalto', 'Mixed Meals & Combinations') %}
+                                                <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
+                                                {% endfor %}
+                                            </optgroup>
                                         </select>
                                     </div>
                                 </div>

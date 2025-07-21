@@ -155,7 +155,7 @@ def add_meal():
 
 
 @site.route('/apes/<int:ape_id>/edit', methods=['GET', 'POST'])
-@roles_required("Admin")
+@login_required
 def edit_ape(ape_id):
     """
     Display and handle the form for editing an existing ape.
@@ -166,13 +166,16 @@ def edit_ape(ape_id):
         birthday_str = request.form['birthday']
         weight = request.form.get('weight')
         mother = request.form.get('mother')
+        image_filename = request.form.get('image_filename')
         
         try:
             from datetime import datetime
             ape.birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
             ape.weight = float(weight) if weight else None
             ape.mother = mother if mother else None
+            ape.image_filename = image_filename if image_filename else None
             db.session.commit()
+            flash(f'{ape.ape_name} information updated successfully!', 'success')
             return redirect(url_for('site.ape_profile_page', ape_id=ape.id))
         except ValueError:
             flash('Invalid birthday format. Please use YYYY-MM-DD.', 'error')
@@ -216,15 +219,17 @@ def edit_meal(meal_id):
 
 
 @site.route('/apes/<int:ape_id>/delete', methods=['POST'])
-@roles_required("Admin")
+@login_required
 def delete_ape(ape_id):
     """
     Delete an ape from the database.
     """
     ape = Apes.query.get_or_404(ape_id)
+    ape_name = ape.ape_name
     db.session.delete(ape)
     db.session.commit()
-    return redirect(url_for('site.dashboard'))
+    flash(f'{ape_name} has been removed from the system.', 'success')
+    return redirect(url_for('site.all_apes'))
 
 
 
@@ -491,6 +496,26 @@ def update_recipe(recipe_id):
         return jsonify({'success': True, 'message': 'Food item updated successfully'})
     except Exception as e:
         db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@site.route('/api/recipes/<int:recipe_id>', methods=['GET'])
+@login_required
+def get_recipe(recipe_id):
+    """Get a single recipe via API"""
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
+        return jsonify({
+            'success': True,
+            'recipe': {
+                'id': recipe.id,
+                'meal_name': recipe.meal_name,
+                'calories': recipe.calories,
+                'food_category': recipe.food_category,
+                'description': recipe.description
+            }
+        })
+    except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
 

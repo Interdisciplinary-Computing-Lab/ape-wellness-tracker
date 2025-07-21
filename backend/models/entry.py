@@ -19,6 +19,7 @@ class Apes(db.Model):
     birthday = db.Column(db.Date, nullable=False)
     weight = db.Column(db.Float, nullable=True)  # in kg
     mother = db.Column(db.String(90), nullable=True)
+    image_filename = db.Column(db.String(255), nullable=True)
     
     @property
     def age(self):

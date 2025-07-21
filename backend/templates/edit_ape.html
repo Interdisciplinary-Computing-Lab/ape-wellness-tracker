@@ -34,6 +34,20 @@
                                value="{{ ape.mother or '' }}" maxlength="50">
                         <small class="form-text text-muted">Enter mother's name if known (optional)</small>
                     </div>
+                    <div class="form-group">
+                        <label for="image_filename">Profile Image</label>
+                        <select class="form-control" name="image_filename" id="image_filename">
+                            <option value="">Select an image...</option>
+                            <option value="maisha.jpg" {% if ape.image_filename == 'maisha.jpg' %}selected{% endif %}>MAISHA</option>
+                            <option value="teco.jpg" {% if ape.image_filename == 'teco.jpg' %}selected{% endif %}>TECO</option>
+                            <option value="nyota.jpg" {% if ape.image_filename == 'nyota.jpg' %}selected{% endif %}>NYOTA</option>
+                            <option value="clara.jpg" {% if ape.image_filename == 'clara.jpg' %}selected{% endif %}>CLARA</option>
+                            <option value="mali.jpg" {% if ape.image_filename == 'mali.jpg' %}selected{% endif %}>MALI</option>
+                            <option value="elikya.jpg" {% if ape.image_filename == 'elikya.jpg' %}selected{% endif %}>ELIKYA</option>
+                            <option value="bonobo-placeholder.jpg" {% if ape.image_filename == 'bonobo-placeholder.jpg' %}selected{% endif %}>Placeholder</option>
+                        </select>
+                        <small class="form-text text-muted">Choose a profile image for this ape</small>
+                    </div>
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-save mr-2"></i>Save Changes
