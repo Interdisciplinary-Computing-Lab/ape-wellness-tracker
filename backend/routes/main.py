@@ -147,7 +147,8 @@ def add_meal():
     new_meal = Meals(
         ape_id=int(ape_id),
         recipe_id=int(recipe_id),
-        date=date
+        date=date,
+        user_id=current_user.id
     )
 
     add_to_db(new_meal, "meal")
@@ -340,7 +341,8 @@ def save_feeding():
                 meal = Meals(
                     ape_id=int(ape_id),
                     recipe_id=recipe.id,
-                    date=feeding_datetime
+                    date=feeding_datetime,
+                    user_id=current_user.id
                 )
                 add_to_db(meal, "meal")
                 saved_meals.append({
