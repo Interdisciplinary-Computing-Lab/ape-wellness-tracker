@@ -1,10 +1,14 @@
 # Ape Diet & Wellness Tracker App
-A full-stack diet and wellness tracking app for Ape Initiative, built with Flask, HTML5, Bootstrap 5, Chart.js, SQlite, and Apache Superset.
+A full-stack diet and wellness tracking app for Ape Initiative, built with Flask, HTML5, Bootstrap 4, Chart.js, and SQLite.
 
-## 🔧 Status
-✅ Core Backend and Authentication Implemented
+## 🔧 Project Status
 
-🚧 Frontend Integration and Styling In Progress
+✅ Core Backend and Authentication Implemented  
+✅ Frontend Integration and Styling Completed  
+✅ Prototype Ready - Professional UI/UX  
+
+🚧 Production Configuration Needed  
+📌 Deployment Setup and Final Testing Pending
 
 ## 🗂 Project Structure
 
