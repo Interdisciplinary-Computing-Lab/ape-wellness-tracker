@@ -93,10 +93,10 @@
         
         /* Sign-in button and checkbox alignment */
         .icheck-primary {
-            height: 38px;
+            height: 42px;
             display: flex;
             align-items: center;
-            min-width: 0;
+            min-width: auto;
             width: 100%;
         }
         
@@ -108,14 +108,14 @@
         
         .icheck-primary label {
             margin: 0;
-            font-size: 14px;
-            color: #6c757d;
+            font-size: 16px;
+            color: #495057;
             white-space: nowrap;
             overflow: visible;
-            flex: 1;
-            min-width: 0;
-            text-overflow: clip;
+            flex: 0 0 auto;
+            text-overflow: unset;
             word-wrap: normal;
+            font-weight: 500;
         }
         
         .btn-primary {
@@ -126,15 +126,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 12px 20px;
+            padding: 12px 16px;
+            min-width: 100px;
+            white-space: nowrap;
         }
         
         /* Ensure checkbox container has enough space */
-        .col-10 {
+        .col-8 {
             padding-right: 15px;
         }
         
-        .col-2 {
+        .col-4 {
             padding-left: 15px;
         }
     </style>
@@ -187,18 +189,21 @@
                         {{ login_user_form.password(class="form-control", placeholder="Password", required=true) }}
                     </div>
                     
-                    <div class="row align-items-center mb-4">
-                        <div class="col-10">
-                            <div class="icheck-primary d-flex align-items-center">
-                                {{ login_user_form.remember(class="form-check-input mr-2") }}
-                                <label for="{{ login_user_form.remember.id }}" class="mb-0">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ login_user_form.remember(class="form-check-input") }}
+                                <label class="form-check-label" for="{{ login_user_form.remember.id }}">
                                     Remember Me
                                 </label>
                             </div>
                         </div>
-                        <div class="col-2">
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
                             <button type="submit" class="btn btn-primary btn-block" title="Sign In">
-                                <i class="fas fa-sign-in-alt"></i>
+                                <i class="fas fa-sign-in-alt mr-2"></i>Sign In
                             </button>
                         </div>
                     </div>
