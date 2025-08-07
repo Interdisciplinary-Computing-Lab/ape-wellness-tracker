@@ -146,6 +146,7 @@
                                             <th>Food</th>
                                             <th>Category</th>
                                             <th>Calories</th>
+                                            <th>Entered By</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -161,11 +162,20 @@
                                                     <span class="badge {% if meal.recipe.food_category == 'Fruits' %}badge-success{% elif meal.recipe.food_category == 'Vegetables' %}{% elif meal.recipe.food_category == 'Grains & Starches' %}badge-warning{% elif meal.recipe.food_category == 'Protein Sources' %}badge-danger{% elif meal.recipe.food_category == 'Nuts & Seeds' %}badge-info{% elif meal.recipe.food_category == 'Dairy & Alternatives' %}badge-primary{% elif meal.recipe.food_category == 'Dried Fruits' %}badge-secondary{% elif meal.recipe.food_category == 'Enrichment Treats' %}badge-secondary{% elif meal.recipe.food_category == 'Mixed Meals & Combinations' %}badge-dark{% else %}badge-info{% endif %}" {% if meal.recipe.food_category == 'Vegetables' %}style="background-color: #20c997; color: white;"{% endif %}>{{ meal.recipe.food_category or 'Other' }}</span>
                                                 </td>
                                                 <td>{{ meal.recipe.calories }} cal</td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        {% if meal.user %}
+                                                            {{ meal.user.email.split('@')[0] }}
+                                                        {% else %}
+                                                            Unknown
+                                                        {% endif %}
+                                                    </small>
+                                                </td>
                                             </tr>
                                             {% endfor %}
                                         {% else %}
                                             <tr>
-                                                <td colspan="4" class="text-center text-muted">
+                                                <td colspan="5" class="text-center text-muted">
                                                     No feeding activity recorded yet.
                                                 </td>
                                             </tr>

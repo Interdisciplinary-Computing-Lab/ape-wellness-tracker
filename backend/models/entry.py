@@ -77,19 +77,23 @@ class Meals(db.Model):
         ape_id (int): Foreign key to Apes.
         recipe_id (int): Foreign key to Recipe.
         date (datetime): Date and time of the meal.
+        user_id (int): Foreign key to User - tracks who entered the data.
     Relationships:
         ape: The associated Apes object.
         recipe: The associated Recipe object.
+        user: The associated User object who entered the data.
     """
     __tablename__ = 'meals'
     id = db.Column(db.Integer, primary_key=True)
     ape_id = db.Column(db.Integer, sa.ForeignKey('apes.id'), nullable=False)
     recipe_id = db.Column(db.Integer, sa.ForeignKey('recipe.id'), nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=sa.func.now())
+    user_id = db.Column(db.Integer, sa.ForeignKey('user.id'), nullable=False)
 
     # Relationships
     ape = db.relationship('Apes', backref='meals')
     recipe = db.relationship('Recipe', backref='meals')
+    user = db.relationship('User', backref='meals')
 
 
 roles_users = db.Table(

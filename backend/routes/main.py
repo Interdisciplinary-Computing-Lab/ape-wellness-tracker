@@ -147,7 +147,8 @@ def add_meal():
     new_meal = Meals(
         ape_id=int(ape_id),
         recipe_id=int(recipe_id),
-        date=date
+        date=date,
+        user_id=current_user.id
     )
 
     add_to_db(new_meal, "meal")
@@ -340,7 +341,8 @@ def save_feeding():
                 meal = Meals(
                     ape_id=int(ape_id),
                     recipe_id=recipe.id,
-                    date=feeding_datetime
+                    date=feeding_datetime,
+                    user_id=current_user.id
                 )
                 add_to_db(meal, "meal")
                 saved_meals.append({
@@ -556,9 +558,6 @@ def delete_recipe(recipe_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
 
-# Delete route is currently disabled
-# TODO: Implement delete functionality
-
 @site.route('/recipes/add', methods=['POST'])
 @login_required
 def add_recipe_form():
@@ -596,8 +595,117 @@ def add_recipe_form():
         flash(f'Error adding food item: {str(e)}', 'error')
         return redirect(url_for('site.manage_foods'))
 
-# Edit route is currently disabled
-# TODO: Implement edit functionality
-
-# Edit form route is currently disabled
-# TODO: Implement edit functionality
+@site.route('/reports')
+@login_required
+def reports():
+    """Display aggregate reports for all apes"""
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+    from sqlalchemy import func
+    
+    # Get date range from query parameters (default to today)
+    date_range = request.args.get('range', 'today')
+    custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    
+    # Calculate date range
+    if date_range == 'today':
+        start_date = datetime.now().date()
+        end_date = datetime.now().date()
+    elif date_range == 'week':
+        start_date = datetime.now().date() - timedelta(days=7)
+        end_date = datetime.now().date()
+    elif date_range == 'month':
+        start_date = datetime.now().date() - timedelta(days=30)
+        end_date = datetime.now().date()
+    elif date_range == 'custom':
+        try:
+            start_date = datetime.strptime(custom_date, '%Y-%m-%d').date()
+            end_date = start_date
+        except ValueError:
+            start_date = datetime.now().date()
+            end_date = start_date
+    else:
+        start_date = datetime.now().date()
+        end_date = datetime.now().date()
+    
+    # Get all apes
+    apes = Apes.query.all()
+    
+    # Get meals within date range
+    meals_in_range = Meals.query.filter(
+        Meals.date >= start_date,
+        Meals.date <= end_date + timedelta(days=1)  # Include the entire end date
+    ).all()
+    
+    # Calculate aggregate statistics
+    total_calories = sum(meal.recipe.calories for meal in meals_in_range)
+    total_meals = len(meals_in_range)
+    avg_calories_per_meal = total_calories / total_meals if total_meals > 0 else 0
+    
+    # Calculate per-ape statistics
+    ape_stats = {}
+    for ape in apes:
+        ape_meals = [meal for meal in meals_in_range if meal.ape_id == ape.id]
+        ape_calories = sum(meal.recipe.calories for meal in ape_meals)
+        ape_meal_count = len(ape_meals)
+        ape_avg_calories = ape_calories / ape_meal_count if ape_meal_count > 0 else 0
+        
+        ape_stats[ape.id] = {
+            'name': ape.ape_name,
+            'calories': ape_calories,
+            'meal_count': ape_meal_count,
+            'avg_calories': ape_avg_calories,
+            'percentage_of_total': (ape_calories / total_calories * 100) if total_calories > 0 else 0
+        }
+    
+    # Food category distribution
+    category_stats = defaultdict(lambda: {'count': 0, 'calories': 0})
+    for meal in meals_in_range:
+        category = meal.recipe.food_category or 'Other'
+        category_stats[category]['count'] += 1
+        category_stats[category]['calories'] += meal.recipe.calories
+    
+    # Convert to list for template
+    category_data = [
+        {
+            'category': category,
+            'count': stats['count'],
+            'calories': stats['calories'],
+            'percentage': (stats['calories'] / total_calories * 100) if total_calories > 0 else 0
+        }
+        for category, stats in category_stats.items()
+    ]
+    
+    # Sort categories by calories
+    category_data.sort(key=lambda x: x['calories'], reverse=True)
+    
+    # Daily breakdown for the date range
+    daily_stats = defaultdict(lambda: {'calories': 0, 'meals': 0})
+    for meal in meals_in_range:
+        meal_date = meal.date.date()
+        daily_stats[meal_date]['calories'] += meal.recipe.calories
+        daily_stats[meal_date]['meals'] += 1
+    
+    # Convert to sorted list
+    daily_data = [
+        {
+            'date': date,
+            'calories': stats['calories'],
+            'meals': stats['meals']
+        }
+        for date, stats in daily_stats.items()
+    ]
+    daily_data.sort(key=lambda x: x['date'])
+    
+    return render_template('reports.html',
+                         apes=apes,
+                         ape_stats=ape_stats,
+                         total_calories=total_calories,
+                         total_meals=total_meals,
+                         avg_calories_per_meal=avg_calories_per_meal,
+                         category_data=category_data,
+                         daily_data=daily_data,
+                         date_range=date_range,
+                         start_date=start_date,
+                         end_date=end_date,
+                         custom_date=custom_date)
