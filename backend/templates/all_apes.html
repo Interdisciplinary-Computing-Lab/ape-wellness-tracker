@@ -13,11 +13,7 @@
     <div class="col-md-4 col-lg-3 mb-4 d-flex align-items-stretch">
       <div class="card w-100 text-center">
         <a href="{{ url_for('site.ape_profile_page', ape_id=ape.id) }}">
-          {% if ape.image_filename %}
-            <img src="{{ url_for('static', filename='images/' + ape.image_filename) }}" class="card-img-top" alt="{{ ape.ape_name }}" style="object-fit: cover; height: 250px;">
-          {% else %}
-            <img src="{{ url_for('static', filename='images/bonobo-placeholder.jpg') }}" class="card-img-top" alt="{{ ape.ape_name }}" style="object-fit: cover; height: 250px;">
-          {% endif %}
+          <img src="{{ ape.get_image_url() }}" class="card-img-top" alt="{{ ape.ape_name }}" style="object-fit: cover; height: 250px;">
         </a>
         <div class="card-body">
           <h5 class="card-title mb-0">{{ ape.ape_name }}</h5>

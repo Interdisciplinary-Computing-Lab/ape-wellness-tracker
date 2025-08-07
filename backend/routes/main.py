@@ -202,14 +202,39 @@ def edit_ape(ape_id):
         birthday_str = request.form['birthday']
         weight = request.form.get('weight')
         mother = request.form.get('mother')
-        image_filename = request.form.get('image_filename')
         
         try:
             from datetime import datetime
             ape.birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
             ape.weight = float(weight) if weight else None
             ape.mother = mother if mother else None
-            ape.image_filename = image_filename if image_filename else None
+            
+            # Handle image upload if provided
+            if 'image' in request.files:
+                file = request.files['image']
+                if file and file.filename != '':
+                    # Check file size
+                    file.seek(0, os.SEEK_END)
+                    file_size = file.tell()
+                    file.seek(0)
+                    
+                    if file_size <= MAX_FILE_SIZE and allowed_file(file.filename):
+                        # Read file data
+                        image_data = file.read()
+                        mime_type = file.content_type or 'image/jpeg'
+                        
+                        # Update image data
+                        ape.image_data = image_data
+                        ape.image_mime_type = mime_type
+                        
+                        # Update filename for backward compatibility
+                        filename = secure_filename(f"{ape.ape_name.lower().replace(' ', '_')}.jpg")
+                        ape.image_filename = filename
+                        
+                        flash(f'Profile photo updated for {ape.ape_name}!', 'success')
+                    else:
+                        flash('Invalid image file. Please upload a valid image under 5MB.', 'error')
+            
             db.session.commit()
             flash(f'{ape.ape_name} information updated successfully!', 'success')
             return redirect(url_for('site.ape_profile_page', ape_id=ape.id))
