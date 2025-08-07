@@ -114,25 +114,27 @@
             overflow: visible;
             flex: 1;
             min-width: 0;
+            text-overflow: clip;
+            word-wrap: normal;
         }
         
         .btn-primary {
             height: 38px;
             line-height: 1.2;
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 14px;
+            font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 8px 12px;
+            padding: 10px 16px;
         }
         
         /* Ensure checkbox container has enough space */
-        .col-8 {
+        .col-9 {
             padding-right: 15px;
         }
         
-        .col-4 {
+        .col-3 {
             padding-left: 15px;
         }
     </style>
@@ -186,7 +188,7 @@
                     </div>
                     
                     <div class="row align-items-center mb-4">
-                        <div class="col-8">
+                        <div class="col-9">
                             <div class="icheck-primary d-flex align-items-center">
                                 {{ login_user_form.remember(class="form-check-input mr-2") }}
                                 <label for="{{ login_user_form.remember.id }}" class="mb-0">
@@ -194,9 +196,9 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="col-4">
+                        <div class="col-3">
                             <button type="submit" class="btn btn-primary btn-block">
-                                <i class="fas fa-sign-in-alt mr-1"></i>Sign In
+                                <i class="fas fa-sign-in-alt mr-2"></i>Sign In
                             </button>
                         </div>
                     </div>
