@@ -85,6 +85,12 @@
                             <p>Manage Foods</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('site.manage_categories') }}" class="nav-link {% if request.endpoint == 'site.manage_categories' %}active{% endif %}">
+                            <i class="nav-icon fas fa-tags"></i>
+                            <p>Food Categories</p>
+                        </a>
+                    </li>
                     <li class="nav-header">REPORTS</li>
                     <li class="nav-item">
                         <a href="{{ url_for('site.reports') }}" class="nav-link {% if request.endpoint == 'site.reports' %}active{% endif %}">

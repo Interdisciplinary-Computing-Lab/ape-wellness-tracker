@@ -1,0 +1,291 @@
+{% extends "adminlte_base.html" %}
+
+{% block title %}Manage Food Categories - Ape Wellness Tracker{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Food Categories</li>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-tags mr-1"></i>
+                    Food Category Management
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCategoryModal">
+                        <i class="fas fa-plus mr-1"></i>Add New Category
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th style="width: 60px;">Icon</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th style="width: 100px;">Color</th>
+                                <th style="width: 80px;">Order</th>
+                                <th style="width: 80px;">Status</th>
+                                <th style="width: 100px;">Food Items</th>
+                                <th style="width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr>
+                                <td>{{ category.id }}</td>
+                                <td>
+                                    <i class="{{ category.icon }}" style="font-size: 1.2em; color: #6c757d;"></i>
+                                </td>
+                                <td>
+                                    <strong>{{ category.name }}</strong>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ category.description or 'No description' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ category.color }}">{{ category.color }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">{{ category.sort_order }}</span>
+                                </td>
+                                <td>
+                                    {% if category.is_active %}
+                                        <span class="badge badge-success">Active</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-primary">{{ category.recipes.count() }}</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('site.edit_category', category_id=category.id) }}" class="btn btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" onclick="deleteCategory({{ category.id }}, '{{ category.name }}')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                                    <p>No food categories found.</p>
+                                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCategoryModal">
+                                        <i class="fas fa-plus mr-1"></i>Add Your First Category
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus mr-1"></i>Add New Food Category
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('site.add_category') }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="categoryName">Category Name *</label>
+                        <input type="text" class="form-control" id="categoryName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryDescription">Description</label>
+                        <textarea class="form-control" id="categoryDescription" name="description" rows="3" placeholder="Optional description of this food category"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="categoryIcon">Icon</label>
+                                <select class="form-control" id="categoryIcon" name="icon">
+                                    <option value="fas fa-apple-alt">🍎 Apple (Fruits)</option>
+                                    <option value="fas fa-carrot">🥕 Carrot (Vegetables)</option>
+                                    <option value="fas fa-egg">🥚 Egg (Protein)</option>
+                                    <option value="fas fa-bread-slice">🍞 Bread (Grains)</option>
+                                    <option value="fas fa-seedling">🌱 Seedling (Nuts & Seeds)</option>
+                                    <option value="fas fa-cheese">🧀 Cheese (Dairy)</option>
+                                    <option value="fas fa-ice-cream">🍦 Ice Cream (Treats)</option>
+                                    <option value="fas fa-utensils">🍽️ Utensils (Meals)</option>
+                                    <option value="fas fa-tag">🏷️ Tag (General)</option>
+                                    <option value="fas fa-leaf">🍃 Leaf (Organic)</option>
+                                    <option value="fas fa-fish">🐟 Fish (Seafood)</option>
+                                    <option value="fas fa-drumstick-bite">🍗 Chicken (Meat)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="categoryColor">Color</label>
+                                <select class="form-control" id="categoryColor" name="color">
+                                    <option value="badge-success">Green (Success)</option>
+                                    <option value="badge-primary">Blue (Primary)</option>
+                                    <option value="badge-info">Cyan (Info)</option>
+                                    <option value="badge-warning">Yellow (Warning)</option>
+                                    <option value="badge-danger">Red (Danger)</option>
+                                    <option value="badge-secondary">Gray (Secondary)</option>
+                                    <option value="badge-dark">Dark (Dark)</option>
+                                    <option value="badge-light">Light (Light)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="categorySortOrder">Sort Order</label>
+                        <input type="number" class="form-control" id="categorySortOrder" name="sort_order" value="0" min="0">
+                        <small class="form-text text-muted">Lower numbers appear first in lists</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i>Save Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Category Confirmation Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>Delete Category
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the category "<strong id="deleteCategoryName"></strong>"?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteCategoryForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash mr-1"></i>Delete Category
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth transitions
+    const style = document.createElement('style');
+    style.textContent = `
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-group .btn {
+            transition: all 0.2s ease;
+        }
+        .btn-group .btn:hover {
+            transform: scale(1.05);
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+// Delete category function
+function deleteCategory(categoryId, categoryName) {
+    document.getElementById('deleteCategoryName').textContent = categoryName;
+    document.getElementById('deleteCategoryForm').action = `/categories/${categoryId}/delete`;
+    $('#deleteCategoryModal').modal('show');
+}
+
+// Show notification function
+function showNotification(message, type) {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    // Create new notification
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Add notification styles
+const notificationStyle = document.createElement('style');
+notificationStyle.textContent = `
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    }
+    .notification.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    .notification.success {
+        background-color: #28a745;
+    }
+    .notification.error {
+        background-color: #dc3545;
+    }
+`;
+document.head.appendChild(notificationStyle);
+</script>
+{% endblock %} 

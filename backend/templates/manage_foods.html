@@ -13,6 +13,9 @@
                                 Food Management
                             </h3>
                             <div class="card-tools">
+                                <a href="{{ url_for('site.manage_categories') }}" class="btn btn-info btn-sm mr-2">
+                                    <i class="fas fa-tags mr-1"></i>Manage Categories
+                                </a>
                                 <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addFoodModal">
                                     <i class="fas fa-plus mr-1"></i>Add New Food
                                 </button>
@@ -183,9 +186,14 @@
                                         <div class="row mt-4">
                                             <div class="col-12 text-center">
                                                 <p class="text-muted">Click on any category tab above to view and manage specific food items.</p>
-                                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addFoodModal">
-                                                    <i class="fas fa-plus mr-1"></i>Add New Food Item
-                                                </button>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addFoodModal">
+                                                        <i class="fas fa-plus mr-1"></i>Add New Food Item
+                                                    </button>
+                                                    <a href="{{ url_for('site.manage_categories') }}" class="btn btn-info">
+                                                        <i class="fas fa-tags mr-1"></i>Manage Categories
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -512,15 +520,9 @@
                                 <div class="form-group">
                                     <label for="foodCategory">Category</label>
                                     <select class="form-control" id="foodCategory" name="food_category">
-                                        <option value="Fruits">🍎 Fruits</option>
-                                        <option value="Vegetables">🥕 Vegetables</option>
-                                        <option value="Grains & Starches">🍞 Grains & Starches</option>
-                                        <option value="Protein Sources">🥚 Protein Sources</option>
-                                        <option value="Nuts & Seeds">🌱 Nuts & Seeds</option>
-                                        <option value="Dairy & Alternatives">🧀 Dairy & Alternatives</option>
-                                        <option value="Dried Fruits">🍇 Dried Fruits</option>
-                                        <option value="Enrichment Treats">🍦 Enrichment Treats</option>
-                                        <option value="Mixed Meals & Combinations">🍽️ Mixed Meals & Combinations</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.name }}">{{ category.name }}</option>
+                                        {% endfor %}
                                         <option value="Other">📦 Other</option>
                                     </select>
                                 </div>

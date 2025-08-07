@@ -9,7 +9,7 @@ and rendering the appropriate templates.
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from backend.extensions import db
-from backend.models.entry import Apes, Recipe, Meals
+from backend.models.entry import Apes, Recipe, Meals, FoodCategory
 from backend.helpers import add_to_db, query_db
 from datetime import datetime, timedelta
 from flask_security import login_required, roles_required, current_user
@@ -505,7 +505,8 @@ def all_apes():
 def manage_foods():
     """Display food management page"""
     recipes = Recipe.query.all()
-    return render_template('manage_foods.html', recipes=recipes)
+    categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order, FoodCategory.name).all()
+    return render_template('manage_foods.html', recipes=recipes, categories=categories)
 
 
 @site.route('/api/recipes', methods=['POST'])
@@ -655,6 +656,144 @@ def add_recipe_form():
         db.session.rollback()
         flash(f'Error adding food item: {str(e)}', 'error')
         return redirect(url_for('site.manage_foods'))
+
+# Food Category Management Routes
+@site.route('/manage_categories')
+@login_required
+@roles_required("Admin")
+def manage_categories():
+    """Display food category management page"""
+    categories = FoodCategory.query.order_by(FoodCategory.sort_order, FoodCategory.name).all()
+    return render_template('manage_categories.html', categories=categories)
+
+@site.route('/categories/add', methods=['POST'])
+@login_required
+@roles_required("Admin")
+def add_category():
+    """Add a new food category"""
+    try:
+        name = request.form.get('name')
+        description = request.form.get('description', '')
+        icon = request.form.get('icon', 'fas fa-tag')
+        color = request.form.get('color', 'badge-secondary')
+        sort_order = int(request.form.get('sort_order', 0))
+        
+        if not name:
+            flash('Category name is required.', 'error')
+            return redirect(url_for('site.manage_categories'))
+        
+        # Check if category already exists
+        existing_category = FoodCategory.query.filter_by(name=name).first()
+        if existing_category:
+            flash(f'A category named "{name}" already exists.', 'error')
+            return redirect(url_for('site.manage_categories'))
+        
+        new_category = FoodCategory(
+            name=name,
+            description=description,
+            icon=icon,
+            color=color,
+            sort_order=sort_order
+        )
+        
+        db.session.add(new_category)
+        db.session.commit()
+        
+        flash(f'Category "{name}" has been added successfully.', 'success')
+        return redirect(url_for('site.manage_categories'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding category: {str(e)}', 'error')
+        return redirect(url_for('site.manage_categories'))
+
+@site.route('/categories/<int:category_id>/edit', methods=['GET', 'POST'])
+@login_required
+@roles_required("Admin")
+def edit_category(category_id):
+    """Edit an existing food category"""
+    category = FoodCategory.query.get_or_404(category_id)
+    
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name')
+            description = request.form.get('description', '')
+            icon = request.form.get('icon', 'fas fa-tag')
+            color = request.form.get('color', 'badge-secondary')
+            sort_order = int(request.form.get('sort_order', 0))
+            is_active = 'is_active' in request.form
+            
+            if not name:
+                flash('Category name is required.', 'error')
+                return render_template('edit_category.html', category=category)
+            
+            # Check if name changed and if new name already exists
+            if name != category.name:
+                existing_category = FoodCategory.query.filter_by(name=name).first()
+                if existing_category:
+                    flash(f'A category named "{name}" already exists.', 'error')
+                    return render_template('edit_category.html', category=category)
+            
+            category.name = name
+            category.description = description
+            category.icon = icon
+            category.color = color
+            category.sort_order = sort_order
+            category.is_active = is_active
+            
+            db.session.commit()
+            
+            flash(f'Category "{name}" has been updated successfully.', 'success')
+            return redirect(url_for('site.manage_categories'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating category: {str(e)}', 'error')
+    
+    return render_template('edit_category.html', category=category)
+
+@site.route('/categories/<int:category_id>/delete', methods=['POST'])
+@login_required
+@roles_required("Admin")
+def delete_category(category_id):
+    """Delete a food category"""
+    try:
+        category = FoodCategory.query.get_or_404(category_id)
+        
+        # Check if category is used by any recipes
+        if category.recipes.count() > 0:
+            flash(f'Cannot delete category "{category.name}" because it is used by {category.recipes.count()} food items.', 'error')
+            return redirect(url_for('site.manage_categories'))
+        
+        db.session.delete(category)
+        db.session.commit()
+        
+        flash(f'Category "{category.name}" has been deleted successfully.', 'success')
+        return redirect(url_for('site.manage_categories'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting category: {str(e)}', 'error')
+        return redirect(url_for('site.manage_categories'))
+
+@site.route('/api/categories', methods=['GET'])
+@login_required
+def get_categories():
+    """Get all active food categories via API"""
+    try:
+        categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order, FoodCategory.name).all()
+        return jsonify({
+            'success': True,
+            'categories': [
+                {
+                    'id': cat.id,
+                    'name': cat.name,
+                    'description': cat.description,
+                    'icon': cat.icon,
+                    'color': cat.color
+                }
+                for cat in categories
+            ]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 @site.route('/reports')
 @login_required
