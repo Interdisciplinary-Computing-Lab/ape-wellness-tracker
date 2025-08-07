@@ -117,42 +117,10 @@
 
                                             <!-- Ape Image -->
                                             <div class="mb-3">
-                                                {% if ape.ape_name.upper() == 'MAISHA' %}
-                                                    <img src="{{ url_for('static', filename='images/maisha.jpg') }}" 
-                                                         alt="{{ ape.ape_name }}" 
-                                                         class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
-                                                {% elif ape.ape_name.upper() == 'TECO' %}
-                                                    <img src="{{ url_for('static', filename='images/teco.jpg') }}" 
-                                                         alt="{{ ape.ape_name }}" 
-                                                         class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
-                                                {% elif ape.ape_name.upper() == 'NYOTA' %}
-                                                    <img src="{{ url_for('static', filename='images/nyota.jpg') }}" 
-                                                         alt="{{ ape.ape_name }}" 
-                                                         class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
-                                                {% elif ape.ape_name.upper() == 'CLARA' %}
-                                                    <img src="{{ url_for('static', filename='images/clara.jpg') }}" 
-                                                         alt="{{ ape.ape_name }}" 
-                                                         class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
-                                                {% elif ape.ape_name.upper() == 'MALI' %}
-                                                    <img src="{{ url_for('static', filename='images/mali.jpg') }}" 
-                                                         alt="{{ ape.ape_name }}" 
-                                                         class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
-                                                {% elif ape.ape_name.upper() == 'ELIKYA' %}
-                                                    <img src="{{ url_for('static', filename='images/elikya.jpg') }}" 
-                                                         alt="{{ ape.ape_name }}" 
-                                                         class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
-                                                {% else %}
-                                                    <img src="{{ url_for('static', filename='images/default-ape.jpg') }}" 
-                                                         alt="{{ ape.ape_name }}" 
-                                                         class="img-circle elevation-2" 
-                                                         style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
-                                                {% endif %}
+                                                <img src="{{ url_for('site.ape_image', ape_id=ape.id) }}" 
+                                                     alt="{{ ape.ape_name }}" 
+                                                     class="img-circle elevation-2" 
+                                                     style="width: 80px; height: 80px; object-fit: cover; object-position: center;">
                                             </div>
 
                                             <h5 class="card-title">{{ ape.ape_name }}</h5>
