@@ -518,6 +518,24 @@ def get_recipe(recipe_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@site.route('/api/test/recipes/<int:recipe_id>', methods=['GET'])
+def test_get_recipe(recipe_id):
+    """Test endpoint to get a single recipe without authentication"""
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
+        return jsonify({
+            'success': True,
+            'recipe': {
+                'id': recipe.id,
+                'meal_name': recipe.meal_name,
+                'calories': recipe.calories,
+                'food_category': recipe.food_category,
+                'description': recipe.description
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 
 @site.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
 @login_required
@@ -537,3 +555,49 @@ def delete_recipe(recipe_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
+
+# Delete route is currently disabled
+# TODO: Implement delete functionality
+
+@site.route('/recipes/add', methods=['POST'])
+@login_required
+def add_recipe_form():
+    """Add a new recipe via form submission"""
+    try:
+        meal_name = request.form.get('meal_name')
+        calories = request.form.get('calories')
+        food_category = request.form.get('food_category')
+        description = request.form.get('description', '')
+        
+        if not meal_name or not calories:
+            flash('Food name and calories are required.', 'error')
+            return redirect(url_for('site.manage_foods'))
+        
+        # Check if recipe already exists
+        existing_recipe = Recipe.query.filter_by(meal_name=meal_name).first()
+        if existing_recipe:
+            flash(f'A food item named "{meal_name}" already exists.', 'error')
+            return redirect(url_for('site.manage_foods'))
+        
+        new_recipe = Recipe(
+            meal_name=meal_name,
+            calories=int(calories),
+            food_category=food_category,
+            description=description
+        )
+        
+        db.session.add(new_recipe)
+        db.session.commit()
+        
+        flash(f'"{meal_name}" has been added successfully.', 'success')
+        return redirect(url_for('site.manage_foods'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding food item: {str(e)}', 'error')
+        return redirect(url_for('site.manage_foods'))
+
+# Edit route is currently disabled
+# TODO: Implement edit functionality
+
+# Edit form route is currently disabled
+# TODO: Implement edit functionality

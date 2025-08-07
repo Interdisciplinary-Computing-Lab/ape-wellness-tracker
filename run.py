@@ -13,7 +13,7 @@ app = create_app()
 
 if __name__ == '__main__':
     import sys
-    port = 5000
+    port = 5003
     if '--port' in sys.argv:
         try:
             port_index = sys.argv.index('--port')

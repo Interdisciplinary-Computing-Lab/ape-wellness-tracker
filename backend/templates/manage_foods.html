@@ -503,7 +503,7 @@
                                 <span>&times;</span>
                             </button>
                         </div>
-                        <form id="addFoodForm">
+                        <form id="addFoodForm" method="POST" action="/recipes/add">
                             <div class="modal-body">
                                 <div class="form-group">
                                     <label for="foodName">Food Name</label>
@@ -544,59 +544,8 @@
                 </div>
             </div>
 
-            <!-- Edit Food Modal -->
-            <div class="modal fade" id="editFoodModal" tabindex="-1" role="dialog">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="fas fa-edit mr-1"></i>Edit Food Item
-                            </h5>
-                            <button type="button" class="close" data-dismiss="modal">
-                                <span>&times;</span>
-                            </button>
-                        </div>
-                        <form id="editFoodForm">
-                            <input type="hidden" id="editFoodId" name="id">
-                            <div class="modal-body">
-                                <div class="form-group">
-                                    <label for="editFoodName">Food Name</label>
-                                    <input type="text" class="form-control" id="editFoodName" name="meal_name" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="editFoodCategory">Category</label>
-                                    <select class="form-control" id="editFoodCategory" name="food_category">
-                                        <option value="Fruits">🍎 Fruits</option>
-                                        <option value="Vegetables">🥕 Vegetables</option>
-                                        <option value="Grains & Starches">🍞 Grains & Starches</option>
-                                        <option value="Protein Sources">🥚 Protein Sources</option>
-                                        <option value="Nuts & Seeds">🌱 Nuts & Seeds</option>
-                                        <option value="Dairy & Alternatives">🧀 Dairy & Alternatives</option>
-                                        <option value="Dried Fruits">🍇 Dried Fruits</option>
-                                        <option value="Enrichment Treats">🍦 Enrichment Treats</option>
-                                        <option value="Mixed Meals & Combinations">🍽️ Mixed Meals & Combinations</option>
-                                        <option value="Other">📦 Other</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="editCalories">Calories</label>
-                                    <input type="number" class="form-control" id="editCalories" name="calories" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="editDescription">Description (Optional)</label>
-                                    <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save mr-1"></i>Update Food Item
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+            <!-- Edit Food Modal - Currently Disabled -->
+            <!-- TODO: Implement edit functionality -->
 {% endblock %}
 
 {% block scripts %}
@@ -615,6 +564,9 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
         });
     });
+    
+    // Note: Edit and delete buttons are currently disabled
+    // TODO: Implement working edit and delete functionality
 
     // Add transition styles
     const style = document.createElement('style');
@@ -682,144 +634,16 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-// Add new food item
+// Add new food item - let form submit normally
 document.getElementById('addFoodForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData);
-    
-    fetch('/api/recipes', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            $('#addFoodModal').modal('hide');
-            showNotification('Food item added successfully!', 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        } else {
-            showNotification('Error: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('An error occurred while adding the food item.', 'error');
-    });
+    // Don't prevent default - let the form submit normally
+    // The form will submit to the backend route
 });
 
-// Edit food item
-function editFood(recipeId) {
-    console.log('Edit function called for recipe ID:', recipeId);
-    
-    // Fetch the recipe data
-    fetch(`/api/recipes/${recipeId}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log('Edit response:', data);
-            if (data.success) {
-                const recipe = data.recipe;
-                
-                // Populate the edit form
-                document.getElementById('editFoodId').value = recipe.id;
-                document.getElementById('editFoodName').value = recipe.meal_name;
-                document.getElementById('editCalories').value = recipe.calories;
-                document.getElementById('editDescription').value = recipe.description || '';
-                
-                // Set the category dropdown
-                const categorySelect = document.getElementById('editFoodCategory');
-                for (let option of categorySelect.options) {
-                    if (option.value === recipe.food_category) {
-                        option.selected = true;
-                        break;
-                    }
-                }
-                
-                // Show the modal
-                $('#editFoodModal').modal('show');
-            } else {
-                alert('Error loading food item: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while loading the food item.');
-        });
-}
+// Edit and delete functions are currently disabled
+// TODO: Implement working edit and delete functionality
 
-// Delete food item
-function deleteFood(recipeId) {
-    console.log('Delete function called for recipe ID:', recipeId);
-    
-    // Get the food name for better confirmation message
-    const foodCard = event.target.closest('.card');
-    const foodName = foodCard ? foodCard.querySelector('.card-title').textContent.trim() : 'this food item';
-    
-    console.log('Food name:', foodName);
-    
-    if (confirm(`Are you sure you want to delete "${foodName}"? This action cannot be undone.`)) {
-        console.log('Delete confirmed, sending request...');
-        fetch(`/api/recipes/${recipeId}`, {
-            method: 'DELETE'
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Delete response:', data);
-            if (data.success) {
-                // Show success message
-                showNotification('Food item deleted successfully!', 'success');
-                // Reload the page after a short delay
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                showNotification('Error: ' + data.message, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('An error occurred while deleting the food item.', 'error');
-        });
-    }
-}
-
-// Update food item
-document.getElementById('editFoodForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData);
-    const recipeId = data.id;
-    
-    fetch(`/api/recipes/${recipeId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            $('#editFoodModal').modal('hide');
-            showNotification('Food item updated successfully!', 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        } else {
-            showNotification('Error: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('An error occurred while updating the food item.', 'error');
-    });
-});
+// Edit form is currently disabled
+// TODO: Implement edit functionality
 </script>
 {% endblock %} 
