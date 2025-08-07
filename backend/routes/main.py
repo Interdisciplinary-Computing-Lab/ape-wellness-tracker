@@ -253,11 +253,21 @@ def edit_recipe(recipe_id):
     """
     recipe = Recipe.query.get_or_404(recipe_id)
     if request.method == 'POST':
-        recipe.meal_name = request.form['meal_name']
-        recipe.description = request.form['description']
-        recipe.calories = int(request.form['calories'])
-        db.session.commit()
-        return redirect(url_for('site.dashboard'))
+        try:
+            recipe.meal_name = request.form['meal_name']
+            recipe.description = request.form.get('description', '')
+            recipe.calories = int(request.form['calories'])
+            recipe.food_category = request.form.get('food_category', 'Other')
+            
+            db.session.commit()
+            
+            flash(f'Food item "{recipe.meal_name}" has been updated successfully.', 'success')
+            return redirect(url_for('site.manage_foods'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating food item: {str(e)}', 'error')
+            return redirect(url_for('site.manage_foods'))
+    
     return render_template('edit_recipe.html', recipe=recipe)
 
 
@@ -296,6 +306,31 @@ def delete_ape(ape_id):
 
 
 
+
+@site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
+@roles_required("Admin")
+def delete_recipe_form(recipe_id):
+    """
+    Delete a recipe from the database via form submission.
+    """
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
+        recipe_name = recipe.meal_name
+        
+        # Check if recipe is used in any meals
+        if recipe.meals:
+            flash(f'Cannot delete food item "{recipe_name}" because it is used in {len(recipe.meals)} existing meals.', 'error')
+            return redirect(url_for('site.manage_foods'))
+        
+        db.session.delete(recipe)
+        db.session.commit()
+        
+        flash(f'Food item "{recipe_name}" has been deleted successfully.', 'success')
+        return redirect(url_for('site.manage_foods'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting food item: {str(e)}', 'error')
+        return redirect(url_for('site.manage_foods'))
 
 @site.route('/meals/<int:meal_id>/delete', methods=['POST'])
 @roles_required("Admin")
@@ -506,6 +541,12 @@ def manage_foods():
     """Display food management page"""
     recipes = Recipe.query.all()
     categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order, FoodCategory.name).all()
+    
+    # Debug: Print counts
+    print(f"DEBUG: Found {len(recipes)} recipes and {len(categories)} categories")
+    if recipes:
+        print(f"DEBUG: First recipe: {recipes[0].meal_name}")
+    
     return render_template('manage_foods.html', recipes=recipes, categories=categories)
 
 

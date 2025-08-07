@@ -1,615 +1,675 @@
-{% extends "adminlte_base.html" %}
+{% extends 'adminlte_base.html' %}
 
-{% block title %}Manage Foods - Ape Wellness Tracker{% endblock %}
+{% block title %}Food Management{% endblock %}
 
-{% block body %}
-            <!-- Category Filter Tabs -->
-            <div class="row mb-3">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">
-                                <i class="fas fa-apple-alt mr-1"></i>
-                                Food Management
-                            </h3>
-                            <div class="card-tools">
-                                <a href="{{ url_for('site.manage_categories') }}" class="btn btn-info btn-sm mr-2">
-                                    <i class="fas fa-tags mr-1"></i>Manage Categories
-                                </a>
-                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addFoodModal">
-                                    <i class="fas fa-plus mr-1"></i>Add New Food
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body p-0">
-                            <!-- Main Navigation Tabs -->
-                            <ul class="nav nav-tabs mb-2" id="mainTabs" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link active" id="overview-tab" data-toggle="tab" href="#overview" role="tab">
-                                        <i class="fas fa-th-large mr-1"></i>Overview
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="all-foods-tab" data-toggle="tab" href="#all-foods" role="tab">
-                                        <i class="fas fa-th-list mr-1"></i>🍽️ All Food Items
-                                        <span class="badge badge-dark ml-1">{{ recipes|length }}</span>
-                                    </a>
-                                </li>
-                            </ul>
-                            
-                            <!-- Food Category Tabs -->
-                            <ul class="nav nav-tabs" id="categoryTabs" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link" id="fruits-tab" data-toggle="tab" href="#fruits" role="tab">
-                                        <i class="fas fa-apple-alt mr-1"></i>🍎 Fruits
-                                        <span class="badge badge-success ml-1">{{ recipes|selectattr('food_category', 'equalto', 'Fruits')|list|length }}</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="vegetables-tab" data-toggle="tab" href="#vegetables" role="tab">
-                                        <i class="fas fa-carrot mr-1"></i>🥕 Vegetables
-                                        <span class="badge ml-1" style="background-color: #20c997; color: white;">{{ recipes|selectattr('food_category', 'equalto', 'Vegetables')|list|length }}</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="protein-tab" data-toggle="tab" href="#protein" role="tab">
-                                        <i class="fas fa-egg mr-1"></i>🥚 Protein
-                                        <span class="badge badge-danger ml-1">{{ recipes|selectattr('food_category', 'equalto', 'Protein Sources')|list|length }}</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="grains-tab" data-toggle="tab" href="#grains" role="tab">
-                                        <i class="fas fa-bread-slice mr-1"></i>🍞 Grains
-                                        <span class="badge badge-warning ml-1">{{ recipes|selectattr('food_category', 'equalto', 'Grains & Starches')|list|length }}</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="nuts-tab" data-toggle="tab" href="#nuts" role="tab">
-                                        <i class="fas fa-seedling mr-1"></i>🌱 Nuts & Seeds
-                                        <span class="badge badge-info ml-1">{{ recipes|selectattr('food_category', 'equalto', 'Nuts & Seeds')|list|length }}</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="dairy-tab" data-toggle="tab" href="#dairy" role="tab">
-                                        <i class="fas fa-cheese mr-1"></i>🧀 Dairy
-                                        <span class="badge badge-primary ml-1">{{ recipes|selectattr('food_category', 'equalto', 'Dairy & Alternatives')|list|length }}</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="treats-tab" data-toggle="tab" href="#treats" role="tab">
-                                        <i class="fas fa-ice-cream mr-1"></i>🍦 Treats
-                                        <span class="badge badge-secondary ml-1">{{ recipes|selectattr('food_category', 'in', ['Enrichment Treats', 'Dried Fruits'])|list|length }}</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="meals-tab" data-toggle="tab" href="#meals" role="tab">
-                                        <i class="fas fa-utensils mr-1"></i>🍽️ Meals
-                                        <span class="badge badge-dark ml-1">{{ recipes|selectattr('food_category', 'equalto', 'Mixed Meals & Combinations')|list|length }}</span>
-                                    </a>
-                                </li>
-                            </ul>
-
-                            <!-- Tab Content -->
-                            <div class="tab-content" id="categoryTabContent">
-                                <!-- Overview Tab -->
-                                <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                                    <div class="p-4">
-                                        <div class="row">
-                                            <div class="col-12 mb-4">
-                                                <h4 class="text-center mb-4">
-                                                    <i class="fas fa-chart-pie mr-2"></i>Food Categories Overview
-                                                </h4>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-lg-3 col-md-6 mb-3">
-                                                <div class="card bg-success text-white text-center">
-                                                    <div class="card-body">
-                                                        <i class="fas fa-apple-alt fa-2x mb-2"></i>
-                                                        <h5>Fruits</h5>
-                                                        <h3>{{ recipes|selectattr('food_category', 'equalto', 'Fruits')|list|length }}</h3>
-                                                        <p class="mb-0">Fresh fruits</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3 col-md-6 mb-3">
-                                                <div class="card text-white text-center" style="background-color: #20c997;">
-                                                    <div class="card-body">
-                                                        <i class="fas fa-carrot fa-2x mb-2"></i>
-                                                        <h5>Vegetables</h5>
-                                                        <h3>{{ recipes|selectattr('food_category', 'equalto', 'Vegetables')|list|length }}</h3>
-                                                        <p class="mb-0">Fresh vegetables</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3 col-md-6 mb-3">
-                                                <div class="card bg-danger text-white text-center">
-                                                    <div class="card-body">
-                                                        <i class="fas fa-egg fa-2x mb-2"></i>
-                                                        <h5>Protein</h5>
-                                                        <h3>{{ recipes|selectattr('food_category', 'equalto', 'Protein Sources')|list|length }}</h3>
-                                                        <p class="mb-0">Protein sources</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3 col-md-6 mb-3">
-                                                <div class="card bg-warning text-white text-center">
-                                                    <div class="card-body">
-                                                        <i class="fas fa-bread-slice fa-2x mb-2"></i>
-                                                        <h5>Grains</h5>
-                                                        <h3>{{ recipes|selectattr('food_category', 'equalto', 'Grains & Starches')|list|length }}</h3>
-                                                        <p class="mb-0">Grains & starches</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3 col-md-6 mb-3">
-                                                <div class="card bg-primary text-white text-center">
-                                                    <div class="card-body">
-                                                        <i class="fas fa-seedling fa-2x mb-2"></i>
-                                                        <h5>Nuts & Seeds</h5>
-                                                        <h3>{{ recipes|selectattr('food_category', 'equalto', 'Nuts & Seeds')|list|length }}</h3>
-                                                        <p class="mb-0">Nuts and seeds</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3 col-md-6 mb-3">
-                                                <div class="card bg-secondary text-white text-center">
-                                                    <div class="card-body">
-                                                        <i class="fas fa-cheese fa-2x mb-2"></i>
-                                                        <h5>Dairy</h5>
-                                                        <h3>{{ recipes|selectattr('food_category', 'equalto', 'Dairy & Alternatives')|list|length }}</h3>
-                                                        <p class="mb-0">Dairy & alternatives</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3 col-md-6 mb-3">
-                                                <div class="card bg-dark text-white text-center">
-                                                    <div class="card-body">
-                                                        <i class="fas fa-ice-cream fa-2x mb-2"></i>
-                                                        <h5>Treats</h5>
-                                                        <h3>{{ recipes|selectattr('food_category', 'in', ['Enrichment Treats', 'Dried Fruits'])|list|length }}</h3>
-                                                        <p class="mb-0">Enrichment treats</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-3 col-md-6 mb-3">
-                                                <div class="card bg-light text-dark text-center">
-                                                    <div class="card-body">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <h5>Meals</h5>
-                                                        <h3>{{ recipes|selectattr('food_category', 'equalto', 'Mixed Meals & Combinations')|list|length }}</h3>
-                                                        <p class="mb-0">Mixed meals</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-4">
-                                            <div class="col-12 text-center">
-                                                <p class="text-muted">Click on any category tab above to view and manage specific food items.</p>
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addFoodModal">
-                                                        <i class="fas fa-plus mr-1"></i>Add New Food Item
-                                                    </button>
-                                                    <a href="{{ url_for('site.manage_categories') }}" class="btn btn-info">
-                                                        <i class="fas fa-tags mr-1"></i>Manage Categories
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- All Food Items Tab -->
-                                <div class="tab-pane fade" id="all-foods" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row mb-3">
-                                            <div class="col-12">
-                                                <h5 class="text-center mb-3">
-                                                    <i class="fas fa-th-list mr-2"></i>All Food Items ({{ recipes|length }} total)
-                                                </h5>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            {% for recipe in recipes %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: {% if recipe.food_category == 'Fruits' %}#28a745{% elif recipe.food_category == 'Vegetables' %}#20c997{% elif recipe.food_category == 'Grains & Starches' %}#ffc107{% elif recipe.food_category == 'Protein Sources' %}#dc3545{% elif recipe.food_category == 'Nuts & Seeds' %}#6f42c1{% elif recipe.food_category == 'Dairy & Alternatives' %}#17a2b8{% elif recipe.food_category == 'Dried Fruits' %}#fd7e14{% elif recipe.food_category == 'Enrichment Treats' %}#e83e8c{% elif recipe.food_category == 'Mixed Meals & Combinations' %}#6c757d{% else %}#6c757d{% endif %} !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge {% if recipe.food_category == 'Fruits' %}badge-success{% elif recipe.food_category == 'Vegetables' %}{% elif recipe.food_category == 'Grains & Starches' %}badge-warning{% elif recipe.food_category == 'Protein Sources' %}badge-danger{% elif recipe.food_category == 'Nuts & Seeds' %}badge-info{% elif recipe.food_category == 'Dairy & Alternatives' %}badge-primary{% elif recipe.food_category == 'Dried Fruits' %}badge-secondary{% elif recipe.food_category == 'Enrichment Treats' %}badge-secondary{% elif recipe.food_category == 'Mixed Meals & Combinations' %}badge-dark{% else %}badge-info{% endif %}" {% if recipe.food_category == 'Vegetables' %}style="background-color: #20c997; color: white;"{% endif %}>{{ recipe.food_category or 'Other' }}</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Fruits Tab -->
-                                <div class="tab-pane fade" id="fruits" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            {% for recipe in recipes|selectattr('food_category', 'equalto', 'Fruits') %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: #28a745 !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge badge-success">Fruits</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Vegetables Tab -->
-                                <div class="tab-pane fade" id="vegetables" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            {% for recipe in recipes|selectattr('food_category', 'equalto', 'Vegetables') %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: #20c997 !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge" style="background-color: #20c997; color: white;">Vegetables</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Protein Tab -->
-                                <div class="tab-pane fade" id="protein" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            {% for recipe in recipes|selectattr('food_category', 'equalto', 'Protein Sources') %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: #dc3545 !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge badge-danger">Protein</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Grains Tab -->
-                                <div class="tab-pane fade" id="grains" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            {% for recipe in recipes|selectattr('food_category', 'equalto', 'Grains & Starches') %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: #ffc107 !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge badge-warning">Grains</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Nuts Tab -->
-                                <div class="tab-pane fade" id="nuts" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            {% for recipe in recipes|selectattr('food_category', 'equalto', 'Nuts & Seeds') %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: #6f42c1 !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge badge-info">Nuts & Seeds</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Dairy Tab -->
-                                <div class="tab-pane fade" id="dairy" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            {% for recipe in recipes|selectattr('food_category', 'equalto', 'Dairy & Alternatives') %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: #17a2b8 !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge badge-primary">Dairy</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Treats Tab -->
-                                <div class="tab-pane fade" id="treats" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            {% for recipe in recipes|selectattr('food_category', 'in', ['Enrichment Treats', 'Dried Fruits']) %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: #e83e8c !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge badge-secondary">{{ recipe.food_category }}</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Meals Tab -->
-                                <div class="tab-pane fade" id="meals" role="tabpanel">
-                                    <div class="p-3">
-                                        <div class="row">
-                                            {% for recipe in recipes|selectattr('food_category', 'equalto', 'Mixed Meals & Combinations') %}
-                                            <div class="col-lg-4 col-md-6 mb-3">
-                                                <div class="card h-100 border-left-4" style="border-left-color: #6c757d !important;">
-                                                    <div class="card-body">
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                                            <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                                                            <span class="badge badge-success">{{ recipe.calories }} cal</span>
-                                                        </div>
-                                                        <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <span class="badge badge-dark">Mixed Meals</span>
-                                                            <div class="btn-group btn-group-sm">
-                                                                <button type="button" class="btn btn-outline-primary" onclick="editFood({{ recipe.id }})">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-outline-danger" onclick="deleteFood({{ recipe.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Add Food Modal -->
-            <div class="modal fade" id="addFoodModal" tabindex="-1" role="dialog">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="fas fa-plus mr-1"></i>Add New Food Item
-                            </h5>
-                            <button type="button" class="close" data-dismiss="modal">
-                                <span>&times;</span>
-                            </button>
-                        </div>
-                        <form id="addFoodForm" method="POST" action="/recipes/add">
-                            <div class="modal-body">
-                                <div class="form-group">
-                                    <label for="foodName">Food Name</label>
-                                    <input type="text" class="form-control" id="foodName" name="meal_name" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="foodCategory">Category</label>
-                                    <select class="form-control" id="foodCategory" name="food_category">
-                                        {% for category in categories %}
-                                        <option value="{{ category.name }}">{{ category.name }}</option>
-                                        {% endfor %}
-                                        <option value="Other">📦 Other</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="calories">Calories</label>
-                                    <input type="number" class="form-control" id="calories" name="calories" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="description">Description (Optional)</label>
-                                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save mr-1"></i>Save Food Item
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Edit Food Modal - Currently Disabled -->
-            <!-- TODO: Implement edit functionality -->
+{% block page_title %}
+<i class="fas fa-apple-alt mr-2"></i>Food Management
 {% endblock %}
 
-{% block scripts %}
-<script>
-// Initialize tabs and enhance UX
-document.addEventListener('DOMContentLoaded', function() {
-    // Add smooth transitions to cards
-    const cards = document.querySelectorAll('.card');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
-            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
-        });
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
-        });
-    });
-    
-    // Note: Edit and delete buttons are currently disabled
-    // TODO: Implement working edit and delete functionality
+{% block body %}
+<!-- Centered Action Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="action-buttons-center">
+            <a href="{{ url_for('site.manage_categories') }}" class="btn btn-outline-info mr-2">
+                <i class="fas fa-tags mr-1"></i>Manage Categories
+            </a>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addFoodModal">
+                <i class="fas fa-plus mr-1"></i>Add New Food
+            </button>
+        </div>
+    </div>
+</div>
 
-    // Add transition styles
+<!-- Category Filter Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="category-filters">
+            <button type="button" class="filter-btn active" data-category="all">
+                <i class="fas fa-th-list"></i>
+                <span class="filter-text">All</span>
+                <span class="filter-count">({{ recipes|length }})</span>
+            </button>
+            <button type="button" class="filter-btn" data-category="Fruits">
+                <i class="fas fa-apple-alt"></i>
+                <span class="filter-text">Fruits</span>
+                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Fruits')|list|length }})</span>
+            </button>
+            <button type="button" class="filter-btn" data-category="Vegetables">
+                <i class="fas fa-carrot"></i>
+                <span class="filter-text">Vegetables</span>
+                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Vegetables')|list|length }})</span>
+            </button>
+            <button type="button" class="filter-btn" data-category="Protein Sources">
+                <i class="fas fa-egg"></i>
+                <span class="filter-text">Protein</span>
+                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Protein Sources')|list|length }})</span>
+            </button>
+            <button type="button" class="filter-btn" data-category="Grains & Starches">
+                <i class="fas fa-bread-slice"></i>
+                <span class="filter-text">Grains</span>
+                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Grains & Starches')|list|length }})</span>
+            </button>
+            <button type="button" class="filter-btn" data-category="Nuts & Seeds">
+                <i class="fas fa-seedling"></i>
+                <span class="filter-text">Nuts & Seeds</span>
+                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Nuts & Seeds')|list|length }})</span>
+            </button>
+            <button type="button" class="filter-btn" data-category="Dairy & Alternatives">
+                <i class="fas fa-cheese"></i>
+                <span class="filter-text">Dairy</span>
+                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Dairy & Alternatives')|list|length }})</span>
+            </button>
+            <button type="button" class="filter-btn" data-category="Enrichment Treats">
+                <i class="fas fa-ice-cream"></i>
+                <span class="filter-text">Treats</span>
+                <span class="filter-count">({{ recipes|selectattr('food_category', 'in', ['Enrichment Treats', 'Dried Fruits'])|list|length }})</span>
+            </button>
+            <button type="button" class="filter-btn" data-category="Mixed Meals & Combinations">
+                <i class="fas fa-utensils"></i>
+                <span class="filter-text">Meals</span>
+                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Mixed Meals & Combinations')|list|length }})</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Food Items Grid -->
+<div class="row">
+    
+    {% for recipe in recipes %}
+    <div class="col-lg-4 col-md-6 mb-3 food-item" data-category="{{ recipe.food_category }}">
+        <div class="card h-100 border-left-4" style="border-left-color: 
+            {% if recipe.food_category == 'Fruits' %}#28a745
+            {% elif recipe.food_category == 'Vegetables' %}#20c997
+            {% elif recipe.food_category == 'Grains & Starches' %}#ffc107
+            {% elif recipe.food_category == 'Protein Sources' %}#dc3545
+            {% elif recipe.food_category == 'Nuts & Seeds' %}#6f42c1
+            {% elif recipe.food_category == 'Dairy & Alternatives' %}#17a2b8
+            {% elif recipe.food_category == 'Dried Fruits' %}#fd7e14
+            {% elif recipe.food_category == 'Enrichment Treats' %}#e83e8c
+            {% elif recipe.food_category == 'Mixed Meals & Combinations' %}#6c757d
+            {% else %}#6c757d{% endif %} !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
+                    <span class="badge badge-success">{{ recipe.calories }} cal</span>
+                </div>
+                <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge category-badge"
+                        data-category="{{ recipe.food_category or 'Other' }}">
+                        {{ recipe.food_category or 'Other' }}
+                    </span>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary edit-food-btn" 
+                                data-id="{{ recipe.id }}" 
+                                data-name="{{ recipe.meal_name }}" 
+                                data-category="{{ recipe.food_category or 'Other' }}" 
+                                data-calories="{{ recipe.calories }}" 
+                                data-description="{{ recipe.description or '' }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger delete-food-btn" 
+                                data-id="{{ recipe.id }}" 
+                                data-name="{{ recipe.meal_name }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add New Food Modal -->
+<div class="modal fade" id="addFoodModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus mr-2"></i>Add New Food Item
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('site.add_recipe_form') }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="meal_name">Food Name *</label>
+                        <input type="text" class="form-control" id="meal_name" name="meal_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="food_category">Category</label>
+                        <select class="form-control" id="food_category" name="food_category">
+                            {% for category in categories %}
+                            <option value="{{ category.name }}">{{ category.name }}</option>
+                            {% endfor %}
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="calories">Calories *</label>
+                        <input type="number" class="form-control" id="calories" name="calories" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i>Add Food Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Food Modal -->
+<div class="modal fade" id="editFoodModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit mr-2"></i>Edit Food Item
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="editFoodForm" method="POST">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="editFoodName">Food Name *</label>
+                        <input type="text" class="form-control" id="editFoodName" name="meal_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editFoodCategory">Category</label>
+                        <select class="form-control" id="editFoodCategory" name="food_category">
+                            {% for category in categories %}
+                            <option value="{{ category.name }}">{{ category.name }}</option>
+                            {% endfor %}
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCalories">Calories *</label>
+                        <input type="number" class="form-control" id="editCalories" name="calories" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDescription">Description</label>
+                        <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i>Update Food Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Food Confirmation Modal -->
+<div class="modal fade" id="deleteFoodModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle mr-2 text-warning"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the food item "<strong id="deleteFoodName"></strong>"?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteFoodForm" method="POST" style="display: inline;">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash mr-1"></i>Delete Food Item
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth transitions and custom styles
     const style = document.createElement('style');
     style.textContent = `
-        .card {
+        .food-item {
             transition: all 0.3s ease;
         }
-        .nav-tabs .nav-link {
+        .food-item.hidden {
+            display: none;
+        }
+        .card {
+            transition: all 0.2s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+        }
+        
+        /* Category badge colors matching filter tabs */
+        .category-badge[data-category="Fruits"] {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .category-badge[data-category="Vegetables"] {
+            background-color: #20c997;
+            color: white;
+        }
+        
+        .category-badge[data-category="Protein Sources"] {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .category-badge[data-category="Grains & Starches"] {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .category-badge[data-category="Nuts & Seeds"] {
+            background-color: #6f42c1;
+            color: white;
+        }
+        
+        .category-badge[data-category="Dairy & Alternatives"] {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .category-badge[data-category="Dried Fruits"] {
+            background-color: #e83e8c;
+            color: white;
+        }
+        
+        .category-badge[data-category="Enrichment Treats"] {
+            background-color: #e83e8c;
+            color: white;
+        }
+        
+        .category-badge[data-category="Mixed Meals & Combinations"] {
+            background-color: #fd7e14;
+            color: white;
+        }
+        
+        .category-badge[data-category="Other"] {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        /* Action buttons styling */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
             transition: all 0.2s ease;
         }
-        .nav-tabs .nav-link:hover {
-            background-color: #f8f9fa;
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            padding: 15px 20px;
-            border-radius: 5px;
+        
+        .btn-outline-info {
+            border-color: #17a2b8;
+            color: #17a2b8;
+        }
+        
+        .btn-outline-info:hover {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+        
+        /* Centered action buttons styling */
+        .action-buttons-center {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .action-buttons-center .btn {
+            min-width: 160px;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+        }
+        
+        /* Responsive adjustments for action buttons */
+        @media (max-width: 576px) {
+            .action-buttons-center {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .action-buttons-center .btn {
+                min-width: 200px;
+                margin: 0;
+            }
+        }
+        
+        /* Category Filter Styling */
+        .category-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .filter-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            background: white;
+            color: #6c757d;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 80px;
+            text-decoration: none;
+        }
+        
+        /* Category-specific colors */
+        .filter-btn[data-category="all"] {
+            border-color: #6c757d;
+            color: #6c757d;
+        }
+        .filter-btn[data-category="all"]:hover {
+            border-color: #495057;
+            color: #495057;
+            box-shadow: 0 2px 4px rgba(73,80,87,0.1);
+        }
+        .filter-btn[data-category="all"].active {
+            border-color: #495057;
+            background: #495057;
             color: white;
-            font-weight: bold;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(73,80,87,0.3);
         }
-        .notification.show {
-            opacity: 1;
-            transform: translateX(0);
+        
+        .filter-btn[data-category="Fruits"] {
+            border-color: #28a745;
+            color: #28a745;
         }
-        .notification.success {
-            background-color: #28a745;
+        .filter-btn[data-category="Fruits"]:hover {
+            border-color: #218838;
+            color: #218838;
+            box-shadow: 0 2px 4px rgba(40,167,69,0.1);
         }
-        .notification.error {
-            background-color: #dc3545;
+        .filter-btn[data-category="Fruits"].active {
+            border-color: #218838;
+            background: #28a745;
+            color: white;
+            box-shadow: 0 2px 8px rgba(40,167,69,0.3);
+        }
+        
+        .filter-btn[data-category="Vegetables"] {
+            border-color: #20c997;
+            color: #20c997;
+        }
+        .filter-btn[data-category="Vegetables"]:hover {
+            border-color: #1aa085;
+            color: #1aa085;
+            box-shadow: 0 2px 4px rgba(32,201,151,0.1);
+        }
+        .filter-btn[data-category="Vegetables"].active {
+            border-color: #1aa085;
+            background: #20c997;
+            color: white;
+            box-shadow: 0 2px 8px rgba(32,201,151,0.3);
+        }
+        
+        .filter-btn[data-category="Protein Sources"] {
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+        .filter-btn[data-category="Protein Sources"]:hover {
+            border-color: #c82333;
+            color: #c82333;
+            box-shadow: 0 2px 4px rgba(220,53,69,0.1);
+        }
+        .filter-btn[data-category="Protein Sources"].active {
+            border-color: #c82333;
+            background: #dc3545;
+            color: white;
+            box-shadow: 0 2px 8px rgba(220,53,69,0.3);
+        }
+        
+        .filter-btn[data-category="Grains & Starches"] {
+            border-color: #ffc107;
+            color: #e0a800;
+        }
+        .filter-btn[data-category="Grains & Starches"]:hover {
+            border-color: #e0a800;
+            color: #d39e00;
+            box-shadow: 0 2px 4px rgba(255,193,7,0.1);
+        }
+        .filter-btn[data-category="Grains & Starches"].active {
+            border-color: #d39e00;
+            background: #ffc107;
+            color: #212529;
+            box-shadow: 0 2px 8px rgba(255,193,7,0.3);
+        }
+        
+        .filter-btn[data-category="Nuts & Seeds"] {
+            border-color: #6f42c1;
+            color: #6f42c1;
+        }
+        .filter-btn[data-category="Nuts & Seeds"]:hover {
+            border-color: #5a32a3;
+            color: #5a32a3;
+            box-shadow: 0 2px 4px rgba(111,66,193,0.1);
+        }
+        .filter-btn[data-category="Nuts & Seeds"].active {
+            border-color: #5a32a3;
+            background: #6f42c1;
+            color: white;
+            box-shadow: 0 2px 8px rgba(111,66,193,0.3);
+        }
+        
+        .filter-btn[data-category="Dairy & Alternatives"] {
+            border-color: #17a2b8;
+            color: #17a2b8;
+        }
+        .filter-btn[data-category="Dairy & Alternatives"]:hover {
+            border-color: #138496;
+            color: #138496;
+            box-shadow: 0 2px 4px rgba(23,162,184,0.1);
+        }
+        .filter-btn[data-category="Dairy & Alternatives"].active {
+            border-color: #138496;
+            background: #17a2b8;
+            color: white;
+            box-shadow: 0 2px 8px rgba(23,162,184,0.3);
+        }
+        
+        .filter-btn[data-category="Enrichment Treats"] {
+            border-color: #e83e8c;
+            color: #e83e8c;
+        }
+        .filter-btn[data-category="Enrichment Treats"]:hover {
+            border-color: #e21e7b;
+            color: #e21e7b;
+            box-shadow: 0 2px 4px rgba(232,62,140,0.1);
+        }
+        .filter-btn[data-category="Enrichment Treats"].active {
+            border-color: #e21e7b;
+            background: #e83e8c;
+            color: white;
+            box-shadow: 0 2px 8px rgba(232,62,140,0.3);
+        }
+        
+        .filter-btn[data-category="Mixed Meals & Combinations"] {
+            border-color: #fd7e14;
+            color: #fd7e14;
+        }
+        .filter-btn[data-category="Mixed Meals & Combinations"]:hover {
+            border-color: #e8650e;
+            color: #e8650e;
+            box-shadow: 0 2px 4px rgba(253,126,20,0.1);
+        }
+        .filter-btn[data-category="Mixed Meals & Combinations"].active {
+            border-color: #e8650e;
+            background: #fd7e14;
+            color: white;
+            box-shadow: 0 2px 8px rgba(253,126,20,0.3);
+        }
+        
+        .filter-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .filter-btn i {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        .filter-text {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .filter-count {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        
+        .filter-btn.active .filter-count {
+            opacity: 0.9;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .category-filters {
+                gap: 6px;
+            }
+            
+            .filter-btn {
+                padding: 8px 12px;
+                min-width: 70px;
+                font-size: 0.8rem;
+            }
+            
+            .filter-btn i {
+                font-size: 1rem;
+            }
         }
     `;
     document.head.appendChild(style);
+    
+    // Add click event listeners for filter buttons
+    document.querySelectorAll('.filter-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+            filterByCategory(category);
+        });
+    });
 });
 
-// Notification function
+// Category filter function
+function filterByCategory(category) {
+    const foodItems = document.querySelectorAll('.food-item');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    // Update active button
+    filterButtons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Filter items
+    foodItems.forEach(item => {
+        if (category === 'all' || item.dataset.category === category) {
+            item.classList.remove('hidden');
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+}
+
+// Add event listeners for edit and delete buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit food buttons
+    document.querySelectorAll('.edit-food-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const recipeId = this.getAttribute('data-id');
+            const recipeName = this.getAttribute('data-name');
+            const recipeCategory = this.getAttribute('data-category');
+            const recipeCalories = this.getAttribute('data-calories');
+            const recipeDescription = this.getAttribute('data-description');
+            
+            // Populate the edit form
+            document.getElementById('editFoodName').value = recipeName;
+            document.getElementById('editFoodCategory').value = recipeCategory || 'Other';
+            document.getElementById('editCalories').value = recipeCalories;
+            document.getElementById('editDescription').value = recipeDescription || '';
+            
+            // Set the form action
+            document.getElementById('editFoodForm').action = `/recipes/${recipeId}/edit`;
+            
+            // Show the modal
+            $('#editFoodModal').modal('show');
+        });
+    });
+    
+    // Delete food buttons
+    document.querySelectorAll('.delete-food-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const recipeId = this.getAttribute('data-id');
+            const recipeName = this.getAttribute('data-name');
+            
+            // Set the food name in the confirmation modal
+            document.getElementById('deleteFoodName').textContent = recipeName;
+            
+            // Set the form action
+            document.getElementById('deleteFoodForm').action = `/recipes/${recipeId}/delete`;
+            
+            // Show the confirmation modal
+            $('#deleteFoodModal').modal('show');
+        });
+    });
+});
+
+// Show notification function
 function showNotification(message, type) {
     // Remove existing notifications
     const existingNotifications = document.querySelectorAll('.notification');
@@ -636,16 +696,33 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-// Add new food item - let form submit normally
-document.getElementById('addFoodForm').addEventListener('submit', function(e) {
-    // Don't prevent default - let the form submit normally
-    // The form will submit to the backend route
-});
-
-// Edit and delete functions are currently disabled
-// TODO: Implement working edit and delete functionality
-
-// Edit form is currently disabled
-// TODO: Implement edit functionality
+// Add notification styles
+const notificationStyle = document.createElement('style');
+notificationStyle.textContent = `
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    }
+    .notification.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    .notification.success {
+        background-color: #28a745;
+    }
+    .notification.error {
+        background-color: #dc3545;
+    }
+`;
+document.head.appendChild(notificationStyle);
 </script>
 {% endblock %} 
