@@ -63,7 +63,7 @@
                 <div class="meal-preview">
                     <div class="row align-items-center mb-3">
                         <div class="col-md-3 text-center">
-                            <img src="{{ url_for('static', filename='images/' + meal.ape.ape_name|lower + '.jpg') }}" 
+                            <img src="{{ url_for('site.ape_image', ape_id=meal.ape.id) }}" 
                                  alt="{{ meal.ape.ape_name }}" 
                                  class="img-fluid rounded-circle border" style="width: 60px; height: 60px; object-fit: cover;">
                         </div>
