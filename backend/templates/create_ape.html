@@ -11,7 +11,7 @@
                 </h3>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="ape_name">Ape Name</label>
                         <input type="text" class="form-control form-control-lg" name="ape_name" id="ape_name" 
@@ -35,6 +35,19 @@
                         <input type="text" class="form-control" name="mother" id="mother" 
                                placeholder="e.g., Matata" maxlength="50">
                         <small class="form-text text-muted">Enter the mother's name if known (optional)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="image">Profile Photo</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" name="image" id="image" 
+                                   accept="image/*" onchange="previewImage(this)">
+                            <label class="custom-file-label" for="image">Choose file...</label>
+                        </div>
+                        <small class="form-text text-muted">Upload a photo of the ape (optional, max 5MB)</small>
+                        <div id="imagePreview" class="mt-2" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview" 
+                                 style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                        </div>
                     </div>
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
@@ -68,11 +81,10 @@
                         <li>You can start logging feeding data immediately</li>
                     </ul>
                     
-                    <div class="alert alert-info mt-3">
-                        <i class="fas fa-lightbulb mr-2"></i>
-                        <strong>Tip:</strong> Make sure to upload a photo of the ape to the 
-                        <code>backend/static/images/</code> folder with the filename 
-                        <code>ape_name_lowercase.jpg</code>
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <strong>New Feature:</strong> You can now upload a profile photo directly when creating an ape! 
+                        The image will be stored securely in the database.
                     </div>
                     
                     <div class="mt-3">
@@ -145,5 +157,47 @@ document.querySelector('form').addEventListener('submit', function(e) {
         return;
     }
 });
+
+// Image preview functionality
+function previewImage(input) {
+    const file = input.files[0];
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const fileLabel = document.querySelector('.custom-file-label');
+    
+    if (file) {
+        // Update file label
+        fileLabel.textContent = file.name;
+        
+        // Check file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File is too large. Please select an image smaller than 5MB.');
+            input.value = '';
+            fileLabel.textContent = 'Choose file...';
+            preview.style.display = 'none';
+            return;
+        }
+        
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please select a valid image file.');
+            input.value = '';
+            fileLabel.textContent = 'Choose file...';
+            preview.style.display = 'none';
+            return;
+        }
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        fileLabel.textContent = 'Choose file...';
+        preview.style.display = 'none';
+    }
+}
 </script>
 {% endblock %} 

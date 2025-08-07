@@ -2,6 +2,7 @@ from backend.extensions import db
 import sqlalchemy as sa
 from flask_security import UserMixin, RoleMixin
 from datetime import datetime, date
+from flask import url_for
 
 class Apes(db.Model):
     """
@@ -12,6 +13,9 @@ class Apes(db.Model):
         birthday (date): Birthday of the ape.
         weight (float): Current weight in kg.
         mother (str): Mother's name if known.
+        image_filename (str): Filename of the image (for backward compatibility).
+        image_data (bytes): BLOB data of the actual image.
+        image_mime_type (str): MIME type of the image (e.g., 'image/jpeg').
     """
     __tablename__ = 'apes'
     id = db.Column(db.Integer, primary_key=True)
@@ -19,7 +23,9 @@ class Apes(db.Model):
     birthday = db.Column(db.Date, nullable=False)
     weight = db.Column(db.Float, nullable=True)  # in kg
     mother = db.Column(db.String(90), nullable=True)
-    image_filename = db.Column(db.String(255), nullable=True)
+    image_filename = db.Column(db.String(255), nullable=True)  # For backward compatibility
+    image_data = db.Column(db.LargeBinary, nullable=True)  # BLOB for image data
+    image_mime_type = db.Column(db.String(100), nullable=True)  # MIME type of image
     
     @property
     def age(self):
@@ -46,6 +52,19 @@ class Apes(db.Model):
             next_birthday = date(today.year + 1, self.birthday.month, self.birthday.day)
         
         return (next_birthday - today).days
+    
+    def has_image(self):
+        """Check if the ape has an uploaded image"""
+        return self.image_data is not None
+    
+    def get_image_url(self):
+        """Get the URL for the ape's image"""
+        if self.has_image():
+            return url_for('site.ape_image', ape_id=self.id)
+        elif self.image_filename:
+            return url_for('static', filename='images/' + self.image_filename)
+        else:
+            return url_for('static', filename='images/bonobo-placeholder.jpg')
 
 class Recipe(db.Model):
     """

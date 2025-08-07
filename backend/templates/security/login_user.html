@@ -19,7 +19,7 @@
             justify-content: center;
         }
         .login-box {
-            width: 400px;
+            width: 500px;
             margin: 0 auto;
         }
         .login-logo {
@@ -40,6 +40,7 @@
         .login-card-body {
             border-radius: 10px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 2rem;
         }
         .input-group-text {
             background-color: #f8f9fa;
@@ -89,6 +90,55 @@
         .login-footer a:hover {
             text-decoration: underline;
         }
+        
+        /* Sign-in button and checkbox alignment */
+        .icheck-primary {
+            height: 42px;
+            display: flex;
+            align-items: center;
+            min-width: auto;
+            width: 100%;
+        }
+        
+        .icheck-primary .form-check-input {
+            margin: 0;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        
+        .icheck-primary label {
+            margin: 0;
+            font-size: 16px;
+            color: #495057;
+            white-space: nowrap;
+            overflow: visible;
+            flex: 0 0 auto;
+            text-overflow: unset;
+            word-wrap: normal;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            height: 42px;
+            line-height: 1.2;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            min-width: 100px;
+            white-space: nowrap;
+        }
+        
+        /* Ensure checkbox container has enough space */
+        .col-8 {
+            padding-right: 15px;
+        }
+        
+        .col-4 {
+            padding-left: 15px;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +171,7 @@
                 <form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
                     {{ login_user_form.hidden_tag() }}
                     
-                    <div class="input-group mb-3">
+                    <div class="input-group mb-4">
                         <div class="input-group-prepend">
                             <span class="input-group-text">
                                 <i class="fas fa-envelope"></i>
@@ -130,7 +180,7 @@
                         {{ login_user_form.email(class="form-control", placeholder="Email", required=true) }}
                     </div>
                     
-                    <div class="input-group mb-3">
+                    <div class="input-group mb-4">
                         <div class="input-group-prepend">
                             <span class="input-group-text">
                                 <i class="fas fa-lock"></i>
@@ -139,17 +189,20 @@
                         {{ login_user_form.password(class="form-control", placeholder="Password", required=true) }}
                     </div>
                     
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="icheck-primary">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
                                 {{ login_user_form.remember(class="form-check-input") }}
-                                <label for="{{ login_user_form.remember.id }}">
+                                <label class="form-check-label" for="{{ login_user_form.remember.id }}">
                                     Remember Me
                                 </label>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <button type="submit" class="btn btn-primary btn-block">
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary btn-block" title="Sign In">
                                 <i class="fas fa-sign-in-alt mr-2"></i>Sign In
                             </button>
                         </div>
