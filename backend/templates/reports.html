@@ -1,0 +1,289 @@
+{% extends "adminlte_base.html" %}
+
+{% block title %}Reports - Ape Wellness Tracker{% endblock %}
+
+{% block body %}
+    <!-- Page Header -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        Nutrition Reports
+                    </h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{{ url_for('site.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Reports</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-calendar mr-1"></i>
+                        Date Range
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('site.reports') }}" class="form-inline">
+                        <div class="form-group mr-3">
+                            <label for="range" class="mr-2">Time Period:</label>
+                            <select name="range" id="range" class="form-control" onchange="toggleCustomDate()">
+                                <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+                                <option value="week" {% if date_range == 'week' %}selected{% endif %}>Last 7 Days</option>
+                                <option value="month" {% if date_range == 'month' %}selected{% endif %}>Last 30 Days</option>
+                                <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>Custom Date</option>
+                            </select>
+                        </div>
+                        <div class="form-group mr-3" id="customDateGroup" style="display: {% if date_range == 'custom' %}block{% else %}none{% endif %};">
+                            <label for="date" class="mr-2">Date:</label>
+                            <input type="date" name="date" id="date" class="form-control" value="{{ custom_date }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search mr-1"></i>
+                            Update Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>{{ total_calories }}</h3>
+                    <p>Total Calories</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>{{ total_meals }}</h3>
+                    <p>Total Meals</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-utensils"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>{{ "%.1f"|format(avg_calories_per_meal) }}</h3>
+                    <p>Avg Calories/Meal</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>{{ apes|length }}</h3>
+                    <p>Active Apes</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Per-Ape Statistics -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user mr-1"></i>
+                        Per-Ape Statistics
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Ape Name</th>
+                                    <th>Calories</th>
+                                    <th>Meals</th>
+                                    <th>Avg Calories/Meal</th>
+                                    <th>% of Total</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ape in apes %}
+                                {% set stats = ape_stats[ape.id] %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ stats.name }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">{{ stats.calories }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-secondary">{{ stats.meal_count }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-warning">{{ "%.1f"|format(stats.avg_calories) }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-success" 
+                                                 style="width: {{ "%.1f"|format(stats.percentage_of_total) }}%">
+                                                {{ "%.1f"|format(stats.percentage_of_total) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('site.ape_profile_page', ape_id=ape.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-user mr-1"></i>
+                                            View Profile
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Food Category Distribution -->
+    {% if category_data %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-pie-chart mr-1"></i>
+                        Food Category Distribution
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Meals</th>
+                                    <th>Calories</th>
+                                    <th>% of Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in category_data %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ category.category }}</strong>
+                                    </td>
+                                    <td>{{ category.count }}</td>
+                                    <td>{{ category.calories }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-info" 
+                                                 style="width: {{ "%.1f"|format(category.percentage) }}%">
+                                                {{ "%.1f"|format(category.percentage) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Breakdown -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-calendar-day mr-1"></i>
+                        Daily Breakdown
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Calories</th>
+                                    <th>Meals</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for day in daily_data %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ day.date.strftime('%Y-%m-%d') }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">{{ day.calories }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-secondary">{{ day.meals }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- No Data Message -->
+    {% if total_meals == 0 %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="icon fas fa-info"></i> No Data Available</h5>
+                No meals have been logged for the selected date range. 
+                <a href="{{ url_for('site.log_feeding') }}" class="alert-link">Log some feeding data</a> to see reports.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleCustomDate() {
+    const rangeSelect = document.getElementById('range');
+    const customDateGroup = document.getElementById('customDateGroup');
+    
+    if (rangeSelect.value === 'custom') {
+        customDateGroup.style.display = 'block';
+    } else {
+        customDateGroup.style.display = 'none';
+    }
+}
+</script>
+{% endblock %} 
