@@ -7,7 +7,7 @@ Populates the database with ape information and food items.
 from datetime import date, datetime, timedelta
 from run import app
 from backend.extensions import db
-from backend.models.entry import Apes, Recipe, Meals
+from backend.models.entry import Apes, Recipe, Meals, User
 from backend.helpers import add_to_db
 
 def seed_apes():
@@ -170,13 +170,22 @@ def seed_sample_meals():
     # Clear existing meals
     Meals.query.delete()
     
-    # Get apes and recipes
+    # Get apes, recipes, and users
     apes = Apes.query.all()
     recipes = Recipe.query.all()
+    users = User.query.all()
     
     if not apes or not recipes:
         print("No apes or recipes found. Please run seed_apes() and seed_foods() first.")
         return
+    
+    if not users:
+        print("No users found. Please create an admin user first by running 'python3 create_admin.py'")
+        return
+    
+    # Use the first available user for seeded meals
+    default_user = users[0]
+    print(f"Assigning meals to user: {default_user.email}")
     
     # Create sample meals for the last 7 days
     for i in range(7):
@@ -190,11 +199,13 @@ def seed_sample_meals():
                 meal = Meals(
                     ape_id=ape.id,
                     recipe_id=recipe.id,
-                    date=meal_date.replace(hour=8 + (meal_count * 4), minute=30)
+                    date=meal_date.replace(hour=8 + (meal_count * 4), minute=30),
+                    user_id=default_user.id
                 )
                 add_to_db(meal, "meal")
     
     print(f"Added sample meals for {len(apes)} apes over the last 7 days")
+    print(f"All meals assigned to user: {default_user.email}")
 
 def main():
     """Main seeding function"""

@@ -199,7 +199,7 @@
                                                 </a>
                                             </td>
                                             <td>
-                                                <span class="badge {% if meal.recipe.food_category == 'Fruits' %}badge-success{% elif meal.recipe.food_category == 'Vegetables' %}{% elif meal.recipe.food_category == 'Grains & Starches' %}badge-warning{% elif meal.recipe.food_category == 'Protein Sources' %}badge-danger{% elif meal.recipe.food_category == 'Nuts & Seeds' %}badge-info{% elif meal.recipe.food_category == 'Dairy & Alternatives' %}badge-primary{% elif meal.recipe.food_category == 'Dried Fruits' %}badge-secondary{% elif meal.recipe.food_category == 'Enrichment Treats' %}badge-secondary{% elif meal.recipe.food_category == 'Mixed Meals & Combinations' %}badge-dark{% else %}badge-info{% endif %}" {% if meal.recipe.food_category == 'Vegetables' %}style="background-color: #20c997; color: white;"{% endif %}>{{ meal.recipe.meal_name }}</span>
+                                                <span class="badge category-badge" data-category="{{ meal.recipe.food_category or 'Other' }}">{{ meal.recipe.meal_name }}</span>
                                             </td>
                                             <td>{{ meal.recipe.calories }} cal</td>
                                             <td>
@@ -240,4 +240,57 @@ function resetHelpAlerts() {
     }
 }
 </script>
+
+<style>
+/* Category badge colors matching manage foods page */
+.category-badge[data-category="Fruits"] {
+    background-color: #28a745;
+    color: white;
+}
+
+.category-badge[data-category="Vegetables"] {
+    background-color: #20c997;
+    color: white;
+}
+
+.category-badge[data-category="Protein Sources"] {
+    background-color: #dc3545;
+    color: white;
+}
+
+.category-badge[data-category="Grains & Starches"] {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.category-badge[data-category="Nuts & Seeds"] {
+    background-color: #6f42c1;
+    color: white;
+}
+
+.category-badge[data-category="Dairy & Alternatives"] {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.category-badge[data-category="Dried Fruits"] {
+    background-color: #e83e8c;
+    color: white;
+}
+
+.category-badge[data-category="Enrichment Treats"] {
+    background-color: #e83e8c;
+    color: white;
+}
+
+.category-badge[data-category="Mixed Meals & Combinations"] {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.category-badge[data-category="Other"] {
+    background-color: #6c757d;
+    color: white;
+}
+</style>
 {% endblock %} 
