@@ -51,7 +51,27 @@
                                     <span class="text-muted">{{ category.description or 'No description' }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge {{ category.color }}">{{ category.color }}</span>
+                                    {% if category.name == 'Fruits' %}
+                                        <span class="badge" style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Green</span>
+                                    {% elif category.name == 'Vegetables' %}
+                                        <span class="badge" style="background-color: #20c997; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Teal</span>
+                                    {% elif category.name == 'Protein Sources' %}
+                                        <span class="badge" style="background-color: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Red</span>
+                                    {% elif category.name == 'Grains & Starches' %}
+                                        <span class="badge" style="background-color: #ffc107; color: #212529; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Yellow</span>
+                                    {% elif category.name == 'Nuts & Seeds' %}
+                                        <span class="badge" style="background-color: #6f42c1; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Purple</span>
+                                    {% elif category.name == 'Dairy & Alternatives' %}
+                                        <span class="badge" style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Blue</span>
+                                    {% elif category.name == 'Dried Fruits' %}
+                                        <span class="badge" style="background-color: #e83e8c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Pink</span>
+                                    {% elif category.name == 'Enrichment Treats' %}
+                                        <span class="badge" style="background-color: #e83e8c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Pink</span>
+                                    {% elif category.name == 'Mixed Meals & Combinations' %}
+                                        <span class="badge" style="background-color: #fd7e14; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Orange</span>
+                                    {% else %}
+                                        <span class="badge" style="background-color: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600;">Gray</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <span class="badge badge-info">{{ category.sort_order }}</span>
@@ -64,7 +84,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <span class="badge badge-primary">{{ category.recipes.count() }}</span>
+                                    <span class="badge badge-primary">{{ category_counts[category.id] or 0 }}</span>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
@@ -204,7 +224,7 @@
 <script>
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
-    // Add smooth transitions
+    // Add smooth transitions and color styling
     const style = document.createElement('style');
     style.textContent = `
         .table tbody tr {
@@ -220,6 +240,54 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         .btn-group .btn:hover {
             transform: scale(1.05);
+        }
+        
+        /* Category color badges */
+        .category-color-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .category-color-badge[data-category="Fruits"] {
+            background-color: #28a745 !important;
+            color: white !important;
+        }
+        .category-color-badge[data-category="Vegetables"] {
+            background-color: #20c997 !important;
+            color: white !important;
+        }
+        .category-color-badge[data-category="Protein Sources"] {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+        .category-color-badge[data-category="Grains & Starches"] {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+        .category-color-badge[data-category="Nuts & Seeds"] {
+            background-color: #6f42c1 !important;
+            color: white !important;
+        }
+        .category-color-badge[data-category="Dairy & Alternatives"] {
+            background-color: #17a2b8 !important;
+            color: white !important;
+        }
+        .category-color-badge[data-category="Dried Fruits"],
+        .category-color-badge[data-category="Enrichment Treats"] {
+            background-color: #e83e8c !important;
+            color: white !important;
+        }
+        .category-color-badge[data-category="Mixed Meals & Combinations"] {
+            background-color: #fd7e14 !important;
+            color: white !important;
+        }
+        .category-color-badge:not([data-category]) {
+            background-color: #6c757d !important;
+            color: white !important;
         }
     `;
     document.head.appendChild(style);

@@ -705,7 +705,24 @@ def add_recipe_form():
 def manage_categories():
     """Display food category management page"""
     categories = FoodCategory.query.order_by(FoodCategory.sort_order, FoodCategory.name).all()
-    return render_template('manage_categories.html', categories=categories)
+    
+    # Calculate food counts for each category
+    category_counts = {}
+    for category in categories:
+        # Count recipes that match this category by name (using the legacy food_category field)
+        count = Recipe.query.filter_by(food_category=category.name).count()
+        
+        # Also check for alternative category names that might be stored differently
+        if count == 0:
+            # Check for simplified names that might have been used
+            simplified_name = category.name.split(' ')[0]  # Get first word (e.g., "Fruits" from "Fruits")
+            alt_count = Recipe.query.filter_by(food_category=simplified_name).count()
+            if alt_count > 0:
+                count = alt_count
+        
+        category_counts[category.id] = count
+    
+    return render_template('manage_categories.html', categories=categories, category_counts=category_counts)
 
 @site.route('/categories/add', methods=['POST'])
 @login_required
