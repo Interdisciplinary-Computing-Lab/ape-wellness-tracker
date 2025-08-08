@@ -60,7 +60,7 @@
 <!-- Enhanced Food Selection Interface -->
 <div class="row">
     <div class="col-lg-8">
-        <div class="card">
+        <div class="card food-selection-card">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-utensils mr-2"></i>Food Selection ({{ recipes|length }} Available)
@@ -448,27 +448,27 @@
     pointer-events: none;
 }
 
-/* Custom scrollbar for food grid */
-.card-body {
+/* Custom scrollbar for food grid only */
+.food-selection-card .card-body {
     max-height: 600px;
     overflow-y: auto;
 }
 
-.card-body::-webkit-scrollbar {
+.food-selection-card .card-body::-webkit-scrollbar {
     width: 6px;
 }
 
-.card-body::-webkit-scrollbar-track {
+.food-selection-card .card-body::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 10px;
 }
 
-.card-body::-webkit-scrollbar-thumb {
+.food-selection-card .card-body::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 10px;
 }
 
-.card-body::-webkit-scrollbar-thumb:hover {
+.food-selection-card .card-body::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
 </style>

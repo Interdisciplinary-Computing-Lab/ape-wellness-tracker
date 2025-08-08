@@ -21,58 +21,7 @@
     </div>
 </div>
 
-<!-- Category Filter Buttons -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="category-filters">
-            <button type="button" class="filter-btn active" data-category="all">
-                <i class="fas fa-th-list"></i>
-                <span class="filter-text">All</span>
-                <span class="filter-count">({{ categories|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Fruits">
-                <i class="fas fa-apple-alt"></i>
-                <span class="filter-text">Fruits</span>
-                <span class="filter-count">({{ categories|selectattr('name', 'equalto', 'Fruits')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Vegetables">
-                <i class="fas fa-carrot"></i>
-                <span class="filter-text">Vegetables</span>
-                <span class="filter-count">({{ categories|selectattr('name', 'equalto', 'Vegetables')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Protein Sources">
-                <i class="fas fa-egg"></i>
-                <span class="filter-text">Protein</span>
-                <span class="filter-count">({{ categories|selectattr('name', 'equalto', 'Protein Sources')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Grains & Starches">
-                <i class="fas fa-bread-slice"></i>
-                <span class="filter-text">Grains</span>
-                <span class="filter-count">({{ categories|selectattr('name', 'equalto', 'Grains & Starches')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Nuts & Seeds">
-                <i class="fas fa-seedling"></i>
-                <span class="filter-text">Nuts & Seeds</span>
-                <span class="filter-count">({{ categories|selectattr('name', 'equalto', 'Nuts & Seeds')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Dairy & Alternatives">
-                <i class="fas fa-cheese"></i>
-                <span class="filter-text">Dairy</span>
-                <span class="filter-count">({{ categories|selectattr('name', 'equalto', 'Dairy & Alternatives')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Enrichment Treats">
-                <i class="fas fa-ice-cream"></i>
-                <span class="filter-text">Treats</span>
-                <span class="filter-count">({{ categories|selectattr('name', 'in', ['Enrichment Treats', 'Dried Fruits'])|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Mixed Meals & Combinations">
-                <i class="fas fa-utensils"></i>
-                <span class="filter-text">Meals</span>
-                <span class="filter-count">({{ categories|selectattr('name', 'equalto', 'Mixed Meals & Combinations')|list|length }})</span>
-            </button>
-        </div>
-    </div>
-</div>
+
 
 <!-- Categories Grid -->
 <div class="row">
