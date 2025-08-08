@@ -1,9 +1,9 @@
 {% extends 'adminlte_base.html' %}
 
-{% block title %}Food Management{% endblock %}
+{% block title %}Food Category Management{% endblock %}
 
 {% block page_title %}
-<i class="fas fa-apple-alt mr-2"></i>Food Management
+<i class="fas fa-tags mr-2"></i>Food Category Management
 {% endblock %}
 
 {% block body %}
@@ -11,108 +11,57 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="action-buttons-center">
-            <a href="{{ url_for('site.manage_categories') }}" class="btn btn-outline-info mr-2">
-                <i class="fas fa-tags mr-1"></i>Manage Categories
+            <a href="{{ url_for('site.manage_foods') }}" class="btn btn-outline-info mr-2">
+                <i class="fas fa-apple-alt mr-1"></i>Manage Foods
             </a>
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addFoodModal">
-                <i class="fas fa-plus mr-1"></i>Add New Food
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCategoryModal">
+                <i class="fas fa-plus mr-1"></i>Add New Category
             </button>
         </div>
     </div>
 </div>
 
-<!-- Category Filter Buttons -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="category-filters">
-            <button type="button" class="filter-btn active" data-category="all">
-                <i class="fas fa-th-list"></i>
-                <span class="filter-text">All</span>
-                <span class="filter-count">({{ recipes|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Fruits">
-                <i class="fas fa-apple-alt"></i>
-                <span class="filter-text">Fruits</span>
-                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Fruits')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Vegetables">
-                <i class="fas fa-carrot"></i>
-                <span class="filter-text">Vegetables</span>
-                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Vegetables')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Protein Sources">
-                <i class="fas fa-egg"></i>
-                <span class="filter-text">Protein</span>
-                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Protein Sources')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Grains & Starches">
-                <i class="fas fa-bread-slice"></i>
-                <span class="filter-text">Grains</span>
-                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Grains & Starches')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Nuts & Seeds">
-                <i class="fas fa-seedling"></i>
-                <span class="filter-text">Nuts & Seeds</span>
-                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Nuts & Seeds')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Dairy & Alternatives">
-                <i class="fas fa-cheese"></i>
-                <span class="filter-text">Dairy</span>
-                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Dairy & Alternatives')|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Enrichment Treats">
-                <i class="fas fa-ice-cream"></i>
-                <span class="filter-text">Treats</span>
-                <span class="filter-count">({{ recipes|selectattr('food_category', 'in', ['Enrichment Treats', 'Dried Fruits'])|list|length }})</span>
-            </button>
-            <button type="button" class="filter-btn" data-category="Mixed Meals & Combinations">
-                <i class="fas fa-utensils"></i>
-                <span class="filter-text">Meals</span>
-                <span class="filter-count">({{ recipes|selectattr('food_category', 'equalto', 'Mixed Meals & Combinations')|list|length }})</span>
-            </button>
-        </div>
-    </div>
-</div>
 
-<!-- Food Items Grid -->
+
+<!-- Categories Grid -->
 <div class="row">
     
-    {% for recipe in recipes %}
-    <div class="col-lg-4 col-md-6 mb-3 food-item" data-category="{{ recipe.food_category }}">
+    {% for category in categories %}
+    <div class="col-lg-4 col-md-6 mb-3 category-item" data-category="{{ category.name }}">
         <div class="card h-100 border-left-4" style="border-left-color: 
-            {% if recipe.food_category == 'Fruits' %}#28a745
-            {% elif recipe.food_category == 'Vegetables' %}#20c997
-            {% elif recipe.food_category == 'Grains & Starches' %}#ffc107
-            {% elif recipe.food_category == 'Protein Sources' %}#dc3545
-            {% elif recipe.food_category == 'Nuts & Seeds' %}#6f42c1
-            {% elif recipe.food_category == 'Dairy & Alternatives' %}#17a2b8
-            {% elif recipe.food_category == 'Dried Fruits' %}#fd7e14
-            {% elif recipe.food_category == 'Enrichment Treats' %}#e83e8c
-            {% elif recipe.food_category == 'Mixed Meals & Combinations' %}#6c757d
+            {% if category.name == 'Fruits' %}#28a745
+            {% elif category.name == 'Vegetables' %}#20c997
+            {% elif category.name == 'Grains & Starches' %}#ffc107
+            {% elif category.name == 'Protein Sources' %}#dc3545
+            {% elif category.name == 'Nuts & Seeds' %}#6f42c1
+            {% elif category.name == 'Dairy & Alternatives' %}#17a2b8
+            {% elif category.name == 'Dried Fruits' %}#fd7e14
+            {% elif category.name == 'Enrichment Treats' %}#e83e8c
+            {% elif category.name == 'Mixed Meals & Combinations' %}#6c757d
             {% else %}#6c757d{% endif %} !important;">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
-                    <span class="badge badge-success">{{ recipe.calories }} cal</span>
+                    <h6 class="card-title mb-0">{{ category.name }}</h6>
+                    <span class="badge badge-success">{{ category_counts[category.id] or 0 }} items</span>
                 </div>
-                <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
+                <p class="text-muted small mb-2">{{ category.description or 'No description' }}</p>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="badge category-badge"
-                        data-category="{{ recipe.food_category or 'Other' }}">
-                        {{ recipe.food_category or 'Other' }}
+                        data-category="{{ category.name }}">
+                        <i class="{{ category.icon }}"></i> {{ category.name }}
                     </span>
                     <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-outline-primary edit-food-btn" 
-                                data-id="{{ recipe.id }}" 
-                                data-name="{{ recipe.meal_name }}" 
-                                data-category="{{ recipe.food_category or 'Other' }}" 
-                                data-calories="{{ recipe.calories }}" 
-                                data-description="{{ recipe.description or '' }}">
+                        <button type="button" class="btn btn-outline-primary edit-category-btn" 
+                                data-id="{{ category.id }}" 
+                                data-name="{{ category.name }}" 
+                                data-description="{{ category.description or '' }}"
+                                data-icon="{{ category.icon }}"
+                                data-color="{{ category.color }}">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-danger delete-food-btn" 
-                                data-id="{{ recipe.id }}" 
-                                data-name="{{ recipe.meal_name }}">
+                        <button type="button" class="btn btn-outline-danger delete-category-btn" 
+                                data-id="{{ category.id }}" 
+                                data-name="{{ category.name }}">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -123,46 +72,47 @@
     {% endfor %}
 </div>
 
-<!-- Add New Food Modal -->
-<div class="modal fade" id="addFoodModal" tabindex="-1" role="dialog">
+<!-- Add New Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-plus mr-2"></i>Add New Food Item
+                    <i class="fas fa-plus mr-2"></i>Add New Category
                 </h5>
                 <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
-            <form method="POST" action="{{ url_for('site.add_recipe_form') }}">
+            <form method="POST" action="{{ url_for('site.add_category') }}">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="meal_name">Food Name *</label>
-                        <input type="text" class="form-control" id="meal_name" name="meal_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="food_category">Category</label>
-                        <select class="form-control" id="food_category" name="food_category">
-                            {% for category in categories %}
-                            <option value="{{ category.name }}">{{ category.name }}</option>
-                            {% endfor %}
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="calories">Calories *</label>
-                        <input type="number" class="form-control" id="calories" name="calories" min="0" required>
+                        <label for="name">Category Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
                     </div>
                     <div class="form-group">
                         <label for="description">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="icon">Icon</label>
+                        <select class="form-control" id="icon" name="icon">
+                            <option value="fas fa-apple-alt">🍎 Apple (Fruits)</option>
+                            <option value="fas fa-carrot">🥕 Carrot (Vegetables)</option>
+                            <option value="fas fa-egg">🥚 Egg (Protein)</option>
+                            <option value="fas fa-bread-slice">🍞 Bread (Grains)</option>
+                            <option value="fas fa-seedling">🌱 Seedling (Nuts & Seeds)</option>
+                            <option value="fas fa-cheese">🧀 Cheese (Dairy)</option>
+                            <option value="fas fa-ice-cream">🍦 Ice Cream (Treats)</option>
+                            <option value="fas fa-utensils">🍽️ Utensils (Meals)</option>
+                            <option value="fas fa-tag">🏷️ Tag (General)</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i>Add Food Item
+                        <i class="fas fa-save mr-1"></i>Add Category
                     </button>
                 </div>
             </form>
@@ -170,46 +120,47 @@
     </div>
 </div>
 
-<!-- Edit Food Modal -->
-<div class="modal fade" id="editFoodModal" tabindex="-1" role="dialog">
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-edit mr-2"></i>Edit Food Item
+                    <i class="fas fa-edit mr-2"></i>Edit Category
                 </h5>
                 <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
-            <form id="editFoodForm" method="POST">
+            <form id="editCategoryForm" method="POST">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="editFoodName">Food Name *</label>
-                        <input type="text" class="form-control" id="editFoodName" name="meal_name" required>
+                        <label for="editCategoryName">Category Name *</label>
+                        <input type="text" class="form-control" id="editCategoryName" name="name" required>
                     </div>
                     <div class="form-group">
-                        <label for="editFoodCategory">Category</label>
-                        <select class="form-control" id="editFoodCategory" name="food_category">
-                            {% for category in categories %}
-                            <option value="{{ category.name }}">{{ category.name }}</option>
-                            {% endfor %}
-                            <option value="Other">Other</option>
+                        <label for="editCategoryDescription">Description</label>
+                        <textarea class="form-control" id="editCategoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategoryIcon">Icon</label>
+                        <select class="form-control" id="editCategoryIcon" name="icon">
+                            <option value="fas fa-apple-alt">🍎 Apple (Fruits)</option>
+                            <option value="fas fa-carrot">🥕 Carrot (Vegetables)</option>
+                            <option value="fas fa-egg">🥚 Egg (Protein)</option>
+                            <option value="fas fa-bread-slice">🍞 Bread (Grains)</option>
+                            <option value="fas fa-seedling">🌱 Seedling (Nuts & Seeds)</option>
+                            <option value="fas fa-cheese">🧀 Cheese (Dairy)</option>
+                            <option value="fas fa-ice-cream">🍦 Ice Cream (Treats)</option>
+                            <option value="fas fa-utensils">🍽️ Utensils (Meals)</option>
+                            <option value="fas fa-tag">🏷️ Tag (General)</option>
                         </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editCalories">Calories *</label>
-                        <input type="number" class="form-control" id="editCalories" name="calories" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editDescription">Description</label>
-                        <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i>Update Food Item
+                        <i class="fas fa-save mr-1"></i>Update Category
                     </button>
                 </div>
             </form>
@@ -217,8 +168,8 @@
     </div>
 </div>
 
-<!-- Delete Food Confirmation Modal -->
-<div class="modal fade" id="deleteFoodModal" tabindex="-1" role="dialog">
+<!-- Delete Category Confirmation Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -230,14 +181,14 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete the food item "<strong id="deleteFoodName"></strong>"?</p>
+                <p>Are you sure you want to delete the category "<strong id="deleteCategoryName"></strong>"?</p>
                 <p class="text-muted small">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
-                <form id="deleteFoodForm" method="POST" style="display: inline;">
+                <form id="deleteCategoryForm" method="POST" style="display: inline;">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash mr-1"></i>Delete Food Item
+                        <i class="fas fa-trash mr-1"></i>Delete Category
                     </button>
                 </form>
             </div>
@@ -253,10 +204,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add smooth transitions and custom styles
     const style = document.createElement('style');
     style.textContent = `
-        .food-item {
+        .category-item {
             transition: all 0.3s ease;
         }
-        .food-item.hidden {
+        .category-item.hidden {
             display: none;
         }
         .card {
@@ -609,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Category filter function
 function filterByCategory(category) {
-    const foodItems = document.querySelectorAll('.food-item');
+    const categoryItems = document.querySelectorAll('.category-item');
     const filterButtons = document.querySelectorAll('.filter-btn');
     
     // Update active button
@@ -617,7 +568,7 @@ function filterByCategory(category) {
     event.target.classList.add('active');
     
     // Filter items
-    foodItems.forEach(item => {
+    categoryItems.forEach(item => {
         if (category === 'all' || item.dataset.category === category) {
             item.classList.remove('hidden');
         } else {
@@ -628,43 +579,41 @@ function filterByCategory(category) {
 
 // Add event listeners for edit and delete buttons
 document.addEventListener('DOMContentLoaded', function() {
-    // Edit food buttons
-    document.querySelectorAll('.edit-food-btn').forEach(button => {
+    // Edit category buttons
+    document.querySelectorAll('.edit-category-btn').forEach(button => {
         button.addEventListener('click', function() {
-            const recipeId = this.getAttribute('data-id');
-            const recipeName = this.getAttribute('data-name');
-            const recipeCategory = this.getAttribute('data-category');
-            const recipeCalories = this.getAttribute('data-calories');
-            const recipeDescription = this.getAttribute('data-description');
+            const categoryId = this.getAttribute('data-id');
+            const categoryName = this.getAttribute('data-name');
+            const categoryDescription = this.getAttribute('data-description');
+            const categoryIcon = this.getAttribute('data-icon');
             
             // Populate the edit form
-            document.getElementById('editFoodName').value = recipeName;
-            document.getElementById('editFoodCategory').value = recipeCategory || 'Other';
-            document.getElementById('editCalories').value = recipeCalories;
-            document.getElementById('editDescription').value = recipeDescription || '';
+            document.getElementById('editCategoryName').value = categoryName;
+            document.getElementById('editCategoryDescription').value = categoryDescription || '';
+            document.getElementById('editCategoryIcon').value = categoryIcon || 'fas fa-tag';
             
             // Set the form action
-            document.getElementById('editFoodForm').action = `/recipes/${recipeId}/edit`;
+            document.getElementById('editCategoryForm').action = `/categories/${categoryId}/edit`;
             
             // Show the modal
-            $('#editFoodModal').modal('show');
+            $('#editCategoryModal').modal('show');
         });
     });
     
-    // Delete food buttons
-    document.querySelectorAll('.delete-food-btn').forEach(button => {
+    // Delete category buttons
+    document.querySelectorAll('.delete-category-btn').forEach(button => {
         button.addEventListener('click', function() {
-            const recipeId = this.getAttribute('data-id');
-            const recipeName = this.getAttribute('data-name');
+            const categoryId = this.getAttribute('data-id');
+            const categoryName = this.getAttribute('data-name');
             
-            // Set the food name in the confirmation modal
-            document.getElementById('deleteFoodName').textContent = recipeName;
+            // Set the category name in the confirmation modal
+            document.getElementById('deleteCategoryName').textContent = categoryName;
             
             // Set the form action
-            document.getElementById('deleteFoodForm').action = `/recipes/${recipeId}/delete`;
+            document.getElementById('deleteCategoryForm').action = `/categories/${categoryId}/delete`;
             
             // Show the confirmation modal
-            $('#deleteFoodModal').modal('show');
+            $('#deleteCategoryModal').modal('show');
         });
     });
 });

@@ -34,24 +34,46 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('site.reports') }}" class="form-inline">
-                        <div class="form-group mr-3">
-                            <label for="range" class="mr-2">Time Period:</label>
-                            <select name="range" id="range" class="form-control" onchange="toggleCustomDate()">
-                                <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
-                                <option value="week" {% if date_range == 'week' %}selected{% endif %}>Last 7 Days</option>
-                                <option value="month" {% if date_range == 'month' %}selected{% endif %}>Last 30 Days</option>
-                                <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>Custom Date</option>
-                            </select>
+                    <form method="GET" action="{{ url_for('site.reports') }}">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="range" class="form-label">Time Period:</label>
+                                <select name="range" id="range" class="form-control" onchange="toggleCustomDate()">
+                                    <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+                                    <option value="week" {% if date_range == 'week' %}selected{% endif %}>Last 7 Days</option>
+                                    <option value="month" {% if date_range == 'month' %}selected{% endif %}>Last 30 Days</option>
+                                    <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>Custom Date</option>
+                                    <option value="custom_range" {% if date_range == 'custom_range' %}selected{% endif %}>Custom Date Range</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Single Custom Date -->
+                            <div class="col-md-3 mb-3" id="customDateGroup" style="display: {% if date_range == 'custom' %}block{% else %}none{% endif %};">
+                                <label for="date" class="form-label">Date:</label>
+                                <input type="date" name="date" id="date" class="form-control" value="{{ custom_date }}">
+                            </div>
+                            
+                            <!-- Custom Date Range -->
+                            <div class="col-md-6 mb-3" id="customRangeGroup" style="display: {% if date_range == 'custom_range' %}block{% else %}none{% endif %};">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="start_date" class="form-label">Start Date:</label>
+                                        <input type="date" name="start_date" id="start_date" class="form-control" value="{{ custom_start_date }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="end_date" class="form-label">End Date:</label>
+                                        <input type="date" name="end_date" id="end_date" class="form-control" value="{{ custom_end_date }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2 mb-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search mr-1"></i>
+                                    Update Report
+                                </button>
+                            </div>
                         </div>
-                        <div class="form-group mr-3" id="customDateGroup" style="display: {% if date_range == 'custom' %}block{% else %}none{% endif %};">
-                            <label for="date" class="mr-2">Date:</label>
-                            <input type="date" name="date" id="date" class="form-control" value="{{ custom_date }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search mr-1"></i>
-                            Update Report
-                        </button>
                     </form>
                 </div>
             </div>
@@ -278,12 +300,76 @@
 function toggleCustomDate() {
     const rangeSelect = document.getElementById('range');
     const customDateGroup = document.getElementById('customDateGroup');
+    const customRangeGroup = document.getElementById('customRangeGroup');
+    const dateInput = document.getElementById('date');
+    const startDateInput = document.getElementById('start_date');
     
+    // Hide both custom groups first
+    customDateGroup.style.display = 'none';
+    customRangeGroup.style.display = 'none';
+    
+    // Show the appropriate group based on selection
     if (rangeSelect.value === 'custom') {
         customDateGroup.style.display = 'block';
+        // Auto-focus and open the calendar for better UX
+        setTimeout(() => {
+            dateInput.focus();
+            // Try to open the calendar picker
+            try {
+                dateInput.showPicker();
+            } catch (e) {
+                // Fallback for browsers that don't support showPicker
+                dateInput.click();
+            }
+        }, 150);
+    } else if (rangeSelect.value === 'custom_range') {
+        customRangeGroup.style.display = 'block';
+        // Auto-focus the start date input and open its calendar
+        setTimeout(() => {
+            startDateInput.focus();
+            // Try to open the calendar picker for start date
+            try {
+                startDateInput.showPicker();
+            } catch (e) {
+                // Fallback for browsers that don't support showPicker
+                startDateInput.click();
+            }
+        }, 150);
     } else {
-        customDateGroup.style.display = 'none';
+        // For predefined ranges, auto-submit the form
+        document.querySelector('form').submit();
     }
 }
+
+// Auto-submit when date is selected for single custom date
+function handleDateChange() {
+    // Small delay to ensure the date value is properly set
+    setTimeout(() => {
+        document.querySelector('form').submit();
+    }, 100);
+}
+
+// Auto-submit when both start and end dates are selected for custom range
+function handleRangeChange() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    
+    // Only auto-submit if both dates are selected
+    if (startDate && endDate) {
+        setTimeout(() => {
+            document.querySelector('form').submit();
+        }, 100);
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleCustomDate();
+    
+    // Add event listeners for auto-submit
+    document.getElementById('date').addEventListener('change', handleDateChange);
+    document.getElementById('start_date').addEventListener('change', handleRangeChange);
+    document.getElementById('end_date').addEventListener('change', handleRangeChange);
+});
 </script>
 {% endblock %} 

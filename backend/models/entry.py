@@ -66,6 +66,35 @@ class Apes(db.Model):
         else:
             return url_for('static', filename='images/bonobo-placeholder.jpg')
 
+class FoodCategory(db.Model):
+    """
+    Represents a food category in the wellness tracker.
+    Fields:
+        id (int): Primary key.
+        name (str): Unique name of the category.
+        description (str): Description of the category.
+        icon (str): FontAwesome icon class for the category.
+        color (str): Bootstrap color class for the category.
+        is_active (bool): Whether the category is active.
+        sort_order (int): Order for displaying categories.
+    """
+    __tablename__ = 'food_categories'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(200), nullable=True)
+    icon = db.Column(db.String(50), nullable=True, default='fas fa-tag')
+    color = db.Column(db.String(20), nullable=True, default='badge-secondary')
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=sa.func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, default=sa.func.now(), onupdate=sa.func.now(), nullable=False)
+
+    # Relationships
+    recipes = db.relationship('Recipe', backref='category', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<FoodCategory {self.name}>'
+
 class Recipe(db.Model):
     """
     Represents a recipe or meal option in the wellness tracker.
@@ -75,13 +104,15 @@ class Recipe(db.Model):
         description (str): Description of the meal.
         calories (int): Calorie count (must be non-negative).
         food_category (str): Category of food (fruits, vegetables, protein, etc.).
+        category_id (int): Foreign key to FoodCategory.
     """
     __tablename__ = 'recipe'
     id = db.Column(db.Integer, primary_key=True)
     meal_name = db.Column(db.String(30), unique=True, nullable=False)
     description = db.Column(db.String)
     calories = db.Column(db.Integer, nullable=False)
-    food_category = db.Column(db.String(50), nullable=True, default='Other')
+    food_category = db.Column(db.String(50), nullable=True, default='Other')  # Legacy field for backward compatibility
+    category_id = db.Column(db.Integer, sa.ForeignKey('food_categories.id'), nullable=True)
 
     # Example constraint: calories must be >=0
     __table_args__ = (

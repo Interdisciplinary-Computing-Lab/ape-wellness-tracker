@@ -1,6 +1,6 @@
 {% extends 'adminlte_base.html' %}
 {% block title %}Log Feeding - Ape Wellness Tracker{% endblock %}
-{% block page_title %}Log Feeding{% endblock %}
+{% block page_title %}Enhanced Log Feeding{% endblock %}
 {% block body %}
 <!-- Quick Status Bar -->
 <div class="row mb-3">
@@ -8,11 +8,12 @@
         <div class="alert alert-info d-flex justify-content-between align-items-center">
             <div>
                 <i class="fas fa-info-circle mr-2"></i>
-                <strong>Fieldwork Mode:</strong> Quick logging for real-time data collection
+                <strong>Enhanced Fieldwork Mode:</strong> Complete food database access for comprehensive logging
             </div>
             <div>
                 <span class="badge badge-light mr-2">Selected: <span id="selectedCount">0</span> apes</span>
                 <span class="badge badge-success">Total: {{ apes|length }} apes</span>
+                <span class="badge badge-primary ml-2">Available: {{ recipes|length }} foods</span>
             </div>
         </div>
     </div>
@@ -38,9 +39,9 @@
             <div class="row">
                 {% for ape in apes %}
                 <div class="col-md-2 col-sm-4 col-6 mb-3">
-                    <div class="ape-avatar text-center" data-ape-id="{{ ape.id }}" onclick="toggleApeSelection(this, {{ ape.id }})">
+                    <div class="ape-avatar text-center" data-ape-id="{{ ape.id }}" onclick="toggleApeSelection(this, '{{ ape.id }}')">
                         <div class="position-relative">
-                            <img src="{{ url_for('site.ape_image', ape_id=ape.id) }}" 
+                            <img src="{{ ape.get_image_url() }}" 
                                  class="avatar-circle" alt="{{ ape.ape_name }}">
                             <div class="selection-indicator">
                                 <i class="fas fa-check-circle text-success"></i>
@@ -56,288 +57,162 @@
     </div>
 </div>
 
-<!-- Quick Food Entry -->
+<!-- Enhanced Food Selection Interface -->
 <div class="row">
     <div class="col-lg-8">
-        <div class="card">
+        <div class="card food-selection-card">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-utensils mr-2"></i>Quick Food Entry
+                    <i class="fas fa-utensils mr-2"></i>Food Selection ({{ recipes|length }} Available)
                 </h3>
+                <div class="card-tools">
+                    <div class="input-group input-group-sm" style="width: 250px;">
+                        <input type="text" id="foodSearch" class="form-control float-right" 
+                               placeholder="Search foods..." onkeyup="searchFoods()">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-default" onclick="clearSearch()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
-                <!-- Common Foods Grid -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h6 class="mb-3">Quick Add Foods</h6>
-                        
-                        <!-- Fruits Section -->
-                        <div class="mb-3">
-                            <small class="text-muted font-weight-bold">🍌 Fruits</small>
-                            <div class="row">
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="banana" data-calories="105" data-name="Banana" data-category="Fruits">
-                                        <i class="fas fa-banana mb-1"></i>
-                                        <div class="d-block small">Banana</div>
-                                        <small class="text-muted">105 cal</small>
-                                    </button>
+                <!-- Category Filter Tabs -->
+                <div class="mb-4">
+                    <ul class="nav nav-pills nav-fill" id="categoryTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="all-tab" data-toggle="pill" href="#all" 
+                               role="tab" aria-controls="all" aria-selected="true" onclick="filterByCategory('all')">
+                                <i class="fas fa-th-list"></i> All ({{ recipes|length }})
+                            </a>
+                        </li>
+                        {% for category_name, foods in foods_by_category.items() %}
+                        <li class="nav-item">
+                            <a class="nav-link" id="{{ category_name|lower|replace(' ', '-')|replace('&', 'and') }}-tab" 
+                               data-toggle="pill" href="#{{ category_name|lower|replace(' ', '-')|replace('&', 'and') }}" 
+                               role="tab" aria-controls="{{ category_name|lower|replace(' ', '-')|replace('&', 'and') }}" 
+                               aria-selected="false" onclick="filterByCategory('{{ category_name }}')">
+                                {% if category_name == 'Fruits' %}<i class="fas fa-apple-alt"></i>
+                                {% elif category_name == 'Vegetables' %}<i class="fas fa-carrot"></i>
+                                {% elif category_name == 'Protein Sources' %}<i class="fas fa-egg"></i>
+                                {% elif category_name == 'Grains & Starches' %}<i class="fas fa-bread-slice"></i>
+                                {% elif category_name == 'Nuts & Seeds' %}<i class="fas fa-seedling"></i>
+                                {% elif category_name == 'Dairy & Alternatives' %}<i class="fas fa-cheese"></i>
+                                {% elif category_name == 'Enrichment Treats' %}<i class="fas fa-ice-cream"></i>
+                                {% elif category_name == 'Mixed Meals & Combinations' %}<i class="fas fa-utensils"></i>
+                                {% else %}<i class="fas fa-tag"></i>{% endif %}
+                                {{ category_name }} ({{ foods|length }})
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Foods Grid -->
+                <div class="tab-content" id="categoryTabContent">
+                    <div class="row" id="foodsGrid">
+                        {% for recipe in recipes %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb-2 food-item" 
+                             data-category="{{ recipe.food_category or 'Other' }}"
+                             data-name="{{ recipe.meal_name|lower }}"
+                             data-calories="{{ recipe.calories }}">
+                            <button class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card" 
+                                    data-food="{{ recipe.meal_name }}" 
+                                    data-calories="{{ recipe.calories }}" 
+                                    data-name="{{ recipe.meal_name }}" 
+                                    data-category="{{ recipe.food_category or 'Other' }}"
+                                    title="{{ recipe.description or 'No description' }}">
+                                <div class="text-center">
+                                    {% if recipe.food_category == 'Fruits' %}<i class="fas fa-apple-alt mb-1 text-success"></i>
+                                    {% elif recipe.food_category == 'Vegetables' %}<i class="fas fa-carrot mb-1 text-info"></i>
+                                    {% elif recipe.food_category == 'Protein Sources' %}<i class="fas fa-egg mb-1 text-danger"></i>
+                                    {% elif recipe.food_category == 'Grains & Starches' %}<i class="fas fa-bread-slice mb-1 text-warning"></i>
+                                    {% elif recipe.food_category == 'Nuts & Seeds' %}<i class="fas fa-seedling mb-1 text-purple"></i>
+                                    {% elif recipe.food_category == 'Dairy & Alternatives' %}<i class="fas fa-cheese mb-1 text-info"></i>
+                                    {% elif recipe.food_category == 'Enrichment Treats' %}<i class="fas fa-ice-cream mb-1 text-pink"></i>
+                                    {% elif recipe.food_category == 'Mixed Meals & Combinations' %}<i class="fas fa-utensils mb-1 text-orange"></i>
+                                    {% else %}<i class="fas fa-tag mb-1 text-secondary"></i>{% endif %}
+                                    <div class="d-block small font-weight-bold">{{ recipe.meal_name }}</div>
+                                    <small class="text-muted">{{ recipe.calories }} cal</small>
+                                    {% if recipe.description %}
+                                    <div class="small text-muted mt-1" style="font-size: 0.7rem; opacity: 0.8;">
+                                        {{ recipe.description[:30] }}{% if recipe.description|length > 30 %}...{% endif %}
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="apple" data-calories="95" data-name="Apple" data-category="Fruits">
-                                        <i class="fas fa-apple-alt mb-1"></i>
-                                        <div class="d-block small">Apple</div>
-                                        <small class="text-muted">95 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="grapes" data-calories="62" data-name="Grapes" data-category="Fruits">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Grapes</div>
-                                        <small class="text-muted">62 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="blueberries" data-calories="85" data-name="Blueberries" data-category="Fruits">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Blueberries</div>
-                                        <small class="text-muted">85 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="watermelon" data-calories="30" data-name="Watermelon" data-category="Fruits">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Watermelon</div>
-                                        <small class="text-muted">30 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="papaya" data-calories="43" data-name="Papaya" data-category="Fruits">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Papaya</div>
-                                        <small class="text-muted">43 cal</small>
-                                    </button>
-                                </div>
-                            </div>
+                            </button>
                         </div>
+                        {% endfor %}
                         
-                        <!-- Vegetables Section -->
-                        <div class="mb-3">
-                            <small class="text-muted font-weight-bold">🥕 Vegetables</small>
-                            <div class="row">
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="carrot" data-calories="41" data-name="Carrot" data-category="Vegetables">
-                                        <i class="fas fa-carrot mb-1"></i>
-                                        <div class="d-block small">Carrot</div>
-                                        <small class="text-muted">41 cal</small>
-                                    </button>
+                        <!-- Custom Food Entry Card -->
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb-2">
+                            <button class="btn btn-outline-secondary w-100 h-100 py-2" onclick="showCustomFoodModal()">
+                                <div class="text-center">
+                                    <i class="fas fa-plus mb-1"></i>
+                                    <div class="d-block small font-weight-bold">Custom Food</div>
+                                    <small class="text-muted">Add new</small>
                                 </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="sweet potato" data-calories="103" data-name="Sweet Potato" data-category="Vegetables">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Sweet Potato</div>
-                                        <small class="text-muted">103 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="cucumber" data-calories="16" data-name="Cucumber" data-category="Vegetables">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Cucumber</div>
-                                        <small class="text-muted">16 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="bell pepper" data-calories="31" data-name="Bell Pepper" data-category="Vegetables">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Bell Pepper</div>
-                                        <small class="text-muted">31 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="kale" data-calories="33" data-name="Kale" data-category="Vegetables">
-                                        <i class="fas fa-leaf mb-1"></i>
-                                        <div class="d-block small">Kale</div>
-                                        <small class="text-muted">33 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-success w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="broccoli" data-calories="34" data-name="Broccoli" data-category="Vegetables">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Broccoli</div>
-                                        <small class="text-muted">34 cal</small>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Protein & Grains Section -->
-                        <div class="mb-3">
-                            <small class="text-muted font-weight-bold">🥚 Protein & Grains</small>
-                            <div class="row">
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="boiled egg" data-calories="78" data-name="Boiled Egg" data-category="Protein">
-                                        <i class="fas fa-egg mb-1"></i>
-                                        <div class="d-block small">Egg</div>
-                                        <small class="text-muted">78 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="cooked rice" data-calories="130" data-name="Cooked Rice" data-category="Grains">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Rice</div>
-                                        <small class="text-muted">130 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="oatmeal" data-calories="68" data-name="Oatmeal" data-category="Grains">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Oatmeal</div>
-                                        <small class="text-muted">68 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="lentils" data-calories="116" data-name="Lentils" data-category="Protein">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Lentils</div>
-                                        <small class="text-muted">116 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="almonds" data-calories="164" data-name="Almonds" data-category="Protein">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Almonds</div>
-                                        <small class="text-muted">164 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-warning w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="peanuts" data-calories="166" data-name="Peanuts" data-category="Protein">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Peanuts</div>
-                                        <small class="text-muted">166 cal</small>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Enrichment Treats Section -->
-                        <div class="mb-3">
-                            <small class="text-muted font-weight-bold">🎉 Enrichment Treats</small>
-                            <div class="row">
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-info w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="fruit smoothie" data-calories="120" data-name="Fruit Smoothie">
-                                        <i class="fas fa-glass-whiskey mb-1"></i>
-                                        <div class="d-block small">Smoothie</div>
-                                        <small class="text-muted">120 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-info w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="popcorn" data-calories="31" data-name="Popcorn">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Popcorn</div>
-                                        <small class="text-muted">31 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-info w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="dried apricots" data-calories="48" data-name="Dried Apricots">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Dried Apricots</div>
-                                        <small class="text-muted">48 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-info w-100 h-100 py-2 quick-food-btn" 
-                                            data-food="yogurt" data-calories="59" data-name="Yogurt">
-                                        <i class="fas fa-seedling mb-1"></i>
-                                        <div class="d-block small">Yogurt</div>
-                                        <small class="text-muted">59 cal</small>
-                                    </button>
-                                </div>
-                                <div class="col-md-2 col-sm-3 col-4 mb-2">
-                                    <button class="btn btn-outline-secondary w-100 h-100 py-2" onclick="showCustomFoodModal()">
-                                        <i class="fas fa-plus mb-1"></i>
-                                        <div class="d-block small">Custom</div>
-                                        <small class="text-muted">Add new</small>
-                                    </button>
-                                </div>
-                            </div>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Custom Food Form -->
-                <div class="row">
+                <!-- No Results Message -->
+                <div id="noResults" class="text-center py-4" style="display: none;">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No foods found</h5>
+                    <p class="text-muted">Try adjusting your search or category filter</p>
+                    <button class="btn btn-outline-primary" onclick="clearSearch(); filterByCategory('all')">
+                        <i class="fas fa-redo mr-1"></i>Show All Foods
+                    </button>
+                </div>
+
+                <!-- Quick Custom Food Entry (Compact) -->
+                <div class="row mt-3">
                     <div class="col-12">
-                        <h6 class="mb-3">Custom Food Entry</h6>
-                        <form id="customFoodForm" class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="customFoodName">Food Name</label>
-                                    <input type="text" class="form-control form-control-lg" id="customFoodName" 
-                                           placeholder="e.g., Sweet Potato" value="{{ pre_filled_food }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="customQuantity">Quantity</label>
-                                    <div class="input-group input-group-lg">
-                                        <input type="number" class="form-control" id="customQuantity" value="1" min="1" max="99">
-                                        <div class="input-group-append">
-                                            <button class="btn btn-outline-secondary" type="button" onclick="adjustQuantity(-1)">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <button class="btn btn-outline-secondary" type="button" onclick="adjustQuantity(1)">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="customCalories">Calories</label>
-                                    <div class="input-group input-group-lg">
-                                        <input type="number" class="form-control" id="customCalories" 
-                                               placeholder="100" min="0" max="999" value="{{ pre_filled_calories }}">
-                                        <div class="input-group-append">
-                                            <button class="btn btn-outline-secondary" type="button" onclick="adjustCalories(-10)">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <button class="btn btn-outline-secondary" type="button" onclick="adjustCalories(10)">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>&nbsp;</label>
-                                    <button type="button" class="btn btn-primary btn-lg w-100" onclick="addCustomFood()">
-                                        <i class="fas fa-plus"></i> Add
+                        <div class="card card-outline card-secondary">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-plus mr-1"></i>Quick Add Custom Food
+                                </h6>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
                                     </button>
                                 </div>
                             </div>
-                        </form>
+                            <div class="card-body">
+                                <form id="customFoodForm" class="row">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control" id="customFoodName" 
+                                               placeholder="Food name..." value="{{ pre_filled_food }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="customQuantity" value="1" min="1" max="99">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">qty</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="customCalories" 
+                                                   placeholder="Calories" min="0" max="999" value="{{ pre_filled_calories }}">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">cal</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-primary w-100" onclick="addCustomFood()">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -364,7 +239,7 @@
                             <tr>
                                 <th>Food</th>
                                 <th>Qty</th>
-                                <th>Total</th>
+                                <th>Cal</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -393,6 +268,31 @@
                         <button class="btn btn-outline-secondary" onclick="clearAll()">
                             <i class="fas fa-eraser mr-2"></i>Clear All
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats Card -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar mr-2"></i>Quick Stats
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="description-block">
+                            <h5 class="description-header" id="statsItems">0</h5>
+                            <span class="description-text">Food Items</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="description-block">
+                            <h5 class="description-header" id="statsApes">0</h5>
+                            <span class="description-text">Apes Selected</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -427,15 +327,30 @@
 
 {% block extra_css %}
 <style>
-/* Hide spinner arrows on number inputs */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+/* Enhanced styles for the improved interface */
+.food-card {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    height: 100px;
+    position: relative;
 }
 
-input[type="number"] {
-    -moz-appearance: textfield;
+.food-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border-color: #007bff;
+}
+
+.food-card:active {
+    transform: translateY(0);
+}
+
+.food-item {
+    transition: all 0.3s ease;
+}
+
+.food-item.hidden {
+    display: none !important;
 }
 
 .ape-avatar {
@@ -479,25 +394,27 @@ input[type="number"] {
     transition: all 0.3s ease;
 }
 
-.quick-food-btn {
-    transition: all 0.2s ease;
-    border-radius: 8px;
-}
-
-.quick-food-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.quick-food-btn:active {
-    transform: translateY(0);
-}
-
 .table-sm td, .table-sm th {
     padding: 0.5rem;
     font-size: 0.875rem;
 }
 
+.nav-pills .nav-link {
+    border-radius: 20px;
+    margin: 0 2px;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #007bff;
+}
+
+.text-purple { color: #6f42c1; }
+.text-pink { color: #e83e8c; }
+.text-orange { color: #fd7e14; }
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
     .ape-avatar {
         padding: 5px;
@@ -508,13 +425,51 @@ input[type="number"] {
         height: 50px;
     }
     
-    .quick-food-btn {
+    .food-card {
+        height: 80px;
         padding: 0.5rem !important;
     }
     
-    .quick-food-btn i {
-        font-size: 1.5rem !important;
+    .nav-pills .nav-link {
+        font-size: 0.75rem;
+        padding: 6px 8px;
     }
+}
+
+/* Search highlight */
+.search-highlight {
+    background-color: yellow;
+    font-weight: bold;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Custom scrollbar for food grid only */
+.food-selection-card .card-body {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.food-selection-card .card-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.food-selection-card .card-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.food-selection-card .card-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.food-selection-card .card-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 </style>
 {% endblock %}
@@ -523,40 +478,61 @@ input[type="number"] {
 <script>
 let selectedApes = new Set();
 let feedingItems = [];
+let currentCategory = 'all';
 
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
+    updateStats();
     
     // Pre-fill custom food if provided
     {% if pre_filled_food %}
-    document.getElementById('customFoodName').value = '{{ pre_filled_food }}';
+    document.getElementById('customFoodName').value = '{{ pre_filled_food|e }}';
     {% endif %}
     {% if pre_filled_calories %}
-    document.getElementById('customCalories').value = '{{ pre_filled_calories }}';
+    document.getElementById('customCalories').value = '{{ pre_filled_calories|e }}';
     {% endif %}
     
     // Pre-select ape if provided in URL
     {% if pre_filled_ape %}
-    const apeId = parseInt('{{ pre_filled_ape }}');
+    const apeId = parseInt('{{ pre_filled_ape|e }}');
     if (apeId) {
-        const apeElement = document.querySelector(`[data-ape-id="${apeId}"]`);
+        const apeElement = document.querySelector('[data-ape-id="' + apeId + '"]');
         if (apeElement) {
             toggleApeSelection(apeElement, apeId);
         }
     }
     {% endif %}
+    
+    // Add event listeners to food buttons
+    document.querySelectorAll('.quick-food-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const food = this.getAttribute('data-food');
+            const calories = parseInt(this.getAttribute('data-calories'));
+            const name = this.getAttribute('data-name');
+            addFoodItem(name, calories, 1);
+            
+            // Visual feedback
+            this.classList.add('btn-success');
+            setTimeout(() => {
+                this.classList.remove('btn-success');
+            }, 500);
+        });
+    });
 });
 
+// Ape selection functions
 function toggleApeSelection(element, apeId) {
-    if (selectedApes.has(apeId)) {
-        selectedApes.delete(apeId);
+    const id = parseInt(apeId);
+    if (selectedApes.has(id)) {
+        selectedApes.delete(id);
         element.classList.remove('selected');
     } else {
-        selectedApes.add(apeId);
+        selectedApes.add(id);
         element.classList.add('selected');
     }
     updateSelectedCount();
     updateSaveButton();
+    updateStats();
 }
 
 function selectAllApes() {
@@ -568,6 +544,7 @@ function selectAllApes() {
     });
     updateSelectedCount();
     updateSaveButton();
+    updateStats();
 }
 
 function clearSelection() {
@@ -577,10 +554,16 @@ function clearSelection() {
     });
     updateSelectedCount();
     updateSaveButton();
+    updateStats();
 }
 
 function updateSelectedCount() {
     document.getElementById('selectedCount').textContent = selectedApes.size;
+}
+
+function updateStats() {
+    document.getElementById('statsItems').textContent = feedingItems.length;
+    document.getElementById('statsApes').textContent = selectedApes.size;
 }
 
 function updateSaveButton() {
@@ -596,16 +579,70 @@ function updateSaveButton() {
     }
 }
 
-// Quick food buttons
-document.querySelectorAll('.quick-food-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        const food = this.getAttribute('data-food');
-        const calories = parseInt(this.getAttribute('data-calories'));
-        const name = this.getAttribute('data-name');
-        addFoodItem(name, calories, 1);
+// Search functionality
+function searchFoods() {
+    const searchTerm = document.getElementById('foodSearch').value.toLowerCase();
+    const foodItems = document.querySelectorAll('.food-item');
+    let visibleCount = 0;
+    
+    foodItems.forEach(function(item) {
+        const foodName = item.getAttribute('data-name');
+        const isVisible = foodName.includes(searchTerm) && 
+                         (currentCategory === 'all' || item.getAttribute('data-category') === currentCategory);
+        
+        if (isVisible) {
+            item.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            item.classList.add('hidden');
+        }
     });
-});
+    
+    // Show/hide no results message
+    const noResults = document.getElementById('noResults');
+    if (visibleCount === 0) {
+        noResults.style.display = 'block';
+    } else {
+        noResults.style.display = 'none';
+    }
+}
 
+function clearSearch() {
+    document.getElementById('foodSearch').value = '';
+    searchFoods();
+}
+
+// Category filtering
+function filterByCategory(category) {
+    currentCategory = category;
+    const foodItems = document.querySelectorAll('.food-item');
+    const searchTerm = document.getElementById('foodSearch').value.toLowerCase();
+    let visibleCount = 0;
+    
+    foodItems.forEach(function(item) {
+        const itemCategory = item.getAttribute('data-category');
+        const foodName = item.getAttribute('data-name');
+        const matchesCategory = category === 'all' || itemCategory === category;
+        const matchesSearch = foodName.includes(searchTerm);
+        
+        if (matchesCategory && matchesSearch) {
+            item.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+    
+    // Show/hide no results message
+    const noResults = document.getElementById('noResults');
+    if (visibleCount === 0) {
+        noResults.style.display = 'block';
+    } else {
+        noResults.style.display = 'none';
+    }
+}
+
+// Food management functions
 function addCustomFood() {
     const name = document.getElementById('customFoodName').value.trim();
     const quantity = parseInt(document.getElementById('customQuantity').value);
@@ -642,6 +679,7 @@ function addFoodItem(name, calories, quantity) {
     }
     
     updateFeedingSummary();
+    updateStats();
 }
 
 function updateFeedingSummary() {
@@ -653,11 +691,11 @@ function updateFeedingSummary() {
     feedingItems.forEach(function(item, index) {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${item.name}</td>
+            <td title="${item.name}">${item.name.length > 15 ? item.name.substr(0, 15) + '...' : item.name}</td>
             <td>${item.quantity}</td>
             <td>${item.totalCalories}</td>
             <td>
-                <button class="btn btn-sm btn-outline-danger" onclick="removeFoodItem(${index})">
+                <button class="btn btn-sm btn-outline-danger" onclick="removeFoodItem(${index})" title="Remove">
                     <i class="fas fa-times"></i>
                 </button>
             </td>
@@ -672,30 +710,23 @@ function updateFeedingSummary() {
 function removeFoodItem(index) {
     feedingItems.splice(index, 1);
     updateFeedingSummary();
+    updateStats();
 }
 
 function clearFeedingList() {
     feedingItems = [];
     updateFeedingSummary();
+    updateStats();
 }
 
 function clearAll() {
     clearSelection();
     clearFeedingList();
+    clearSearch();
+    filterByCategory('all');
 }
 
-function adjustQuantity(delta) {
-    const input = document.getElementById('customQuantity');
-    const newValue = Math.max(1, Math.min(99, parseInt(input.value) + delta));
-    input.value = newValue;
-}
-
-function adjustCalories(delta) {
-    const input = document.getElementById('customCalories');
-    const newValue = Math.max(0, parseInt(input.value || 0) + delta);
-    input.value = newValue;
-}
-
+// Save feeding function (same as original)
 function saveFeeding() {
     if (selectedApes.size === 0) {
         alert('Please select at least one ape');
@@ -756,6 +787,16 @@ function saveFeeding() {
     });
 }
 
+// Handle custom food modal (fallback for cases where it's not defined)
+function showCustomFoodModal() {
+    // Scroll to custom food form
+    const customForm = document.getElementById('customFoodForm');
+    if (customForm) {
+        customForm.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('customFoodName').focus();
+    }
+}
+
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
     // Ctrl/Cmd + S to save
@@ -773,6 +814,22 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         clearAll();
     }
+    // Ctrl/Cmd + F to focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        document.getElementById('foodSearch').focus();
+    }
+});
+
+// Focus search input when typing (if not in input field)
+document.addEventListener('keypress', function(e) {
+    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) && 
+        e.key.match(/[a-zA-Z0-9]/)) {
+        const searchInput = document.getElementById('foodSearch');
+        searchInput.focus();
+        searchInput.value = e.key;
+        searchFoods();
+    }
 });
 </script>
-{% endblock %} 
+{% endblock %}

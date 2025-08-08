@@ -9,7 +9,7 @@ and rendering the appropriate templates.
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from backend.extensions import db
-from backend.models.entry import Apes, Recipe, Meals
+from backend.models.entry import Apes, Recipe, Meals, FoodCategory
 from backend.helpers import add_to_db, query_db
 from datetime import datetime, timedelta
 from flask_security import login_required, roles_required, current_user
@@ -253,11 +253,21 @@ def edit_recipe(recipe_id):
     """
     recipe = Recipe.query.get_or_404(recipe_id)
     if request.method == 'POST':
-        recipe.meal_name = request.form['meal_name']
-        recipe.description = request.form['description']
-        recipe.calories = int(request.form['calories'])
-        db.session.commit()
-        return redirect(url_for('site.dashboard'))
+        try:
+            recipe.meal_name = request.form['meal_name']
+            recipe.description = request.form.get('description', '')
+            recipe.calories = int(request.form['calories'])
+            recipe.food_category = request.form.get('food_category', 'Other')
+            
+            db.session.commit()
+            
+            flash(f'Food item "{recipe.meal_name}" has been updated successfully.', 'success')
+            return redirect(url_for('site.manage_foods'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating food item: {str(e)}', 'error')
+            return redirect(url_for('site.manage_foods'))
+    
     return render_template('edit_recipe.html', recipe=recipe)
 
 
@@ -297,6 +307,31 @@ def delete_ape(ape_id):
 
 
 
+@site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
+@roles_required("Admin")
+def delete_recipe_form(recipe_id):
+    """
+    Delete a recipe from the database via form submission.
+    """
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
+        recipe_name = recipe.meal_name
+        
+        # Check if recipe is used in any meals
+        if recipe.meals:
+            flash(f'Cannot delete food item "{recipe_name}" because it is used in {len(recipe.meals)} existing meals.', 'error')
+            return redirect(url_for('site.manage_foods'))
+        
+        db.session.delete(recipe)
+        db.session.commit()
+        
+        flash(f'Food item "{recipe_name}" has been deleted successfully.', 'success')
+        return redirect(url_for('site.manage_foods'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting food item: {str(e)}', 'error')
+        return redirect(url_for('site.manage_foods'))
+
 @site.route('/meals/<int:meal_id>/delete', methods=['POST'])
 @roles_required("Admin")
 def delete_meal(meal_id):
@@ -323,11 +358,29 @@ def log_feeding():
     # Get all apes for selection
     apes = Apes.query.all()
     
+    # Get all available foods from database, grouped by category
+    recipes = Recipe.query.order_by(Recipe.food_category, Recipe.meal_name).all()
+    
+    # Get all food categories for filtering
+    categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order).all()
+    
+    # Group recipes by category for easier template rendering
+    foods_by_category = {}
+    for recipe in recipes:
+        category = recipe.food_category or 'Other'
+        if category not in foods_by_category:
+            foods_by_category[category] = []
+        foods_by_category[category].append(recipe)
+    
     return render_template('log_feeding.html', 
                          apes=apes,
+                         recipes=recipes,
+                         foods_by_category=foods_by_category,
+                         categories=categories,
                          pre_filled_food=pre_filled_food,
                          pre_filled_calories=pre_filled_calories,
                          pre_filled_ape=pre_filled_ape)
+
 
 
 @site.route('/save_feeding', methods=['POST'])
@@ -505,7 +558,14 @@ def all_apes():
 def manage_foods():
     """Display food management page"""
     recipes = Recipe.query.all()
-    return render_template('manage_foods.html', recipes=recipes)
+    categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order, FoodCategory.name).all()
+    
+    # Debug: Print counts
+    print(f"DEBUG: Found {len(recipes)} recipes and {len(categories)} categories")
+    if recipes:
+        print(f"DEBUG: First recipe: {recipes[0].meal_name}")
+    
+    return render_template('manage_foods.html', recipes=recipes, categories=categories)
 
 
 @site.route('/api/recipes', methods=['POST'])
@@ -581,6 +641,24 @@ def get_recipe(recipe_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@site.route('/api/test/recipes/<int:recipe_id>', methods=['GET'])
+def test_get_recipe(recipe_id):
+    """Test endpoint to get a single recipe without authentication"""
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
+        return jsonify({
+            'success': True,
+            'recipe': {
+                'id': recipe.id,
+                'meal_name': recipe.meal_name,
+                'calories': recipe.calories,
+                'food_category': recipe.food_category,
+                'description': recipe.description
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 
 @site.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
 @login_required
@@ -601,6 +679,198 @@ def delete_recipe(recipe_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
 
+@site.route('/recipes/add', methods=['POST'])
+@login_required
+def add_recipe_form():
+    """Add a new recipe via form submission"""
+    try:
+        meal_name = request.form.get('meal_name')
+        calories = request.form.get('calories')
+        food_category = request.form.get('food_category')
+        description = request.form.get('description', '')
+        
+        if not meal_name or not calories:
+            flash('Food name and calories are required.', 'error')
+            return redirect(url_for('site.manage_foods'))
+        
+        # Check if recipe already exists
+        existing_recipe = Recipe.query.filter_by(meal_name=meal_name).first()
+        if existing_recipe:
+            flash(f'A food item named "{meal_name}" already exists.', 'error')
+            return redirect(url_for('site.manage_foods'))
+        
+        new_recipe = Recipe(
+            meal_name=meal_name,
+            calories=int(calories),
+            food_category=food_category,
+            description=description
+        )
+        
+        db.session.add(new_recipe)
+        db.session.commit()
+        
+        flash(f'"{meal_name}" has been added successfully.', 'success')
+        return redirect(url_for('site.manage_foods'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding food item: {str(e)}', 'error')
+        return redirect(url_for('site.manage_foods'))
+
+# Food Category Management Routes
+@site.route('/manage_categories')
+@login_required
+@roles_required("Admin")
+def manage_categories():
+    """Display food category management page"""
+    categories = FoodCategory.query.order_by(FoodCategory.sort_order, FoodCategory.name).all()
+    
+    # Calculate food counts for each category
+    category_counts = {}
+    for category in categories:
+        # Count recipes that match this category by name (using the legacy food_category field)
+        count = Recipe.query.filter_by(food_category=category.name).count()
+        
+        # Also check for alternative category names that might be stored differently
+        if count == 0:
+            # Check for simplified names that might have been used
+            simplified_name = category.name.split(' ')[0]  # Get first word (e.g., "Fruits" from "Fruits")
+            alt_count = Recipe.query.filter_by(food_category=simplified_name).count()
+            if alt_count > 0:
+                count = alt_count
+        
+        category_counts[category.id] = count
+    
+    return render_template('manage_categories.html', categories=categories, category_counts=category_counts)
+
+
+@site.route('/categories/add', methods=['POST'])
+@login_required
+@roles_required("Admin")
+def add_category():
+    """Add a new food category"""
+    try:
+        name = request.form.get('name')
+        description = request.form.get('description', '')
+        icon = request.form.get('icon', 'fas fa-tag')
+        color = request.form.get('color', 'badge-secondary')
+        sort_order = int(request.form.get('sort_order', 0))
+        
+        if not name:
+            flash('Category name is required.', 'error')
+            return redirect(url_for('site.manage_categories'))
+        
+        # Check if category already exists
+        existing_category = FoodCategory.query.filter_by(name=name).first()
+        if existing_category:
+            flash(f'A category named "{name}" already exists.', 'error')
+            return redirect(url_for('site.manage_categories'))
+        
+        new_category = FoodCategory(
+            name=name,
+            description=description,
+            icon=icon,
+            color=color,
+            sort_order=sort_order
+        )
+        
+        db.session.add(new_category)
+        db.session.commit()
+        
+        flash(f'Category "{name}" has been added successfully.', 'success')
+        return redirect(url_for('site.manage_categories'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding category: {str(e)}', 'error')
+        return redirect(url_for('site.manage_categories'))
+
+@site.route('/categories/<int:category_id>/edit', methods=['GET', 'POST'])
+@login_required
+@roles_required("Admin")
+def edit_category(category_id):
+    """Edit an existing food category"""
+    category = FoodCategory.query.get_or_404(category_id)
+    
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name')
+            description = request.form.get('description', '')
+            icon = request.form.get('icon', 'fas fa-tag')
+            color = request.form.get('color', 'badge-secondary')
+            sort_order = int(request.form.get('sort_order', 0))
+            is_active = 'is_active' in request.form
+            
+            if not name:
+                flash('Category name is required.', 'error')
+                return render_template('edit_category.html', category=category)
+            
+            # Check if name changed and if new name already exists
+            if name != category.name:
+                existing_category = FoodCategory.query.filter_by(name=name).first()
+                if existing_category:
+                    flash(f'A category named "{name}" already exists.', 'error')
+                    return render_template('edit_category.html', category=category)
+            
+            category.name = name
+            category.description = description
+            category.icon = icon
+            category.color = color
+            category.sort_order = sort_order
+            category.is_active = is_active
+            
+            db.session.commit()
+            
+            flash(f'Category "{name}" has been updated successfully.', 'success')
+            return redirect(url_for('site.manage_categories'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating category: {str(e)}', 'error')
+    
+    return render_template('edit_category.html', category=category)
+
+@site.route('/categories/<int:category_id>/delete', methods=['POST'])
+@login_required
+@roles_required("Admin")
+def delete_category(category_id):
+    """Delete a food category"""
+    try:
+        category = FoodCategory.query.get_or_404(category_id)
+        
+        # Check if category is used by any recipes
+        if category.recipes.count() > 0:
+            flash(f'Cannot delete category "{category.name}" because it is used by {category.recipes.count()} food items.', 'error')
+            return redirect(url_for('site.manage_categories'))
+        
+        db.session.delete(category)
+        db.session.commit()
+        
+        flash(f'Category "{category.name}" has been deleted successfully.', 'success')
+        return redirect(url_for('site.manage_categories'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting category: {str(e)}', 'error')
+        return redirect(url_for('site.manage_categories'))
+
+@site.route('/api/categories', methods=['GET'])
+@login_required
+def get_categories():
+    """Get all active food categories via API"""
+    try:
+        categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order, FoodCategory.name).all()
+        return jsonify({
+            'success': True,
+            'categories': [
+                {
+                    'id': cat.id,
+                    'name': cat.name,
+                    'description': cat.description,
+                    'icon': cat.icon,
+                    'color': cat.color
+                }
+                for cat in categories
+            ]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 @site.route('/reports')
 @login_required
@@ -613,6 +883,8 @@ def reports():
     # Get date range from query parameters (default to today)
     date_range = request.args.get('range', 'today')
     custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    custom_start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
+    custom_end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
     
     # Calculate date range
     if date_range == 'today':
@@ -628,6 +900,16 @@ def reports():
         try:
             start_date = datetime.strptime(custom_date, '%Y-%m-%d').date()
             end_date = start_date
+        except ValueError:
+            start_date = datetime.now().date()
+            end_date = start_date
+    elif date_range == 'custom_range':
+        try:
+            start_date = datetime.strptime(custom_start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(custom_end_date, '%Y-%m-%d').date()
+            # Ensure start_date is not after end_date
+            if start_date > end_date:
+                start_date, end_date = end_date, start_date
         except ValueError:
             start_date = datetime.now().date()
             end_date = start_date
@@ -715,7 +997,9 @@ def reports():
                          date_range=date_range,
                          start_date=start_date,
                          end_date=end_date,
-                         custom_date=custom_date)
+                         custom_date=custom_date,
+                         custom_start_date=custom_start_date,
+                         custom_end_date=custom_end_date)
 
 
 # Image Upload Routes
