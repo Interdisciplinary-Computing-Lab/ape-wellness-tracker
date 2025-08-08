@@ -358,11 +358,29 @@ def log_feeding():
     # Get all apes for selection
     apes = Apes.query.all()
     
+    # Get all available foods from database, grouped by category
+    recipes = Recipe.query.order_by(Recipe.food_category, Recipe.meal_name).all()
+    
+    # Get all food categories for filtering
+    categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order).all()
+    
+    # Group recipes by category for easier template rendering
+    foods_by_category = {}
+    for recipe in recipes:
+        category = recipe.food_category or 'Other'
+        if category not in foods_by_category:
+            foods_by_category[category] = []
+        foods_by_category[category].append(recipe)
+    
     return render_template('log_feeding.html', 
                          apes=apes,
+                         recipes=recipes,
+                         foods_by_category=foods_by_category,
+                         categories=categories,
                          pre_filled_food=pre_filled_food,
                          pre_filled_calories=pre_filled_calories,
                          pre_filled_ape=pre_filled_ape)
+
 
 
 @site.route('/save_feeding', methods=['POST'])
