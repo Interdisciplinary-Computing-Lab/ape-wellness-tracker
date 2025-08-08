@@ -724,6 +724,7 @@ def manage_categories():
     
     return render_template('manage_categories.html', categories=categories, category_counts=category_counts)
 
+
 @site.route('/categories/add', methods=['POST'])
 @login_required
 @roles_required("Admin")
@@ -864,6 +865,8 @@ def reports():
     # Get date range from query parameters (default to today)
     date_range = request.args.get('range', 'today')
     custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    custom_start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
+    custom_end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
     
     # Calculate date range
     if date_range == 'today':
@@ -879,6 +882,16 @@ def reports():
         try:
             start_date = datetime.strptime(custom_date, '%Y-%m-%d').date()
             end_date = start_date
+        except ValueError:
+            start_date = datetime.now().date()
+            end_date = start_date
+    elif date_range == 'custom_range':
+        try:
+            start_date = datetime.strptime(custom_start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(custom_end_date, '%Y-%m-%d').date()
+            # Ensure start_date is not after end_date
+            if start_date > end_date:
+                start_date, end_date = end_date, start_date
         except ValueError:
             start_date = datetime.now().date()
             end_date = start_date
@@ -966,7 +979,9 @@ def reports():
                          date_range=date_range,
                          start_date=start_date,
                          end_date=end_date,
-                         custom_date=custom_date)
+                         custom_date=custom_date,
+                         custom_start_date=custom_start_date,
+                         custom_end_date=custom_end_date)
 
 
 # Image Upload Routes
