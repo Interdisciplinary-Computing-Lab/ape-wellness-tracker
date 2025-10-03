@@ -1437,3 +1437,9 @@ def change_password():
         db.session.rollback()
         flash(f'Error changing password: {str(e)}', 'error')
         return redirect(url_for('site.user_profile'))
+
+
+@site.route('/forgot_password')
+def forgot_password_page():
+    """Display forgot password page"""
+    return render_template('forgot_password_simple.html')

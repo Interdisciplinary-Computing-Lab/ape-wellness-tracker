@@ -37,14 +37,6 @@
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label>Member Since</label>
-                                <input type="text" class="form-control" value="{% if user.confirmed_at %}{{ user.confirmed_at.strftime('%B %d, %Y') }}{% else %}Not confirmed{% endif %}" readonly>
-                            </div>
-                        </div>
-                    </div>
                     
                     {% if user.roles %}
                     <div class="form-group">
@@ -71,14 +63,6 @@
                             </div>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label>Member Since</label>
-                                    <input type="text" class="form-control" value="{% if user.confirmed_at %}{{ user.confirmed_at.strftime('%B %d, %Y') }}{% else %}Not confirmed{% endif %}" readonly>
-                                </div>
-                            </div>
-                        </div>
                         
                         {% if user.roles %}
                         <div class="form-group">
@@ -161,6 +145,10 @@
                         <i class="fas fa-key mr-2"></i>
                         Change Password
                     </button>
+                    <a href="{{ url_for('site.forgot_password_page') }}" class="btn btn-warning">
+                        <i class="fas fa-question-circle mr-2"></i>
+                        Forgot Password?
+                    </a>
                     <a href="{{ url_for('site.dashboard') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left mr-2"></i>
                         Back to Dashboard
