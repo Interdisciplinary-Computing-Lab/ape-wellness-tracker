@@ -6,26 +6,10 @@ user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security()
 
 def init_security(app):
-    """Initialize Flask-Security with custom configuration"""
+    """Initialize Flask-Security with minimal configuration"""
     security.init_app(app, user_datastore)
     
-    # Configure security settings
-    app.config['SECURITY_LOGIN_USER_TEMPLATE'] = 'security/login_user.html'
-    app.config['SECURITY_REGISTER_USER_TEMPLATE'] = 'security/register_user.html'
-    app.config['SECURITY_FORGOT_PASSWORD_TEMPLATE'] = 'security/forgot_password.html'
-    app.config['SECURITY_RESET_PASSWORD_TEMPLATE'] = 'security/reset_password.html'
-    app.config['SECURITY_CHANGE_PASSWORD_TEMPLATE'] = 'security/change_password.html'
+    # Only essential configurations - let Flask-Security handle the rest
+    app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
     app.config['SECURITY_SEND_PASSWORD_CHANGE_EMAIL'] = False
     app.config['SECURITY_SEND_PASSWORD_RESET_EMAIL'] = False
-    app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
-    
-    # Enable forgot password functionality
-    app.config['SECURITY_RECOVERABLE'] = True
-    app.config['SECURITY_RESETABLE'] = True
-    
-    # Configure login behavior
-    app.config['SECURITY_MSG_LOGIN'] = ('Please log in to access this page.', 'info')
-    app.config['SECURITY_MSG_UNAUTHORIZED'] = ('You do not have permission to view this page.', 'error')
-    
-    # Disable automatic login required messages on login page
-    app.config['SECURITY_FLASH_MESSAGES'] = True

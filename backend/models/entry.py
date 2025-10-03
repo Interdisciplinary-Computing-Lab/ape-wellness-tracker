@@ -3,6 +3,7 @@ import sqlalchemy as sa
 from flask_security import UserMixin, RoleMixin
 from datetime import datetime, date
 from flask import url_for
+import uuid
 
 class Apes(db.Model):
     """
@@ -161,50 +162,22 @@ class Role(db.Model, RoleMixin):
         description (str): Description of the role.
     """
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(80), unique=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
     description = db.Column(db.String(255))
 
 class User(db.Model, UserMixin):
     """
     Represents a user of the wellness tracker application.
-    Fields:
-        id (int): Primary key.
-        email (str): Unique email address.
-        password (str): Encrypted password.
-        active (bool): Whether the user is active.
-        confirmed_at (datetime): Timestamp of confirmation.
-        roles: List of associated roles (many-to-many).
     """
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
+    active = db.Column(db.Boolean, default=True)
+    confirmed_at = db.Column(db.DateTime)
     fs_uniquifier = db.Column(db.String(64), unique=True, nullable=False)
+    
     roles = db.relationship(
         'Role',
         secondary=roles_users,
         backref=db.backref('users', lazy='dynamic')
     )
-    
-    # Flask-Security required methods
-    def get_id(self):
-        """Return the user ID as a string"""
-        return str(self.id)
-    
-    def is_authenticated(self):
-        """Return True if the user is authenticated"""
-        return True
-    
-    def is_anonymous(self):
-        """Return False if this is an authenticated user"""
-        return False
-    
-    def is_active(self):
-        """Return True if the user account is active"""
-        return self.active
-    
-    def verify_password(self, password):
-        """Verify the user's password"""
-        from flask_security.utils import verify_password
-        return verify_password(password, self.password)
