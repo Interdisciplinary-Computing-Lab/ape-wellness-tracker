@@ -186,3 +186,25 @@ class User(db.Model, UserMixin):
         secondary=roles_users,
         backref=db.backref('users', lazy='dynamic')
     )
+    
+    # Flask-Security required methods
+    def get_id(self):
+        """Return the user ID as a string"""
+        return str(self.id)
+    
+    def is_authenticated(self):
+        """Return True if the user is authenticated"""
+        return True
+    
+    def is_anonymous(self):
+        """Return False if this is an authenticated user"""
+        return False
+    
+    def is_active(self):
+        """Return True if the user account is active"""
+        return self.active
+    
+    def verify_password(self, password):
+        """Verify the user's password"""
+        from flask_security.utils import verify_password
+        return verify_password(password, self.password)
