@@ -70,7 +70,6 @@ def add_ape():
     ape_name = request.form.get("ape_name")
     age = request.form.get("age")
 
-    print("FORM DATA:", request.form)
 
     if ape_name and age:
         # Convert age to birthday (approximate)
@@ -150,7 +149,6 @@ def add_recipe():
     description = request.form.get("description")
     calories = request.form.get("calories")
 
-    print("FORM DATA:", request.form)
 
     if meal_name and calories:
         new_recipe = Recipe(
@@ -174,7 +172,6 @@ def add_meal():
     recipe_id = request.form.get("recipe_id")
     date_str = request.form.get("date")
 
-    print("FORM DATA:", request.form)
 
     if not all([ape_id, recipe_id, date_str]):
         print("Need to fill in all forms.")
@@ -562,10 +559,6 @@ def manage_foods():
     recipes = Recipe.query.all()
     categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order, FoodCategory.name).all()
     
-    # Debug: Print counts
-    print(f"DEBUG: Found {len(recipes)} recipes and {len(categories)} categories")
-    if recipes:
-        print(f"DEBUG: First recipe: {recipes[0].meal_name}")
     
     return render_template('manage_foods.html', recipes=recipes, categories=categories)
 
