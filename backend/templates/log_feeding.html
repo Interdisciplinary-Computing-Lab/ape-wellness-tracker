@@ -572,7 +572,10 @@ function updateSaveButton() {
     
     if (selectedApes.size === 0) {
         saveBtn.disabled = true;
-        noApesAlert.style.display = 'block';
+        // Only show warning if we're not in the middle of clearing after a successful save
+        if (!window.isClearingAfterSave) {
+            noApesAlert.style.display = 'block';
+        }
     } else {
         saveBtn.disabled = false;
         noApesAlert.style.display = 'none';
@@ -720,10 +723,18 @@ function clearFeedingList() {
 }
 
 function clearAll() {
+    // Set flag to prevent showing warning during clear
+    window.isClearingAfterSave = true;
+    
     clearSelection();
     clearFeedingList();
     clearSearch();
     filterByCategory('all');
+    
+    // Reset flag after a short delay to allow the clear operations to complete
+    setTimeout(() => {
+        window.isClearingAfterSave = false;
+    }, 100);
 }
 
 // Save feeding function (same as original)
