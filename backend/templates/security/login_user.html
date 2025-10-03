@@ -158,11 +158,14 @@
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
+                            <!-- Only show messages that are not the default login required message -->
+                            {% if message != 'You must sign in to view this resource.' %}
                             <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible">
                                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                                 <i class="icon fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info' }}"></i>
                                 {{ message }}
                             </div>
+                            {% endif %}
                         {% endfor %}
                     {% endif %}
                 {% endwith %}

@@ -22,3 +22,10 @@ def init_security(app):
     # Enable forgot password functionality
     app.config['SECURITY_RECOVERABLE'] = True
     app.config['SECURITY_RESETABLE'] = True
+    
+    # Configure login behavior
+    app.config['SECURITY_MSG_LOGIN'] = ('Please log in to access this page.', 'info')
+    app.config['SECURITY_MSG_UNAUTHORIZED'] = ('You do not have permission to view this page.', 'error')
+    
+    # Disable automatic login required messages on login page
+    app.config['SECURITY_FLASH_MESSAGES'] = True
