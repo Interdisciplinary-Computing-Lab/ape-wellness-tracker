@@ -12,7 +12,7 @@ from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory
 from backend.helpers import add_to_db, query_db
 from datetime import datetime, timedelta
-from flask_security import login_required, roles_required, current_user, change_user_password
+from flask_security import login_required, roles_required, current_user
 import io
 import os
 import csv
@@ -1350,7 +1350,19 @@ def remove_ape_image(ape_id):
 @login_required
 def user_profile():
     """Display user profile page"""
-    return render_template('user_profile.html', user=current_user)
+    # Calculate user statistics
+    total_meals = len(current_user.meals)
+    
+    # Calculate unique active days
+    unique_dates = set()
+    for meal in current_user.meals:
+        unique_dates.add(meal.date.date())  # Use date() to get just the date part
+    active_days = len(unique_dates)
+    
+    return render_template('user_profile.html', 
+                         user=current_user,
+                         total_meals=total_meals,
+                         active_days=active_days)
 
 
 @site.route('/user_profile/change_password', methods=['POST'])
@@ -1379,8 +1391,9 @@ def change_password():
             flash('Current password is incorrect.', 'error')
             return redirect(url_for('site.user_profile'))
         
-        # Change the password
-        current_user.password = current_user.encrypt_password(new_password)
+        # Change the password using Flask-Security's method
+        from flask_security.utils import hash_password
+        current_user.password = hash_password(new_password)
         db.session.commit()
         
         flash('Password changed successfully!', 'success')

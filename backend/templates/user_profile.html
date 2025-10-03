@@ -82,7 +82,7 @@
                             </span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Meals Logged</span>
-                                <span class="info-box-number">{{ user.meals.count() }}</span>
+                                <span class="info-box-number">{{ total_meals }}</span>
                             </div>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                             </span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Active Days</span>
-                                <span class="info-box-number">{{ user.meals.with_entities(Meals.date).distinct().count() }}</span>
+                                <span class="info-box-number">{{ active_days }}</span>
                             </div>
                         </div>
                     </div>
