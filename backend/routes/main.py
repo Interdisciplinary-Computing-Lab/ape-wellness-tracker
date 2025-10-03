@@ -12,7 +12,7 @@ from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory
 from backend.helpers import add_to_db, query_db
 from datetime import datetime, timedelta
-from flask_security import login_required, roles_required, current_user
+from flask_security import login_required, roles_required, current_user, change_user_password
 import io
 import os
 import csv
@@ -1344,3 +1344,49 @@ def remove_ape_image(ape_id):
         db.session.rollback()
         flash(f'Error removing image: {str(e)}', 'error')
         return redirect(url_for('site.ape_profile_page', ape_id=ape_id))
+
+
+@site.route('/user_profile')
+@login_required
+def user_profile():
+    """Display user profile page"""
+    return render_template('user_profile.html', user=current_user)
+
+
+@site.route('/user_profile/change_password', methods=['POST'])
+@login_required
+def change_password():
+    """Handle password change requests"""
+    try:
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not all([current_password, new_password, confirm_password]):
+            flash('All password fields are required.', 'error')
+            return redirect(url_for('site.user_profile'))
+        
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'error')
+            return redirect(url_for('site.user_profile'))
+        
+        if len(new_password) < 8:
+            flash('New password must be at least 8 characters long.', 'error')
+            return redirect(url_for('site.user_profile'))
+        
+        # Verify current password
+        if not current_user.verify_password(current_password):
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('site.user_profile'))
+        
+        # Change the password
+        current_user.password = current_user.encrypt_password(new_password)
+        db.session.commit()
+        
+        flash('Password changed successfully!', 'success')
+        return redirect(url_for('site.user_profile'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error changing password: {str(e)}', 'error')
+        return redirect(url_for('site.user_profile'))

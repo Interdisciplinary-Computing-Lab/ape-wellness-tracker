@@ -30,6 +30,18 @@
         .card-body {
             scrollbar-gutter: stable;
         }
+        
+        /* User profile link styling */
+        .user-panel .info a {
+            color: #c2c7d0;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .user-panel .info a:hover {
+            color: #fff;
+            text-decoration: none;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -69,7 +81,11 @@
                     <i class="fas fa-user-circle img-circle elevation-2"></i>
                 </div>
                 <div class="info">
-                    <a href="#" class="d-block">{{ current_user.email if current_user.is_authenticated else 'Guest' }}</a>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('site.user_profile') }}" class="d-block" title="View Profile">{{ current_user.email }}</a>
+                    {% else %}
+                        <span class="d-block">Guest</span>
+                    {% endif %}
                 </div>
             </div>
             <!-- Sidebar Menu -->
