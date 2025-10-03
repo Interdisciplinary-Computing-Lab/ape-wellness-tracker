@@ -327,7 +327,7 @@
 
 {% block extra_css %}
 <style>
-/* Enhanced styles for the improved interface */
+/* Minimal styles that don't interfere with AdminLTE sidebar */
 .food-card {
     transition: all 0.2s ease;
     border-radius: 8px;
@@ -339,10 +339,6 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     border-color: #007bff;
-}
-
-.food-card:active {
-    transform: translateY(0);
 }
 
 .food-item {
@@ -394,47 +390,9 @@
     transition: all 0.3s ease;
 }
 
-.table-sm td, .table-sm th {
-    padding: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.nav-pills .nav-link {
-    border-radius: 20px;
-    margin: 0 2px;
-    font-size: 0.85rem;
-    padding: 8px 12px;
-}
-
-.nav-pills .nav-link.active {
-    background-color: #007bff;
-}
-
 .text-purple { color: #6f42c1; }
 .text-pink { color: #e83e8c; }
 .text-orange { color: #fd7e14; }
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .ape-avatar {
-        padding: 5px;
-    }
-    
-    .avatar-circle {
-        width: 50px;
-        height: 50px;
-    }
-    
-    .food-card {
-        height: 80px;
-        padding: 0.5rem !important;
-    }
-    
-    .nav-pills .nav-link {
-        font-size: 0.75rem;
-        padding: 6px 8px;
-    }
-}
 
 /* Search highlight */
 .search-highlight {
@@ -446,30 +404,6 @@
 .loading {
     opacity: 0.6;
     pointer-events: none;
-}
-
-/* Custom scrollbar for food grid only */
-.food-selection-card .card-body {
-    max-height: 600px;
-    overflow-y: auto;
-}
-
-.food-selection-card .card-body::-webkit-scrollbar {
-    width: 6px;
-}
-
-.food-selection-card .card-body::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.food-selection-card .card-body::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 10px;
-}
-
-.food-selection-card .card-body::-webkit-scrollbar-thumb:hover {
-    background: #555;
 }
 </style>
 {% endblock %}
