@@ -9,7 +9,7 @@ and rendering the appropriate templates.
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from backend.extensions import db
-from backend.models.entry import Apes, Recipe, Meals, FoodCategory
+from backend.models.entry import Apes, Recipe, Meals, FoodCategory, User
 from backend.helpers import add_to_db, query_db
 from datetime import datetime, timedelta
 from flask_security import login_required, roles_required, current_user
@@ -1363,6 +1363,40 @@ def user_profile():
                          user=current_user,
                          total_meals=total_meals,
                          active_days=active_days)
+
+
+@site.route('/user_profile/update', methods=['POST'])
+@login_required
+def update_profile():
+    """Handle profile information updates"""
+    try:
+        new_email = request.form.get('email', '').strip()
+        
+        if not new_email:
+            flash('Email address is required.', 'error')
+            return redirect(url_for('site.user_profile'))
+        
+        # Check if email is different from current
+        if new_email != current_user.email:
+            # Check if email already exists
+            existing_user = User.query.filter_by(email=new_email).first()
+            if existing_user and existing_user.id != current_user.id:
+                flash('This email address is already in use.', 'error')
+                return redirect(url_for('site.user_profile'))
+            
+            # Update email
+            current_user.email = new_email
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+        else:
+            flash('No changes were made.', 'info')
+        
+        return redirect(url_for('site.user_profile'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating profile: {str(e)}', 'error')
+        return redirect(url_for('site.user_profile'))
 
 
 @site.route('/user_profile/change_password', methods=['POST'])
