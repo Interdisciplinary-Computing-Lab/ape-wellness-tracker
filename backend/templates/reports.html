@@ -23,6 +23,28 @@
         </div>
     </div>
 
+    <!-- Download Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-success">
+                <h5><i class="fas fa-download mr-2"></i>Export Data</h5>
+                <p class="mb-2">Download the current report data for your records:</p>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('site.download_reports', format='csv', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}" 
+                       class="btn btn-success">
+                        <i class="fas fa-file-csv mr-1"></i>
+                        Download CSV
+                    </a>
+                    <a href="{{ url_for('site.download_reports', format='json', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}" 
+                       class="btn btn-info">
+                        <i class="fas fa-file-code mr-1"></i>
+                        Download JSON
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Date Range Filter -->
     <div class="row">
         <div class="col-12">
@@ -72,6 +94,22 @@
                                     <i class="fas fa-search mr-1"></i>
                                     Update Report
                                 </button>
+                            </div>
+                            
+                            <!-- Download Buttons -->
+                            <div class="col-md-3 mb-3 d-flex align-items-end">
+                                <div class="btn-group w-100" role="group">
+                                    <a href="{{ url_for('site.download_reports', format='csv', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}" 
+                                       class="btn btn-success">
+                                        <i class="fas fa-download mr-1"></i>
+                                        CSV
+                                    </a>
+                                    <a href="{{ url_for('site.download_reports', format='json', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}" 
+                                       class="btn btn-info">
+                                        <i class="fas fa-download mr-1"></i>
+                                        JSON
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </form>

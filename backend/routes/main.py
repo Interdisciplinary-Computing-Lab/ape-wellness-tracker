@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 from flask_security import login_required, roles_required, current_user
 import io
 import os
+import csv
+import json
 from werkzeug.utils import secure_filename
 
 # Blueprint for site-wide routes
@@ -1000,6 +1002,247 @@ def reports():
                          custom_date=custom_date,
                          custom_start_date=custom_start_date,
                          custom_end_date=custom_end_date)
+
+
+@site.route('/reports/download/<format>')
+@login_required
+def download_reports(format):
+    """Download nutrition reports data in CSV or JSON format"""
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+    from sqlalchemy import func
+    
+    # Get the same date range parameters as the reports route
+    date_range = request.args.get('range', 'today')
+    custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    custom_start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
+    custom_end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+    
+    # Calculate date range (same logic as reports route)
+    if date_range == 'today':
+        start_date = datetime.now().date()
+        end_date = datetime.now().date()
+    elif date_range == 'week':
+        start_date = datetime.now().date() - timedelta(days=7)
+        end_date = datetime.now().date()
+    elif date_range == 'month':
+        start_date = datetime.now().date() - timedelta(days=30)
+        end_date = datetime.now().date()
+    elif date_range == 'custom':
+        try:
+            start_date = datetime.strptime(custom_date, '%Y-%m-%d').date()
+            end_date = start_date
+        except ValueError:
+            start_date = datetime.now().date()
+            end_date = start_date
+    elif date_range == 'custom_range':
+        try:
+            start_date = datetime.strptime(custom_start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(custom_end_date, '%Y-%m-%d').date()
+            if start_date > end_date:
+                start_date, end_date = end_date, start_date
+        except ValueError:
+            start_date = datetime.now().date()
+            end_date = start_date
+    else:
+        start_date = datetime.now().date()
+        end_date = datetime.now().date()
+    
+    # Get all apes and meals in range
+    apes = Apes.query.all()
+    meals_in_range = Meals.query.filter(
+        Meals.date >= start_date,
+        Meals.date <= end_date + timedelta(days=1)
+    ).all()
+    
+    # Calculate statistics (same as reports route)
+    total_calories = sum(meal.recipe.calories for meal in meals_in_range)
+    total_meals = len(meals_in_range)
+    avg_calories_per_meal = total_calories / total_meals if total_meals > 0 else 0
+    
+    # Per-ape statistics
+    ape_stats = {}
+    for ape in apes:
+        ape_meals = [meal for meal in meals_in_range if meal.ape_id == ape.id]
+        ape_calories = sum(meal.recipe.calories for meal in ape_meals)
+        ape_meal_count = len(ape_meals)
+        ape_avg_calories = ape_calories / ape_meal_count if ape_meal_count > 0 else 0
+        
+        ape_stats[ape.id] = {
+            'name': ape.ape_name,
+            'calories': ape_calories,
+            'meal_count': ape_meal_count,
+            'avg_calories': ape_avg_calories,
+            'percentage_of_total': (ape_calories / total_calories * 100) if total_calories > 0 else 0
+        }
+    
+    # Food category distribution
+    category_stats = defaultdict(lambda: {'count': 0, 'calories': 0})
+    for meal in meals_in_range:
+        category = meal.recipe.food_category or 'Other'
+        category_stats[category]['count'] += 1
+        category_stats[category]['calories'] += meal.recipe.calories
+    
+    category_data = [
+        {
+            'category': category,
+            'count': stats['count'],
+            'calories': stats['calories'],
+            'percentage': (stats['calories'] / total_calories * 100) if total_calories > 0 else 0
+        }
+        for category, stats in category_stats.items()
+    ]
+    category_data.sort(key=lambda x: x['calories'], reverse=True)
+    
+    # Daily breakdown
+    daily_stats = defaultdict(lambda: {'calories': 0, 'meals': 0})
+    for meal in meals_in_range:
+        meal_date = meal.date.date()
+        daily_stats[meal_date]['calories'] += meal.recipe.calories
+        daily_stats[meal_date]['meals'] += 1
+    
+    daily_data = [
+        {
+            'date': date.strftime('%Y-%m-%d'),
+            'calories': stats['calories'],
+            'meals': stats['meals']
+        }
+        for date, stats in daily_stats.items()
+    ]
+    daily_data.sort(key=lambda x: x['date'])
+    
+    # Generate filename with date range
+    filename_date_range = f"{start_date.strftime('%Y%m%d')}-{end_date.strftime('%Y%m%d')}"
+    
+    if format.lower() == 'csv':
+        return generate_csv_report(filename_date_range, apes, ape_stats, category_data, daily_data, 
+                                 total_calories, total_meals, avg_calories_per_meal, start_date, end_date)
+    elif format.lower() == 'json':
+        return generate_json_report(filename_date_range, apes, ape_stats, category_data, daily_data,
+                                  total_calories, total_meals, avg_calories_per_meal, start_date, end_date)
+    else:
+        flash('Invalid download format. Please choose CSV or JSON.', 'error')
+        return redirect(url_for('site.reports'))
+
+
+def generate_csv_report(filename_date_range, apes, ape_stats, category_data, daily_data, 
+                       total_calories, total_meals, avg_calories_per_meal, start_date, end_date):
+    """Generate CSV report"""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Report header
+    writer.writerow(['Ape Wellness Tracker - Nutrition Report'])
+    writer.writerow(['Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+    writer.writerow(['Date Range:', f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"])
+    writer.writerow([])
+    
+    # Summary statistics
+    writer.writerow(['SUMMARY STATISTICS'])
+    writer.writerow(['Total Calories', total_calories])
+    writer.writerow(['Total Meals', total_meals])
+    writer.writerow(['Average Calories per Meal', f"{avg_calories_per_meal:.1f}"])
+    writer.writerow(['Active Apes', len(apes)])
+    writer.writerow([])
+    
+    # Per-ape statistics
+    writer.writerow(['PER-APE STATISTICS'])
+    writer.writerow(['Ape Name', 'Total Calories', 'Total Meals', 'Avg Calories/Meal', '% of Total'])
+    for ape in apes:
+        stats = ape_stats[ape.id]
+        writer.writerow([
+            stats['name'],
+            stats['calories'],
+            stats['meal_count'],
+            f"{stats['avg_calories']:.1f}",
+            f"{stats['percentage_of_total']:.1f}%"
+        ])
+    writer.writerow([])
+    
+    # Food category distribution
+    writer.writerow(['FOOD CATEGORY DISTRIBUTION'])
+    writer.writerow(['Category', 'Meals', 'Total Calories', '% of Total'])
+    for category in category_data:
+        writer.writerow([
+            category['category'],
+            category['count'],
+            category['calories'],
+            f"{category['percentage']:.1f}%"
+        ])
+    writer.writerow([])
+    
+    # Daily breakdown
+    writer.writerow(['DAILY BREAKDOWN'])
+    writer.writerow(['Date', 'Total Calories', 'Total Meals'])
+    for day in daily_data:
+        writer.writerow([day['date'], day['calories'], day['meals']])
+    
+    # Prepare response
+    output.seek(0)
+    mem = io.BytesIO()
+    mem.write(output.getvalue().encode('utf-8'))
+    mem.seek(0)
+    
+    filename = f"nutrition_report_{filename_date_range}.csv"
+    return send_file(
+        mem,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='text/csv'
+    )
+
+
+def generate_json_report(filename_date_range, apes, ape_stats, category_data, daily_data,
+                        total_calories, total_meals, avg_calories_per_meal, start_date, end_date):
+    """Generate JSON report"""
+    report_data = {
+        'report_info': {
+            'generated': datetime.now().isoformat(),
+            'date_range': {
+                'start': start_date.strftime('%Y-%m-%d'),
+                'end': end_date.strftime('%Y-%m-%d')
+            }
+        },
+        'summary_statistics': {
+            'total_calories': total_calories,
+            'total_meals': total_meals,
+            'avg_calories_per_meal': round(avg_calories_per_meal, 1),
+            'active_apes': len(apes)
+        },
+        'per_ape_statistics': [
+            {
+                'ape_name': ape_stats[ape.id]['name'],
+                'total_calories': ape_stats[ape.id]['calories'],
+                'total_meals': ape_stats[ape.id]['meal_count'],
+                'avg_calories_per_meal': round(ape_stats[ape.id]['avg_calories'], 1),
+                'percentage_of_total': round(ape_stats[ape.id]['percentage_of_total'], 1)
+            }
+            for ape in apes
+        ],
+        'food_category_distribution': [
+            {
+                'category': cat['category'],
+                'meals': cat['count'],
+                'total_calories': cat['calories'],
+                'percentage_of_total': round(cat['percentage'], 1)
+            }
+            for cat in category_data
+        ],
+        'daily_breakdown': daily_data
+    }
+    
+    # Prepare response
+    mem = io.BytesIO()
+    mem.write(json.dumps(report_data, indent=2).encode('utf-8'))
+    mem.seek(0)
+    
+    filename = f"nutrition_report_{filename_date_range}.json"
+    return send_file(
+        mem,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/json'
+    )
 
 
 # Image Upload Routes
