@@ -1,0 +1,110 @@
+{% extends "adminlte_base.html" %}
+
+{% block title %}Archived Apes - Ape Wellness Tracker{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-archive mr-2"></i>Archived Apes
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-archive mr-2"></i>Archived Apes
+                </h3>
+                <div class="card-tools">
+                    <a href="{{ url_for('site.all_apes') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-arrow-left mr-1"></i>Back to Active Apes
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if apes %}
+                    <div class="row">
+                        {% for ape in apes %}
+                        <div class="col-md-4 col-lg-3 mb-4">
+                            <div class="card card-outline card-secondary">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <img class="img-circle img-bordered-sm" 
+                                             src="{{ ape.get_image_url() }}" 
+                                             alt="{{ ape.ape_name }}"
+                                             style="width: 80px; height: 80px; object-fit: cover;">
+                                    </div>
+                                    
+                                    <h4 class="mb-1">{{ ape.ape_name }}</h4>
+                                    {% if ape.mother %}
+                                    <p class="text-muted mb-2">Born to {{ ape.mother }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="description-block">
+                                                <h5 class="description-header">{{ ape.age }}</h5>
+                                                <span class="description-text">Years Old</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="description-block">
+                                                <h5 class="description-header">{{ ape.meals|length }}</h5>
+                                                <span class="description-text">Total Meals</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            Archived on {{ ape.archived_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('site.ape_profile_page', ape_id=ape.id) }}" 
+                                           class="btn btn-info btn-sm mb-2">
+                                            <i class="fas fa-eye mr-1"></i>View Profile
+                                        </a>
+                                        
+                                        <button type="button" class="btn btn-success btn-sm" 
+                                                onclick="confirmUnarchive('{{ ape.ape_name }}', {{ ape.id }})">
+                                            <i class="fas fa-undo mr-1"></i>Restore from Archive
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-archive fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Archived Apes</h4>
+                        <p class="text-muted">There are currently no archived apes in the system.</p>
+                        <a href="{{ url_for('site.all_apes') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left mr-1"></i>View Active Apes
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Unarchive confirmation function
+function confirmUnarchive(apeName, apeId) {
+    if (confirm(`Are you sure you want to restore ${apeName} from the archive? This will make the ape active again.`)) {
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/apes/${apeId}/unarchive`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

@@ -17,6 +17,8 @@ class Apes(db.Model):
         image_filename (str): Filename of the image (for backward compatibility).
         image_data (bytes): BLOB data of the actual image.
         image_mime_type (str): MIME type of the image (e.g., 'image/jpeg').
+        is_archived (bool): Whether the ape is archived (default: False).
+        archived_at (datetime): When the ape was archived (None if not archived).
     """
     __tablename__ = 'apes'
     id = db.Column(db.Integer, primary_key=True)
@@ -27,6 +29,8 @@ class Apes(db.Model):
     image_filename = db.Column(db.String(255), nullable=True)  # For backward compatibility
     image_data = db.Column(db.LargeBinary, nullable=True)  # BLOB for image data
     image_mime_type = db.Column(db.String(100), nullable=True)  # MIME type of image
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)  # Archive status
+    archived_at = db.Column(db.DateTime, nullable=True)  # When the ape was archived
     
     @property
     def age(self):

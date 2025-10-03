@@ -101,9 +101,9 @@
                                     <i class="fas fa-edit mr-1"></i><b>Edit Profile</b>
                                 </a>
                                 
-                                <button type="button" class="btn btn-danger btn-block mt-2" 
-                                        onclick="confirmDelete('{{ ape.ape_name }}', {{ ape.id }})">
-                                    <i class="fas fa-trash mr-1"></i><b>Delete Ape</b>
+                                <button type="button" class="btn btn-warning btn-block mt-2" 
+                                        onclick="confirmArchive('{{ ape.ape_name }}', {{ ape.id }})">
+                                    <i class="fas fa-archive mr-1"></i><b>Archive Ape</b>
                                 </button>
                             </div>
                         </div>
@@ -418,13 +418,13 @@ function initializeCharts() {
 
 
 
-// Delete confirmation function
-function confirmDelete(apeName, apeId) {
-    if (confirm(`Are you sure you want to delete ${apeName}? This action cannot be undone and will also remove all associated feeding records.`)) {
+// Archive confirmation function
+function confirmArchive(apeName, apeId) {
+    if (confirm(`Are you sure you want to archive ${apeName}? The ape will be moved to the archive but all data will be preserved. You can restore it later from the archived apes page.`)) {
         // Create a form and submit it
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/apes/${apeId}/delete`;
+        form.action = `/apes/${apeId}/archive`;
         document.body.appendChild(form);
         form.submit();
     }
@@ -456,10 +456,10 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         window.location.href = "{{ url_for('site.edit_ape', ape_id=ape.id) }}";
     }
-    // Ctrl/Cmd + Delete to delete ape
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Delete') {
+    // Ctrl/Cmd + A to archive ape
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         e.preventDefault();
-        confirmDelete('{{ ape.ape_name }}', {{ ape.id }});
+        confirmArchive('{{ ape.ape_name }}', {{ ape.id }});
     }
 
 });

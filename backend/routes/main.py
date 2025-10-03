@@ -36,8 +36,8 @@ def allowed_file(filename):
 @login_required
 def dashboard():
     """Display the main dashboard"""
-    # Get all apes
-    apes = Apes.query.all()
+    # Get all active apes (not archived)
+    apes = Apes.query.filter_by(is_archived=False).all()
     
     # Get all recipes
     recipes = Recipe.query.all()
@@ -289,18 +289,44 @@ def edit_meal(meal_id):
     return render_template('edit_meal.html', meal=meal, apes=apes, recipes=recipes)
 
 
-@site.route('/apes/<int:ape_id>/delete', methods=['POST'])
+@site.route('/apes/<int:ape_id>/archive', methods=['POST'])
 @login_required
-def delete_ape(ape_id):
+def archive_ape(ape_id):
     """
-    Delete an ape from the database.
+    Archive an ape instead of deleting it.
     """
     ape = Apes.query.get_or_404(ape_id)
     ape_name = ape.ape_name
-    db.session.delete(ape)
+    ape.is_archived = True
+    ape.archived_at = datetime.now()
     db.session.commit()
-    flash(f'{ape_name} has been removed from the system.', 'success')
+    flash(f'{ape_name} has been archived. You can view archived apes from the main menu.', 'success')
     return redirect(url_for('site.all_apes'))
+
+
+@site.route('/apes/<int:ape_id>/unarchive', methods=['POST'])
+@login_required
+def unarchive_ape(ape_id):
+    """
+    Unarchive an ape to restore it to active status.
+    """
+    ape = Apes.query.get_or_404(ape_id)
+    ape_name = ape.ape_name
+    ape.is_archived = False
+    ape.archived_at = None
+    db.session.commit()
+    flash(f'{ape_name} has been restored from archive.', 'success')
+    return redirect(url_for('site.archived_apes'))
+
+
+@site.route('/archived_apes')
+@login_required
+def archived_apes():
+    """
+    Display all archived apes.
+    """
+    archived_apes_list = Apes.query.filter_by(is_archived=True).order_by(Apes.archived_at.desc()).all()
+    return render_template('archived_apes.html', apes=archived_apes_list)
 
 
 
@@ -354,8 +380,8 @@ def log_feeding():
     pre_filled_calories = request.args.get('calories', '')
     pre_filled_ape = request.args.get('ape', '')
     
-    # Get all apes for selection
-    apes = Apes.query.all()
+    # Get all active apes for selection (not archived)
+    apes = Apes.query.filter_by(is_archived=False).all()
     
     # Get all available foods from database, grouped by category
     recipes = Recipe.query.order_by(Recipe.food_category, Recipe.meal_name).all()
@@ -548,7 +574,7 @@ def ape_profile_page(ape_id):
 @site.route('/apes')
 @login_required
 def all_apes():
-    apes = Apes.query.all()
+    apes = Apes.query.filter_by(is_archived=False).all()
     return render_template('all_apes.html', apes=apes)
 
 

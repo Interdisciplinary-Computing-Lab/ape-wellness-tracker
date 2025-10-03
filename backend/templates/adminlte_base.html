@@ -111,6 +111,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ url_for('site.archived_apes') }}" class="nav-link {% if request.endpoint == 'site.archived_apes' %}active{% endif %}">
+                            <i class="nav-icon fas fa-archive"></i>
+                            <p>Archived Apes</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ url_for('site.create_ape') }}" class="nav-link {% if request.endpoint == 'site.create_ape' %}active{% endif %}">
                             <i class="nav-icon fas fa-plus-circle"></i>
                             <p>Add New Ape</p>
