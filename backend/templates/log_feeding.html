@@ -547,13 +547,15 @@ function selectAllApes() {
     updateStats();
 }
 
-function clearSelection() {
+function clearSelection(skipWarningUpdate = false) {
     selectedApes.clear();
     document.querySelectorAll('.ape-avatar').forEach(function(element) {
         element.classList.remove('selected');
     });
     updateSelectedCount();
-    updateSaveButton();
+    if (!skipWarningUpdate) {
+        updateSaveButton();
+    }
     updateStats();
 }
 
@@ -719,8 +721,8 @@ function clearFeedingList() {
     updateStats();
 }
 
-function clearAll() {
-    clearSelection();
+function clearAll(skipWarningUpdate = false) {
+    clearSelection(skipWarningUpdate);
     clearFeedingList();
     clearSearch();
     filterByCategory('all');
@@ -768,8 +770,14 @@ function saveFeeding() {
             document.getElementById('savedTotalCalories').textContent = data.total_calories;
             $('#successModal').modal('show');
             
-            // Clear the form after successful save
-            clearAll();
+            // Clear the form after successful save (skip warning update to avoid showing warning after success)
+            clearAll(true);
+            
+            // Set up event listener to show warning when modal is closed and user tries to interact
+            $('#successModal').off('hidden.bs.modal').on('hidden.bs.modal', function() {
+                // Update the save button state after modal is closed
+                updateSaveButton();
+            });
             
             console.log('Feeding saved successfully:', data);
         } else {
