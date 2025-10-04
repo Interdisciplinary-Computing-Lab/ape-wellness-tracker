@@ -67,10 +67,17 @@
                                             <i class="fas fa-eye mr-1"></i>View Profile
                                         </a>
                                         
-                                        <button type="button" class="btn btn-success btn-sm" 
+                                        <button type="button" class="btn btn-success btn-sm mb-2" 
                                                 onclick="confirmUnarchive('{{ ape.ape_name }}', {{ ape.id }})">
                                             <i class="fas fa-undo mr-1"></i>Restore from Archive
                                         </button>
+                                        
+                                        {% if current_user.has_role('Admin') %}
+                                        <button type="button" class="btn btn-danger btn-sm" 
+                                                onclick="confirmDelete('{{ ape.ape_name }}', {{ ape.id }})">
+                                            <i class="fas fa-trash mr-1"></i>Delete Permanently
+                                        </button>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -104,6 +111,23 @@ function confirmUnarchive(apeName, apeId) {
         form.action = `/apes/${apeId}/unarchive`;
         document.body.appendChild(form);
         form.submit();
+    }
+}
+
+// Delete confirmation function (Admin only)
+function confirmDelete(apeName, apeId) {
+    if (confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE ${apeName}?\n\nThis action cannot be undone and will remove all associated data including:\n- All feeding records\n- All meal history\n- Profile information\n\nType 'DELETE' to confirm:`)) {
+        const confirmation = prompt(`Type 'DELETE' to confirm permanent deletion of ${apeName}:`);
+        if (confirmation === 'DELETE') {
+            // Create a form and submit it
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/apes/${apeId}/delete`;
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            alert('Deletion cancelled. You must type "DELETE" exactly to confirm.');
+        }
     }
 }
 </script>

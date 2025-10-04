@@ -319,6 +319,31 @@ def unarchive_ape(ape_id):
     return redirect(url_for('site.archived_apes'))
 
 
+@site.route('/apes/<int:ape_id>/delete', methods=['POST'])
+@login_required
+@roles_required("Admin")
+def delete_ape(ape_id):
+    """
+    Permanently delete an ape from the database (Admin only).
+    This should only be used for archived apes.
+    """
+    ape = Apes.query.get_or_404(ape_id)
+    ape_name = ape.ape_name
+    
+    # Check if ape has any meals - if so, we need to handle them
+    if ape.meals:
+        # For safety, we'll delete all associated meals first
+        for meal in ape.meals:
+            db.session.delete(meal)
+    
+    # Delete the ape
+    db.session.delete(ape)
+    db.session.commit()
+    
+    flash(f'{ape_name} has been permanently deleted from the system.', 'success')
+    return redirect(url_for('site.archived_apes'))
+
+
 @site.route('/archived_apes')
 @login_required
 def archived_apes():
