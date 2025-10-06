@@ -1,12 +1,15 @@
 from flask import Flask
+import os
 from backend.extensions import db
 from backend.security import init_security
 from backend.routes.main import site
 
 def create_app():
-    app = Flask(__name__, static_folder='static', static_url_path='/static')
+    app = Flask(__name__, instance_relative_config=True, static_folder='static', static_url_path='/static')
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+    # Ensure SQLite DB path resolves to the instance directory for cross-OS consistency
+    db_path = os.path.join(app.instance_path, 'database.db').replace('\\', '/')
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = "super-secret-key"
     app.config["SECURITY_PASSWORD_SALT"] = "super-salty-salt"
