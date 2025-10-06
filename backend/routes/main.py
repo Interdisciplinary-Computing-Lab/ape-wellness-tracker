@@ -17,6 +17,7 @@ import io
 import os
 import csv
 import json
+import zipfile
 from werkzeug.utils import secure_filename
 
 # Blueprint for site-wide routes
@@ -1287,6 +1288,123 @@ def generate_json_report(filename_date_range, apes, ape_stats, category_data, da
         download_name=filename,
         mimetype='application/json'
     )
+
+
+@site.route('/reports/download/raw')
+@login_required
+def download_raw_data():
+    """Download raw database data as CSV files in a zip archive"""
+    try:
+        # Create a BytesIO object for the zip file
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # 1. Ape_Information.csv from Apes table
+            apes_data = Apes.query.all()
+            apes_csv = io.StringIO()
+            apes_writer = csv.writer(apes_csv)
+            
+            # Write header
+            apes_writer.writerow(['id', 'ape_name', 'birthday', 'weight', 'mother', 'image_filename', 'image_mime_type', 'is_archived', 'archived_at'])
+            
+            # Write data rows
+            for ape in apes_data:
+                apes_writer.writerow([
+                    ape.id,
+                    ape.ape_name,
+                    ape.birthday.strftime('%Y-%m-%d') if ape.birthday else '',
+                    ape.weight,
+                    ape.mother,
+                    ape.image_filename,
+                    ape.image_mime_type,
+                    ape.is_archived,
+                    ape.archived_at.strftime('%Y-%m-%d %H:%M:%S') if ape.archived_at else ''
+                ])
+            
+            zip_file.writestr('Ape_Information.csv', apes_csv.getvalue())
+            
+            # 2. Meal_Logs.csv from Meals table
+            meals_data = Meals.query.all()
+            meals_csv = io.StringIO()
+            meals_writer = csv.writer(meals_csv)
+            
+            # Write header
+            meals_writer.writerow(['id', 'ape_id', 'recipe_id', 'date', 'user_id'])
+            
+            # Write data rows
+            for meal in meals_data:
+                meals_writer.writerow([
+                    meal.id,
+                    meal.ape_id,
+                    meal.recipe_id,
+                    meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
+                    meal.user_id
+                ])
+            
+            zip_file.writestr('Meal_Logs.csv', meals_csv.getvalue())
+            
+            # 3. Meal_Definitions.csv from Recipe table
+            recipes_data = Recipe.query.all()
+            recipes_csv = io.StringIO()
+            recipes_writer = csv.writer(recipes_csv)
+            
+            # Write header
+            recipes_writer.writerow(['id', 'meal_name', 'description', 'calories', 'food_category', 'category_id'])
+            
+            # Write data rows
+            for recipe in recipes_data:
+                recipes_writer.writerow([
+                    recipe.id,
+                    recipe.meal_name,
+                    recipe.description,
+                    recipe.calories,
+                    recipe.food_category,
+                    recipe.category_id
+                ])
+            
+            zip_file.writestr('Meal_Definitions.csv', recipes_csv.getvalue())
+            
+            # 4. Food_Categories.csv from FoodCategory table
+            categories_data = FoodCategory.query.all()
+            categories_csv = io.StringIO()
+            categories_writer = csv.writer(categories_csv)
+            
+            # Write header
+            categories_writer.writerow(['id', 'name', 'description', 'icon', 'color', 'is_active', 'sort_order', 'created_at', 'updated_at'])
+            
+            # Write data rows
+            for category in categories_data:
+                categories_writer.writerow([
+                    category.id,
+                    category.name,
+                    category.description,
+                    category.icon,
+                    category.color,
+                    category.is_active,
+                    category.sort_order,
+                    category.created_at.strftime('%Y-%m-%d %H:%M:%S') if category.created_at else '',
+                    category.updated_at.strftime('%Y-%m-%d %H:%M:%S') if category.updated_at else ''
+                ])
+            
+            zip_file.writestr('Food_Categories.csv', categories_csv.getvalue())
+        
+        # Prepare the zip file for download
+        zip_buffer.seek(0)
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"bonobo_feeding_log_raw_data_{timestamp}.zip"
+        
+        return send_file(
+            zip_buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/zip'
+        )
+        
+    except Exception as e:
+        flash(f'Error generating raw data download: {str(e)}', 'error')
+        return redirect(url_for('site.reports'))
 
 
 # Image Upload Routes
