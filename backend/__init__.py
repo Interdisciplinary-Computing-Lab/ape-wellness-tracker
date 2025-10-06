@@ -3,6 +3,7 @@ import os
 from backend.extensions import db
 from backend.security import init_security
 from backend.routes.main import site
+from backend.routes.api import api
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True, static_folder='static', static_url_path='/static')
@@ -17,10 +18,16 @@ def create_app():
     app.config["SECURITY_REGISTERABLE"] = True
     app.config["SECURITY_SEND_REGISTER_EMAIL"] = False
 
+    # Export system configuration
+    app.config["EXPORT_TEMP_DIR"] = os.getenv("EXPORT_TEMP_DIR", "/tmp/exports")
+    app.config["EXPORT_SIGNED_URL_TTL"] = int(os.getenv("EXPORT_SIGNED_URL_TTL", "3600"))
+    app.config["EXPORT_HASH_SALT"] = os.getenv("EXPORT_HASH_SALT", "default_salt_change_in_production")
+
     db.init_app(app)
     init_security(app)
 
     app.register_blueprint(site)
+    app.register_blueprint(api)
 
     with app.app_context():
         db.create_all()

@@ -51,6 +51,16 @@
                         Downloads complete database tables as CSV files for external analysis
                     </small>
                 </div>
+                <div class="mt-2">
+                    <a href="{{ url_for('site.advanced_export_page') }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-cogs mr-1"></i>
+                        Advanced Export
+                    </a>
+                    <small class="form-text text-muted">
+                        Researcher-grade exports with filters, multiple formats, and metadata
+                    </small>
+                </div>
             </div>
         </div>
     </div>
@@ -420,4 +430,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('end_date').addEventListener('change', handleRangeChange);
 });
 </script>
+
+
 {% endblock %} 

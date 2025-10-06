@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Advanced Export - Ape Wellness Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f4f4f4; }
+        .card { box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2); }
+    </style>
+</head>
+<body>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cogs mr-2"></i>Advanced Export
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle mr-2"></i>Researcher-Grade Export</h5>
+                        <p>This feature provides comprehensive data exports with multiple formats, filtering options, and detailed metadata for research purposes.</p>
+                    </div>
+
+                    <form method="POST" action="/reports/advanced-export">
+                        <div class="row">
+                            <!-- Export Type -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="export_type">Export Type</label>
+                                    <select class="form-control" id="export_type" name="export_type" required>
+                                        <option value="raw">Raw Data</option>
+                                        <option value="derived">Derived Data (with calculated metrics)</option>
+                                    </select>
+                                    <small class="form-text text-muted">Raw data includes base tables. Derived data includes calculated metrics.</small>
+                                </div>
+                            </div>
+
+                            <!-- Export Format -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="export_format">Export Format</label>
+                                    <select class="form-control" id="export_format" name="export_format" required>
+                                        <option value="csv_pack">CSV Pack (ZIP of CSV files)</option>
+                                        <option value="parquet">Parquet (Columnar format)</option>
+                                        <option value="sqlite">SQLite Database</option>
+                                        <option value="jsonl_pack">JSONL Pack (ZIP of JSON Lines files)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="date_from">Date From</label>
+                                    <input type="date" class="form-control" id="date_from" name="date_from">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="date_to">Date To</label>
+                                    <input type="date" class="form-control" id="date_to" name="date_to">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ape Selection -->
+                        <div class="form-group">
+                            <label for="ape_ids">Select Apes (leave empty for all)</label>
+                            <select class="form-control" id="ape_ids" name="ape_ids" multiple size="5">
+                                {% for ape in apes %}
+                                <option value="{{ ape.id }}">{{ ape.ape_name }} ({{ ape.birthday or 'Unknown DOB' }})</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple apes.</small>
+                        </div>
+
+                        <!-- Food Category Selection -->
+                        <div class="form-group">
+                            <label for="category_ids">Select Food Categories (leave empty for all)</label>
+                            <select class="form-control" id="category_ids" name="category_ids" multiple size="3">
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple categories.</small>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_calculated" name="include_calculated">
+                                <label class="form-check-label" for="include_calculated">
+                                    Include calculated fields
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_identifiers" name="include_identifiers">
+                                <label class="form-check-label" for="include_identifiers">
+                                    Include researcher identifiers
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <strong>Privacy Note:</strong> Identifiers are hashed by default. Check this box only if you need unhashed identifiers for your research.
+                            </small>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-download mr-1"></i>Start Export
+                            </button>
+                            <a href="/reports" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i>Back to Reports
+                            </a>
+                        </div>
+                    </form>
+
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-exclamation-triangle mr-2"></i>Export Information</h6>
+                        <ul class="mb-0">
+                            <li>Exports are generated in UTC time</li>
+                            <li>All timestamps are in ISO-8601 format</li>
+                            <li>Researcher identifiers are hashed unless you opt in</li>
+                            <li>Large exports may take several minutes to process</li>
+                            <li>Download links expire after 1 hour</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
