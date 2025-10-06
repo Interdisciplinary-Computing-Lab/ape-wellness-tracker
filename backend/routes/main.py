@@ -1407,43 +1407,6 @@ def download_raw_data():
         return redirect(url_for('site.reports'))
 
 
-@site.route('/reports/advanced-export', methods=['GET', 'POST'])
-@login_required
-def advanced_export_page():
-    """Advanced export page with filters and options"""
-    try:
-        # Get available apes and categories for the form
-        apes = Apes.query.filter_by(is_archived=False).all()
-        categories = FoodCategory.query.filter_by(is_active=True).all()
-        
-        if request.method == 'POST':
-            # Process the export request
-            export_type = request.form.get('export_type', 'raw')
-            export_format = request.form.get('export_format', 'csv_pack')
-            date_from = request.form.get('date_from')
-            date_to = request.form.get('date_to')
-            ape_ids = request.form.getlist('ape_ids')
-            category_ids = request.form.getlist('category_ids')
-            include_calculated = 'include_calculated' in request.form
-            include_identifiers = 'include_identifiers' in request.form
-            
-            # Convert ape_ids and category_ids to integers
-            ape_ids = [int(id) for id in ape_ids if id.isdigit()]
-            category_ids = [int(id) for id in category_ids if id.isdigit()]
-            
-            # For now, just redirect to the existing raw data download
-            # In a full implementation, this would call the export service
-            flash(f'Advanced export requested: {export_type} data in {export_format} format', 'info')
-            return redirect(url_for('site.download_raw_data'))
-        
-        return render_template('advanced_export.html', 
-                             apes=apes, 
-                             categories=categories)
-    except Exception as e:
-        flash(f'Error loading advanced export page: {str(e)}', 'error')
-        return redirect(url_for('site.reports'))
-
-
 # Image Upload Routes
 
 @site.route('/ape/<int:ape_id>/image')
