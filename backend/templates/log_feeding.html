@@ -2,18 +2,61 @@
 {% block title %}Log Feeding - Ape Wellness Tracker{% endblock %}
 {% block page_title %}Enhanced Log Feeding{% endblock %}
 {% block body %}
-<!-- Quick Status Bar -->
+<!-- Date Selection Header -->
 <div class="row mb-3">
     <div class="col-12">
-        <div class="alert alert-info d-flex justify-content-between align-items-center">
-            <div>
-                <i class="fas fa-info-circle mr-2"></i>
-                <strong>Enhanced Fieldwork Mode:</strong> Complete food database access for comprehensive logging
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-alt mr-2"></i>Logging Date & Quick Stats
+                </h3>
             </div>
-            <div>
-                <span class="badge badge-light mr-2">Selected: <span id="selectedCount">0</span> apes</span>
-                <span class="badge badge-success">Total: {{ apes|length }} apes</span>
-                <span class="badge badge-primary ml-2">Available: {{ recipes|length }} foods</span>
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <div class="form-group mb-0">
+                            <label for="feedingDate" class="form-label font-weight-bold">
+                                <i class="fas fa-calendar mr-1"></i>Select Date for Logging:
+                            </label>
+                            <div class="input-group">
+                                <input type="date" class="form-control" id="feedingDate" 
+                                       value="{{ moment().format('YYYY-MM-DD') if moment else '' }}">
+                                <div class="input-group-append">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateToYesterday()" title="Set to Yesterday">
+                                            <i class="fas fa-calendar-minus mr-1"></i>Yesterday
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setDateToTomorrow()" title="Set to Tomorrow">
+                                            <i class="fas fa-calendar-plus mr-1"></i>Tomorrow
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            <label for="feedingPeriod" class="form-label font-weight-bold">
+                                <i class="fas fa-clock mr-1"></i>Time Period:
+                            </label>
+                            <select class="form-control" id="feedingPeriod">
+                                <option value="morning">Morning (6 AM - 12 PM)</option>
+                                <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
+                                <option value="evening">Evening (6 PM - 12 AM)</option>
+                                <option value="night">Night (12 AM - 6 AM)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="d-flex justify-content-end align-items-center h-100">
+                            <div class="text-center">
+                                <span class="badge badge-light mr-2">Selected: <span id="selectedCount">0</span> apes</span>
+                                <span class="badge badge-success">Total: {{ apes|length }} apes</span>
+                                <span class="badge badge-primary ml-2">Available: {{ recipes|length }} foods</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -256,27 +299,6 @@
                 </div>
                 
                 <div class="p-3">
-                    <!-- Date and Time Period Selection -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="feedingDate" class="form-label">
-                                <i class="fas fa-calendar mr-1"></i>Date
-                            </label>
-                            <input type="date" class="form-control" id="feedingDate" 
-                                   value="{{ moment().format('YYYY-MM-DD') if moment else '' }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="feedingPeriod" class="form-label">
-                                <i class="fas fa-clock mr-1"></i>Time Period
-                            </label>
-                            <select class="form-control" id="feedingPeriod">
-                                <option value="morning">Morning (6 AM - 12 PM)</option>
-                                <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
-                                <option value="evening">Evening (6 PM - 12 AM)</option>
-                                <option value="night">Night (12 AM - 6 AM)</option>
-                            </select>
-                        </div>
-                    </div>
                     
                     <div class="alert alert-warning" id="noApesSelected" style="display: none;">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
@@ -803,5 +825,18 @@ document.addEventListener('keypress', function(e) {
         searchFoods();
     }
 });
+
+// Date quick selection functions
+function setDateToYesterday() {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    document.getElementById('feedingDate').value = yesterday.toISOString().split('T')[0];
+}
+
+function setDateToTomorrow() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('feedingDate').value = tomorrow.toISOString().split('T')[0];
+}
 </script>
 {% endblock %}
