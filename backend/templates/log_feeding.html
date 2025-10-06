@@ -256,6 +256,28 @@
                 </div>
                 
                 <div class="p-3">
+                    <!-- Date and Time Period Selection -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="feedingDate" class="form-label">
+                                <i class="fas fa-calendar mr-1"></i>Date
+                            </label>
+                            <input type="date" class="form-control" id="feedingDate" 
+                                   value="{{ moment().format('YYYY-MM-DD') if moment else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="feedingPeriod" class="form-label">
+                                <i class="fas fa-clock mr-1"></i>Time Period
+                            </label>
+                            <select class="form-control" id="feedingPeriod">
+                                <option value="morning">Morning (6 AM - 12 PM)</option>
+                                <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
+                                <option value="evening">Evening (6 PM - 12 AM)</option>
+                                <option value="night">Night (12 AM - 6 AM)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <div class="alert alert-warning" id="noApesSelected" style="display: none;">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
                         Please select at least one ape
@@ -417,6 +439,10 @@ let currentCategory = 'all';
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
     updateStats();
+    
+    // Initialize date field with today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('feedingDate').value = today;
     
     // Pre-fill custom food if provided
     {% if pre_filled_food %}
@@ -693,7 +719,8 @@ function saveFeeding() {
     const feedingData = {
         ape_ids: Array.from(selectedApes),
         feeding_items: feedingItems,
-        date: new Date().toISOString().split('T')[0]
+        date: document.getElementById('feedingDate').value || new Date().toISOString().split('T')[0],
+        feeding_period: document.getElementById('feedingPeriod').value
     };
     
     // Send data to server

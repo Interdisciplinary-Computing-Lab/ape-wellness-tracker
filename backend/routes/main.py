@@ -449,6 +449,7 @@ def save_feeding():
         ape_ids = data.get('ape_ids', [])
         feeding_items = data.get('feeding_items', [])
         feeding_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
+        feeding_period = data.get('feeding_period', 'morning')  # Default to morning
         
         if not ape_ids:
             return jsonify({'success': False, 'error': 'No apes selected'}), 400
@@ -507,6 +508,7 @@ def save_feeding():
                     ape_id=int(ape_id),
                     recipe_id=recipe.id,
                     date=feeding_datetime,
+                    feeding_period=feeding_period,
                     user_id=current_user.id
                 )
                 add_to_db(meal, "meal")

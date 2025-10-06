@@ -190,7 +190,12 @@
                                     <tbody>
                                         {% for meal in recent_meals %}
                                         <tr>
-                                            <td>{{ meal.date.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                                            <td>
+                                                {{ meal.date.strftime('%m/%d/%Y') }}
+                                                {% if meal.feeding_period %}
+                                                    <br><small class="text-muted">{{ meal.feeding_period_display }}</small>
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 <a href="{{ url_for('site.ape_profile_page', ape_id=meal.ape.id) }}">
                                                     {{ meal.ape.ape_name }}
