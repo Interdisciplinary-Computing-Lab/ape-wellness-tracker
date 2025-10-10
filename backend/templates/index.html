@@ -273,7 +273,14 @@
                         <div>
                             <i class="fas fa-utensils bg-primary"></i>
                             <div class="timeline-item">
-                                <span class="time"><i class="fas fa-clock"></i> {{ meal.date.strftime('%H:%M') }}</span>
+                                <span class="time">
+                                    <i class="fas fa-clock"></i> 
+                                    {% if meal.feeding_period %}
+                                        {{ meal.feeding_period_display }}
+                                    {% else %}
+                                        {{ meal.date.strftime('%H:%M') }}
+                                    {% endif %}
+                                </span>
                                 <h3 class="timeline-header">
                                     <a href="#">{{ meal.ape.ape_name }}</a> had {{ meal.recipe.meal_name }}
                                 </h3>
