@@ -54,6 +54,30 @@ def build_executable():
         print(f"Build failed: {e}")
         return False
 
+def copy_to_distribution():
+    """Copy the built executable to the distribution folder"""
+    import shutil
+    
+    # Ensure distribution directory exists
+    if not os.path.exists('distribution'):
+        os.makedirs('distribution')
+    
+    # Copy executable
+    source = 'dist/ApeWellnessTracker.exe'
+    destination = 'distribution/ApeWellnessTracker.exe'
+    
+    if os.path.exists(source):
+        try:
+            # Remove existing file if it exists
+            if os.path.exists(destination):
+                os.remove(destination)
+            shutil.copy2(source, destination)
+            print(f"Copied executable to: {destination}")
+        except Exception as e:
+            print(f"Warning: Could not copy executable: {e}")
+    else:
+        print(f"Warning: Source executable not found: {source}")
+
 def create_installer_script():
     """Create a simple installer script"""
     installer_content = '''@echo off
@@ -111,12 +135,15 @@ def main():
         print("\nBuild successful!")
         print("Executable created in: dist/ApeWellnessTracker.exe")
         
+        # Copy executable to distribution folder
+        copy_to_distribution()
+        
         # Create installer script
         create_installer_script()
         
         print("\nNext steps:")
-        print("1. Test the executable: dist/ApeWellnessTracker.exe")
-        print("2. Distribute the entire 'dist' folder")
+        print("1. Test the executable: distribution/ApeWellnessTracker.exe")
+        print("2. Distribute the entire 'distribution' folder")
         print("3. Or use install_desktop.bat for easy installation")
     else:
         print("Build failed. Please check the error messages above.")
