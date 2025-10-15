@@ -54,9 +54,7 @@ def main():
         width=1200,
         height=800,
         fullscreen=False,
-        browser_path=None,  # Use default browser
-        shutdown_delay=2.0,
-        close_server_on_exit=True
+        browser_path=None  # Use default browser
     )
     
     # Run the desktop application

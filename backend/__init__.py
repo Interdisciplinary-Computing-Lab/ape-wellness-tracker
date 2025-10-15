@@ -3,6 +3,7 @@ import os
 from backend.extensions import db
 from backend.security import init_security
 from backend.routes.main import site
+from backend.helpers import get_time_period_display
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True, static_folder='static', static_url_path='/static')
@@ -22,6 +23,11 @@ def create_app():
     init_security(app)
 
     app.register_blueprint(site)
+    
+    # Add helper functions to template context
+    @app.context_processor
+    def utility_processor():
+        return dict(get_time_period_display=get_time_period_display)
 
     with app.app_context():
         db.create_all()

@@ -449,6 +449,7 @@ def save_feeding():
         ape_ids = data.get('ape_ids', [])
         feeding_items = data.get('feeding_items', [])
         feeding_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
+        feeding_period = data.get('feeding_period', 'morning')
         
         if not ape_ids:
             return jsonify({'success': False, 'error': 'No apes selected'}), 400
@@ -456,9 +457,21 @@ def save_feeding():
         if not feeding_items:
             return jsonify({'success': False, 'error': 'No food items added'}), 400
         
-        # Convert date string to datetime
+        # Convert date string to datetime and set time based on period
         try:
             feeding_datetime = datetime.strptime(feeding_date, '%Y-%m-%d')
+            
+            # Set the hour based on the selected time period
+            period_hours = {
+                'morning': 9,    # 9 AM
+                'afternoon': 15, # 3 PM  
+                'evening': 21,   # 9 PM
+                'night': 3       # 3 AM
+            }
+            
+            hour = period_hours.get(feeding_period, 9)
+            feeding_datetime = feeding_datetime.replace(hour=hour, minute=0, second=0, microsecond=0)
+            
         except ValueError:
             feeding_datetime = datetime.now()
         

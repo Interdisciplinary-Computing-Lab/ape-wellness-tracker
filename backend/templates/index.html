@@ -273,7 +273,7 @@
                         <div>
                             <i class="fas fa-utensils bg-primary"></i>
                             <div class="timeline-item">
-                                <span class="time"><i class="fas fa-clock"></i> {{ meal.date.strftime('%H:%M') }}</span>
+                                <span class="time"><i class="fas fa-clock"></i> {{ get_time_period_display(meal.date) }}</span>
                                 <h3 class="timeline-header">
                                     <a href="#">{{ meal.ape.ape_name }}</a> had {{ meal.recipe.meal_name }}
                                 </h3>

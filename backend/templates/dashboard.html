@@ -180,7 +180,7 @@
                                 <table class="table table-striped table-sm">
                                     <thead class="thead-light">
                                         <tr>
-                                            <th>Time</th>
+                                            <th>Time Period</th>
                                             <th>Ape</th>
                                             <th>Food</th>
                                             <th>Calories</th>
@@ -190,7 +190,7 @@
                                     <tbody>
                                         {% for meal in recent_meals %}
                                         <tr>
-                                            <td>{{ meal.date.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                                            <td>{{ get_time_period_display(meal.date) }}</td>
                                             <td>
                                                 <a href="{{ url_for('site.ape_profile_page', ape_id=meal.ape.id) }}">
                                                     {{ meal.ape.ape_name }}
