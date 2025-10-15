@@ -13,7 +13,7 @@ FEATURES:
 - Log feeding sessions and meals
 - Track nutrition data and calories
 - Generate comprehensive reports
-- Export data in multiple formats (CSV, JSON, ZIP)
+- Export data in multiple formats (CSV, ZIP)
 - User authentication and data security
 - Archive inactive apes
 - Recipe management system
@@ -50,10 +50,11 @@ TROUBLESHOOTING:
 
 SUPPORT:
 For technical support or questions, contact:
-[Your Email Address]
+dylandaner@me.com
+zmielko@highlands.edu
 
 VERSION: 1.0.0
-BUILD DATE: [Current Date]
+BUILD DATE: 10/15/2025
 
 IMPORTANT NOTES:
 - This application runs completely offline
