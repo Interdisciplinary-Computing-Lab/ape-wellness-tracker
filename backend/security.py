@@ -13,3 +13,6 @@ def init_security(app):
     app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
     app.config['SECURITY_SEND_PASSWORD_CHANGE_EMAIL'] = False
     app.config['SECURITY_SEND_PASSWORD_RESET_EMAIL'] = False
+    
+    # Custom templates for better user experience
+    app.config['SECURITY_UNAUTHORIZED_VIEW'] = 'security.forbidden'

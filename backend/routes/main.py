@@ -779,7 +779,6 @@ def add_recipe_form():
 # Food Category Management Routes
 @site.route('/manage_categories')
 @login_required
-@roles_required("Admin")
 def manage_categories():
     """Display food category management page"""
     categories = FoodCategory.query.order_by(FoodCategory.sort_order, FoodCategory.name).all()
@@ -805,7 +804,6 @@ def manage_categories():
 
 @site.route('/categories/add', methods=['POST'])
 @login_required
-@roles_required("Admin")
 def add_category():
     """Add a new food category"""
     try:
@@ -845,7 +843,6 @@ def add_category():
 
 @site.route('/categories/<int:category_id>/edit', methods=['GET', 'POST'])
 @login_required
-@roles_required("Admin")
 def edit_category(category_id):
     """Edit an existing food category"""
     category = FoodCategory.query.get_or_404(category_id)
@@ -889,7 +886,6 @@ def edit_category(category_id):
 
 @site.route('/categories/<int:category_id>/delete', methods=['POST'])
 @login_required
-@roles_required("Admin")
 def delete_category(category_id):
     """Delete a food category"""
     try:
@@ -1612,5 +1608,12 @@ def change_password():
         db.session.rollback()
         flash(f'Error changing password: {str(e)}', 'error')
         return redirect(url_for('site.user_profile'))
+
+
+@site.route('/forbidden')
+@login_required
+def forbidden():
+    """Custom forbidden page with navigation options"""
+    return render_template('security/forbidden.html')
 
 

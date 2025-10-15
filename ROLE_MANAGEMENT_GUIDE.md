@@ -84,26 +84,34 @@ These functions require the "Admin" role:
 - **Delete apes** (permanent deletion from database)
 - **Edit/delete recipes**
 - **Edit/delete meals**
-- **Manage food categories**
-- **Add/edit/delete categories**
+
+## Functions Available to All Users
+
+These functions are available to all logged-in users:
+- **View and manage food categories**
+- **Add/edit/delete food categories**
+- **View all apes and log feeding sessions**
+- **Access all food items and recipes**
 
 ## Standard Roles
 
 ### Admin
 - Full access to all features
 - Can delete apes permanently
-- Can manage food categories
 - Can edit/delete any meal or recipe
+- Can manage all food categories
 
 ### Researcher
 - Can view all apes
 - Can log feeding sessions
 - Can view all meal data
-- Cannot delete apes or manage categories
+- Can manage food categories
+- Cannot delete apes permanently
 
 ### Viewer
 - Can view all apes
 - Can view meal data
+- Can manage food categories
 - Cannot log feeding sessions
 - Cannot delete anything
 
