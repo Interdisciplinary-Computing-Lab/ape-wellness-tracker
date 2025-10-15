@@ -164,7 +164,8 @@ def ensure_standard_food_data():
         {'meal_name': 'Green Beans', 'description': 'Fresh green beans', 'calories': 31, 'food_category': 'Vegetables'},
         {'meal_name': 'Zucchini', 'description': 'Fresh zucchini', 'calories': 17, 'food_category': 'Vegetables'},
         {'meal_name': 'Tomato', 'description': 'Fresh tomato', 'calories': 22, 'food_category': 'Vegetables'},
-        {'meal_name': 'Cabbage', 'description': 'Fresh cabbage', 'calories': 22, 'food_category': 'Vegetables'},
+        {'meal_name': 'Trash Lettuce', 'description': 'Cabbage', 'calories': 22, 'food_category': 'Vegetables'},
+        {'meal_name': 'Corn', 'description': 'Fresh corn kernels', 'calories': 86, 'food_category': 'Vegetables'},
         
         # Grains & Starches
         {'meal_name': 'Cooked Rice', 'description': 'White rice, cooked', 'calories': 130, 'food_category': 'Grains & Starches'},
@@ -193,6 +194,7 @@ def ensure_standard_food_data():
         {'meal_name': 'Cottage Cheese', 'description': 'Low-fat cottage cheese', 'calories': 98, 'food_category': 'Dairy & Alternatives'},
         {'meal_name': 'Almond Milk', 'description': 'Unsweetened almond milk', 'calories': 30, 'food_category': 'Dairy & Alternatives'},
         {'meal_name': 'Soy Milk', 'description': 'Unsweetened soy milk', 'calories': 80, 'food_category': 'Dairy & Alternatives'},
+        {'meal_name': 'Cheese Toothpaste', 'description': 'Cream cheese', 'calories': 50, 'food_category': 'Dairy & Alternatives'},
         
         # Dried Fruits
         {'meal_name': 'Dried Apricots', 'description': 'Dried apricots', 'calories': 48, 'food_category': 'Dried Fruits'},
