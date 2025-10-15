@@ -33,9 +33,11 @@ def build_executable():
         "--onefile",  # Create a single executable file
         "--windowed",  # Hide console window on Windows
         "--name", "ApeWellnessTracker",
-        "--icon", "backend/static/images/bonobo-placeholder.jpg",  # App icon
+        # "--icon", "backend/static/images/bonobo-placeholder.jpg",  # App icon (commented out due to format issue)
         "--add-data", "backend;backend",  # Include backend directory
         "--add-data", "instance;instance",  # Include instance directory
+        "--add-data", "backend/templates;backend/templates",  # Include templates
+        "--add-data", "backend/static;backend/static",  # Include static files
         "--hidden-import", "flaskwebgui",
         "--hidden-import", "flask",
         "--hidden-import", "flask_security",

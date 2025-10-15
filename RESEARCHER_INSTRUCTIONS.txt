@@ -1,0 +1,64 @@
+APE WELLNESS TRACKER - RESEARCHER INSTRUCTIONS
+===============================================
+
+A desktop application for tracking ape nutrition and wellness data.
+
+QUICK START:
+1. Double-click ApeWellnessTracker.exe
+2. Register a new account (first time only)
+3. Start tracking your apes' nutrition!
+
+FEATURES:
+- Add and manage ape profiles with photos
+- Log feeding sessions and meals
+- Track nutrition data and calories
+- Generate comprehensive reports
+- Export data in multiple formats (CSV, ZIP)
+- User authentication and data security
+- Archive inactive apes
+- Recipe management system
+
+SYSTEM REQUIREMENTS:
+- Windows 10 or later
+- 100MB free disk space
+- No internet connection required (runs locally)
+
+FIRST TIME SETUP:
+1. Run ApeWellnessTracker.exe
+2. Click "Register" to create your account
+3. Login with your credentials
+4. Start adding your apes and logging data
+
+USING THE APPLICATION:
+- Dashboard: Overview of all apes and recent activity
+- Add Ape: Create new ape profiles with photos and details
+- Log Meal: Record feeding sessions with recipes
+- Reports: Generate nutrition and wellness reports
+- Export: Download your data for analysis
+
+DATA MANAGEMENT:
+- All data is stored locally on your computer
+- Data is automatically backed up in the application
+- You can export data anytime for external analysis
+- Each user has their own separate data
+
+TROUBLESHOOTING:
+- If the app doesn't start: Try running as administrator
+- If you get security warnings: Allow the app through Windows Defender
+- If the window is too small: Resize by dragging the corners
+- If you lose your password: Contact the administrator
+
+SUPPORT:
+For technical support or questions, contact:
+dylandaner@me.com
+zmielko@highlands.edu
+
+VERSION: 1.0.0
+BUILD DATE: 10/15/2025
+
+IMPORTANT NOTES:
+- This application runs completely offline
+- Your data is stored securely on your local machine
+- No data is sent to external servers
+- You can export your data at any time
+- The application includes built-in help and documentation
