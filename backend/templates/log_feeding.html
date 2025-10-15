@@ -116,6 +116,7 @@
                         <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb-2 food-item" 
                              data-category="{{ recipe.food_category or 'Other' }}"
                              data-name="{{ recipe.meal_name|lower }}"
+                             data-description="{{ (recipe.description or '')|lower }}"
                              data-calories="{{ recipe.calories }}">
                             <button class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card" 
                                     data-food="{{ recipe.meal_name }}" 
@@ -550,8 +551,10 @@ function searchFoods() {
     
     foodItems.forEach(function(item) {
         const foodName = item.getAttribute('data-name');
-        const isVisible = foodName.includes(searchTerm) && 
-                         (currentCategory === 'all' || item.getAttribute('data-category') === currentCategory);
+        const foodDescription = item.getAttribute('data-description');
+        const matchesSearch = foodName.includes(searchTerm) || foodDescription.includes(searchTerm);
+        const matchesCategory = currentCategory === 'all' || item.getAttribute('data-category') === currentCategory;
+        const isVisible = matchesSearch && matchesCategory;
         
         if (isVisible) {
             item.classList.remove('hidden');
@@ -585,8 +588,9 @@ function filterByCategory(category) {
     foodItems.forEach(function(item) {
         const itemCategory = item.getAttribute('data-category');
         const foodName = item.getAttribute('data-name');
+        const foodDescription = item.getAttribute('data-description');
         const matchesCategory = category === 'all' || itemCategory === category;
-        const matchesSearch = foodName.includes(searchTerm);
+        const matchesSearch = foodName.includes(searchTerm) || foodDescription.includes(searchTerm);
         
         if (matchesCategory && matchesSearch) {
             item.classList.remove('hidden');
