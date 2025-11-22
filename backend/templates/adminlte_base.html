@@ -218,7 +218,7 @@
                     <li class="nav-header">MANAGEMENT</li>
                     <li class="nav-item">
                         <a href="{{ url_for('site.all_apes') }}" class="nav-link {% if request.endpoint == 'site.all_apes' %}active{% endif %}">
-                            <i class="nav-icon fas fa-users"></i>
+                            <i class="nav-icon fas fa-list"></i>
                             <p>All Apes</p>
                         </a>
                     </li>
@@ -308,7 +308,7 @@
                     <i class="fas fa-chart-bar"></i> View Reports
                 </a>
                 <a href="{{ url_for('site.all_apes') }}" class="btn btn-success btn-sm">
-                    <i class="fas fa-users"></i> View Apes
+                    <i class="fas fa-list"></i> View Apes
                 </a>
                 <a href="{{ url_for('site.manage_foods') }}" class="btn btn-info btn-sm">
                     <i class="fas fa-apple-alt"></i> Manage Foods
