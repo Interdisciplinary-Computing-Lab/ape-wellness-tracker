@@ -205,18 +205,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const style = document.createElement('style');
     style.textContent = `
         .category-item {
+            -webkit-transition: all 0.3s ease;
+            -moz-transition: all 0.3s ease;
+            -o-transition: all 0.3s ease;
             transition: all 0.3s ease;
         }
         .category-item.hidden {
             display: none;
         }
         .card {
+            -webkit-transition: all 0.2s ease;
+            -moz-transition: all 0.2s ease;
+            -o-transition: all 0.2s ease;
             transition: all 0.2s ease;
             border: none;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             border-radius: 12px;
         }
         .card:hover {
+            -webkit-transform: translateY(-2px);
+            -moz-transform: translateY(-2px);
+            -ms-transform: translateY(-2px);
+            -o-transform: translateY(-2px);
             transform: translateY(-2px);
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
@@ -291,10 +301,17 @@ document.addEventListener('DOMContentLoaded', function() {
         .btn {
             border-radius: 8px;
             font-weight: 500;
+            -webkit-transition: all 0.2s ease;
+            -moz-transition: all 0.2s ease;
+            -o-transition: all 0.2s ease;
             transition: all 0.2s ease;
         }
         
         .btn:hover {
+            -webkit-transform: translateY(-1px);
+            -moz-transform: translateY(-1px);
+            -ms-transform: translateY(-1px);
+            -o-transform: translateY(-1px);
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
@@ -357,6 +374,9 @@ document.addEventListener('DOMContentLoaded', function() {
             font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
+            -webkit-transition: all 0.2s ease;
+            -moz-transition: all 0.2s ease;
+            -o-transition: all 0.2s ease;
             transition: all 0.2s ease;
             min-width: 80px;
             text-decoration: none;
@@ -508,6 +528,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .filter-btn:hover {
+            -webkit-transform: translateY(-1px);
+            -moz-transform: translateY(-1px);
+            -ms-transform: translateY(-1px);
+            -o-transform: translateY(-1px);
             transform: translateY(-1px);
         }
         
@@ -658,11 +682,22 @@ notificationStyle.textContent = `
         color: white;
         font-weight: bold;
         opacity: 0;
+        -webkit-transform: translateX(100%);
+        -moz-transform: translateX(100%);
+        -ms-transform: translateX(100%);
+        -o-transform: translateX(100%);
         transform: translateX(100%);
+        -webkit-transition: all 0.3s ease;
+        -moz-transition: all 0.3s ease;
+        -o-transition: all 0.3s ease;
         transition: all 0.3s ease;
     }
     .notification.show {
         opacity: 1;
+        -webkit-transform: translateX(0);
+        -moz-transform: translateX(0);
+        -ms-transform: translateX(0);
+        -o-transform: translateX(0);
         transform: translateX(0);
     }
     .notification.success {
