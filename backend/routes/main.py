@@ -16,7 +16,6 @@ from flask_security import login_required, roles_required, current_user
 import io
 import os
 import csv
-import json
 import zipfile
 from werkzeug.utils import secure_filename
 
@@ -1054,7 +1053,7 @@ def reports():
 @site.route('/reports/download/<format>')
 @login_required
 def download_reports(format):
-    """Download nutrition reports data in CSV or JSON format"""
+    """Download nutrition reports data in CSV format"""
     from datetime import datetime, timedelta
     from collections import defaultdict
     from sqlalchemy import func
@@ -1164,11 +1163,8 @@ def download_reports(format):
     if format.lower() == 'csv':
         return generate_csv_report(filename_date_range, apes, ape_stats, category_data, daily_data, 
                                  total_calories, total_meals, avg_calories_per_meal, start_date, end_date)
-    elif format.lower() == 'json':
-        return generate_json_report(filename_date_range, apes, ape_stats, category_data, daily_data,
-                                  total_calories, total_meals, avg_calories_per_meal, start_date, end_date)
     else:
-        flash('Invalid download format. Please choose CSV or JSON.', 'error')
+        flash('Invalid download format. Please choose CSV.', 'error')
         return redirect(url_for('site.reports'))
 
 
@@ -1239,65 +1235,11 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     )
 
 
-def generate_json_report(filename_date_range, apes, ape_stats, category_data, daily_data,
-                        total_calories, total_meals, avg_calories_per_meal, start_date, end_date):
-    """Generate JSON report"""
-    report_data = {
-        'report_info': {
-            'generated': datetime.now().isoformat(),
-            'date_range': {
-                'start': start_date.strftime('%Y-%m-%d'),
-                'end': end_date.strftime('%Y-%m-%d')
-            }
-        },
-        'summary_statistics': {
-            'total_calories': total_calories,
-            'total_meals': total_meals,
-            'avg_calories_per_meal': round(avg_calories_per_meal, 1),
-            'active_apes': len(apes)
-        },
-        'per_ape_statistics': [
-            {
-                'ape_name': ape_stats[ape.id]['name'],
-                'total_calories': ape_stats[ape.id]['calories'],
-                'total_meals': ape_stats[ape.id]['meal_count'],
-                'avg_calories_per_meal': round(ape_stats[ape.id]['avg_calories'], 1),
-                'percentage_of_total': round(ape_stats[ape.id]['percentage_of_total'], 1)
-            }
-            for ape in apes
-        ],
-        'food_category_distribution': [
-            {
-                'category': cat['category'],
-                'meals': cat['count'],
-                'total_calories': cat['calories'],
-                'percentage_of_total': round(cat['percentage'], 1)
-            }
-            for cat in category_data
-        ],
-        'daily_breakdown': daily_data
-    }
-    
-    # Prepare response
-    mem = io.BytesIO()
-    mem.write(json.dumps(report_data, indent=2).encode('utf-8'))
-    mem.seek(0)
-    
-    filename = f"nutrition_report_{filename_date_range}.json"
-    return send_file(
-        mem,
-        as_attachment=True,
-        download_name=filename,
-        mimetype='application/json'
-    )
-
-
 @site.route('/reports/download/raw')
 @login_required
 def download_raw_data():
     """Download raw database data as CSV files in a zip archive with optional date filtering"""
     try:
-        import hashlib
         
         # Get date range parameters (optional)
         date_range = request.args.get('range', 'all')
@@ -1337,22 +1279,6 @@ def download_raw_data():
         # Create a BytesIO object for the zip file
         zip_buffer = io.BytesIO()
         
-        # Track metadata for manifest
-        table_counts = {}
-        table_checksums = {}
-        export_metadata = {
-            'export_time_utc': datetime.utcnow().isoformat() + 'Z',
-            'export_time_local': datetime.now().isoformat(),
-            'schema_version': '1.2',
-            'export_type': 'raw',
-            'date_filter': {
-                'range': date_range,
-                'start_date': start_date.isoformat() if start_date else None,
-                'end_date': end_date.isoformat() if end_date else None
-            },
-            'exported_by': current_user.email if current_user else 'unknown'
-        }
-        
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             # 1. Ape_Information.csv from Apes table
             apes_data = Apes.query.all()
@@ -1376,10 +1302,7 @@ def download_raw_data():
                     ape.archived_at.strftime('%Y-%m-%d %H:%M:%S') if ape.archived_at else ''
                 ])
             
-            apes_csv_content = apes_csv.getvalue()
-            zip_file.writestr('Ape_Information.csv', apes_csv_content)
-            table_counts['Ape_Information'] = len(apes_data)
-            table_checksums['Ape_Information'] = hashlib.sha256(apes_csv_content.encode('utf-8')).hexdigest()
+            zip_file.writestr('Ape_Information.csv', apes_csv.getvalue())
             
             # 2. Meal_Logs.csv from Meals table (with optional date filtering)
             meals_query = Meals.query
@@ -1407,9 +1330,7 @@ def download_raw_data():
                 ])
             
             meals_csv_content = meals_csv.getvalue()
-            zip_file.writestr('Meal_Logs.csv', meals_csv_content)
-            table_counts['Meal_Logs'] = len(meals_data)
-            table_checksums['Meal_Logs'] = hashlib.sha256(meals_csv_content.encode('utf-8')).hexdigest()
+            zip_file.writestr('Meal_Logs.csv', meals_csv.getvalue())
             
             # 3. Meal_Definitions.csv from Recipe table
             recipes_data = Recipe.query.all()
@@ -1430,10 +1351,7 @@ def download_raw_data():
                     recipe.category_id
                 ])
             
-            recipes_csv_content = recipes_csv.getvalue()
-            zip_file.writestr('Meal_Definitions.csv', recipes_csv_content)
-            table_counts['Meal_Definitions'] = len(recipes_data)
-            table_checksums['Meal_Definitions'] = hashlib.sha256(recipes_csv_content.encode('utf-8')).hexdigest()
+            zip_file.writestr('Meal_Definitions.csv', recipes_csv.getvalue())
             
             # 4. Food_Categories.csv from FoodCategory table
             categories_data = FoodCategory.query.all()
@@ -1457,10 +1375,7 @@ def download_raw_data():
                     category.updated_at.strftime('%Y-%m-%d %H:%M:%S') if category.updated_at else ''
                 ])
             
-            categories_csv_content = categories_csv.getvalue()
-            zip_file.writestr('Food_Categories.csv', categories_csv_content)
-            table_counts['Food_Categories'] = len(categories_data)
-            table_checksums['Food_Categories'] = hashlib.sha256(categories_csv_content.encode('utf-8')).hexdigest()
+            zip_file.writestr('Food_Categories.csv', categories_csv.getvalue())
             
             # 5. Denormalized export (all meal data in one table) - optional
             if include_denormalized:
@@ -1516,22 +1431,7 @@ def download_raw_data():
                         user.email if user else ''
                     ])
                 
-                denormalized_csv_content = denormalized_csv.getvalue()
-                zip_file.writestr('Meal_Data_Denormalized.csv', denormalized_csv_content)
-                table_counts['Meal_Data_Denormalized'] = len(meals_data)
-                table_checksums['Meal_Data_Denormalized'] = hashlib.sha256(denormalized_csv_content.encode('utf-8')).hexdigest()
-            
-            # 6. Metadata manifest file
-            export_metadata['tables'] = {
-                table_name: {
-                    'rows': count,
-                    'sha256': table_checksums[table_name]
-                }
-                for table_name, count in table_counts.items()
-            }
-            
-            manifest_content = json.dumps(export_metadata, indent=2)
-            zip_file.writestr('EXPORT_MANIFEST.json', manifest_content)
+                zip_file.writestr('Meal_Data_Denormalized.csv', denormalized_csv.getvalue())
         
         # Prepare the zip file for download
         zip_buffer.seek(0)
