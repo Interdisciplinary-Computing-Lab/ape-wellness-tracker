@@ -169,7 +169,12 @@
                                         {% if recent_meals %}
                                             {% for meal in recent_meals[:20] %}
                                             <tr>
-                                                <td>{{ meal.date.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                                                <td>
+                                                    {{ meal.date.strftime('%m/%d/%Y') }}
+                                                    {% if meal.feeding_period %}
+                                                        <br><small class="text-muted">{{ meal.feeding_period_display }}</small>
+                                                    {% endif %}
+                                                </td>
                                                 <td>
                                                     <span class="badge category-badge" data-category="{{ meal.recipe.food_category }}">{{ meal.recipe.meal_name }}</span>
                                                 </td>
