@@ -13,6 +13,8 @@ from backend.models.entry import Apes, Recipe, Meals, FoodCategory, User
 from backend.helpers import add_to_db, query_db
 from datetime import datetime, timedelta, date
 from flask_security import login_required, roles_required, current_user
+from collections import defaultdict
+from sqlalchemy import func
 import io
 import os
 import csv
@@ -558,9 +560,6 @@ def ape_profile_page(ape_id):
     avg_calories_per_meal = total_calories_week / len(recent_meals_week) if recent_meals_week else 0
     
     # Prepare chart data for pie charts
-    from collections import defaultdict
-    from sqlalchemy import func
-    
     # Food category distribution (all time)
     category_data = db.session.query(
         Recipe.food_category,
@@ -924,10 +923,6 @@ def get_categories():
 @login_required
 def reports():
     """Display aggregate reports for all apes"""
-    from datetime import datetime, timedelta
-    from collections import defaultdict
-    from sqlalchemy import func
-    
     # Get date range from query parameters (default to today)
     date_range = request.args.get('range', 'today')
     custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
@@ -1054,10 +1049,6 @@ def reports():
 @login_required
 def download_reports(format):
     """Download nutrition reports data in CSV format"""
-    from datetime import datetime, timedelta
-    from collections import defaultdict
-    from sqlalchemy import func
-    
     # Get the same date range parameters as the reports route
     date_range = request.args.get('range', 'today')
     custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
