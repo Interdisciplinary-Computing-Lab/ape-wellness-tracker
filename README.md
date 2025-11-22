@@ -49,6 +49,76 @@ After starting the app for the first time, you may want to:
 - Create a test user: `python create_user.py`
 - Seed sample data: `python seed_data.py`
 
+## 💻 Desktop Application
+
+The app can be packaged as a standalone desktop application for both macOS and Windows.
+
+### Running as Desktop App (Development)
+
+To run the app in a desktop window during development:
+
+```bash
+python desktop_app.py
+```
+
+This will launch the Flask app in a native desktop window using pywebview.
+
+### Building Standalone Desktop Applications
+
+#### macOS
+
+1. **Install build dependencies:**
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. **Run the build script:**
+   ```bash
+   ./build_mac.sh
+   ```
+
+3. **The application bundle will be created at:**
+   ```
+   dist/Ape Wellness Tracker.app
+   ```
+
+4. **To test the app:**
+   ```bash
+   open "dist/Ape Wellness Tracker.app"
+   ```
+
+5. **Optional: Create a DMG installer:**
+   ```bash
+   hdiutil create -volname "Ape Wellness Tracker" \
+     -srcfolder "dist/Ape Wellness Tracker.app" \
+     -ov -format UDZO "dist/Ape Wellness Tracker.dmg"
+   ```
+
+#### Windows
+
+1. **Install build dependencies:**
+   ```powershell
+   pip install pyinstaller
+   ```
+
+2. **Run the build script:**
+   ```powershell
+   .\build_windows.bat
+   ```
+
+3. **The executable will be created at:**
+   ```
+   dist\Ape Wellness Tracker.exe
+   ```
+
+### Desktop App Features
+
+- ✅ Native window (no browser required)
+- ✅ Cross-platform (macOS and Windows)
+- ✅ Standalone executable (no Python installation needed for end users)
+- ✅ All dependencies bundled
+- ✅ Database stored locally in the app's instance folder
+
 ## 🗂 Project Structure
 
 This app uses Flask to serve both backend logic and frontend UI. All app code lives inside the `backend/` folder, while the database and configuration files live in the `instance/` folder.
@@ -66,5 +136,8 @@ ape-wellness-tracker/
 │   └── database.db          # SQLite database file
 │
 ├── run.py                   # Main entry point to start the Flask app
+├── desktop_app.py           # Desktop application entry point (pywebview)
+├── build_mac.sh             # macOS build script
+├── build_windows.bat        # Windows build script
 ├── init_db.py               # Database initialization script
 ├── requirements.txt         # Python dependencies

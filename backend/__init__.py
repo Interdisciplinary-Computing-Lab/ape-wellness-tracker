@@ -19,6 +19,7 @@ def create_app():
     app.config["SECURITY_PASSWORD_HASH"] = "bcrypt"
     app.config["SECURITY_REGISTERABLE"] = True
     app.config["SECURITY_SEND_REGISTER_EMAIL"] = False
+    
 
 
     db.init_app(app)
