@@ -540,27 +540,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     {% endif %}
     
-    // Use event delegation for food buttons (works even when buttons are hidden/shown)
-    document.getElementById('foodsGrid').addEventListener('click', function(e) {
-        const btn = e.target.closest('.quick-food-btn');
-        if (btn) {
-            e.preventDefault();
-            e.stopPropagation();
+    // Add event listeners to food buttons
+    document.querySelectorAll('.quick-food-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const food = this.getAttribute('data-food');
+            const calories = parseInt(this.getAttribute('data-calories'));
+            const name = this.getAttribute('data-name');
+            addFoodItem(name, calories, 1);
             
-            const food = btn.getAttribute('data-food');
-            const calories = parseInt(btn.getAttribute('data-calories')) || 0;
-            const name = btn.getAttribute('data-name');
-            
-            if (name && calories > 0) {
-                addFoodItem(name, calories, 1);
-                
-                // Visual feedback
-                btn.classList.add('btn-success');
-                setTimeout(() => {
-                    btn.classList.remove('btn-success');
-                }, 500);
-            }
-        }
+            // Visual feedback
+            this.classList.add('btn-success');
+            setTimeout(() => {
+                this.classList.remove('btn-success');
+            }, 500);
+        });
     });
 });
 
