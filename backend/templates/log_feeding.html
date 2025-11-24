@@ -2,18 +2,63 @@
 {% block title %}Log Feeding - Ape Wellness Tracker{% endblock %}
 {% block page_title %}Enhanced Log Feeding{% endblock %}
 {% block body %}
-<!-- Quick Status Bar -->
+<!-- Date Selection Header -->
 <div class="row mb-3">
     <div class="col-12">
-        <div class="alert alert-info d-flex justify-content-between align-items-center">
-            <div>
-                <i class="fas fa-info-circle mr-2"></i>
-                <strong>Enhanced Fieldwork Mode:</strong> Complete food database access for comprehensive logging
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-alt mr-2"></i>Logging Date & Time
+                </h3>
             </div>
-            <div>
-                <span class="badge badge-light mr-2">Selected: <span id="selectedCount">0</span> apes</span>
-                <span class="badge badge-success">Total: {{ apes|length }} apes</span>
-                <span class="badge badge-primary ml-2">Available: {{ recipes|length }} foods</span>
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <label for="feedingDate" class="form-label font-weight-bold">
+                                        <i class="fas fa-calendar mr-1"></i>Select Date for Logging:
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="date" class="form-control" id="feedingDate" 
+                                               value="{{ moment().format('YYYY-MM-DD') if moment else '' }}" 
+                                               style="max-width: 180px;">
+                                        <div class="input-group-append">
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDateToYesterday()" title="Set to Yesterday">
+                                                    <i class="fas fa-calendar-minus mr-1"></i>Yesterday
+                                                </button>
+                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="setDateToToday()" title="Set to Today">
+                                                    <i class="fas fa-calendar-day mr-1"></i>Today
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info btn-sm" onclick="setDateToTomorrow()" title="Set to Tomorrow">
+                                                    <i class="fas fa-calendar-plus mr-1"></i>Tomorrow
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <label for="feedingPeriod" class="form-label font-weight-bold">
+                                        <i class="fas fa-clock mr-1"></i>Time Period:
+                                    </label>
+                                    <select class="form-control" id="feedingPeriod">
+                                        <option value="morning">Morning (6 AM - 12 PM)</option>
+                                        <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
+                                        <option value="evening">Evening (6 PM - 12 AM)</option>
+                                        <option value="night">Night (12 AM - 6 AM)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <!-- Empty space for better balance -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -23,7 +68,7 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fas fa-users mr-2"></i>Select Apes
+            <i class="fas fa-list mr-2"></i>Select Apes
         </h3>
         <div class="card-tools">
             <button type="button" class="btn btn-tool btn-sm" onclick="selectAllApes()">
@@ -296,30 +341,6 @@
             </div>
         </div>
         
-        <!-- Quick Stats Card -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-chart-bar mr-2"></i>Quick Stats
-                </h3>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6">
-                        <div class="description-block">
-                            <h5 class="description-header" id="statsItems">0</h5>
-                            <span class="description-text">Food Items</span>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="description-block">
-                            <h5 class="description-header" id="statsApes">0</h5>
-                            <span class="description-text">Apes Selected</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -352,6 +373,9 @@
 <style>
 /* Minimal styles that don't interfere with AdminLTE sidebar */
 .food-card {
+    -webkit-transition: all 0.2s ease;
+    -moz-transition: all 0.2s ease;
+    -o-transition: all 0.2s ease;
     transition: all 0.2s ease;
     border-radius: 8px;
     height: 100px;
@@ -359,12 +383,19 @@
 }
 
 .food-card:hover {
+    -webkit-transform: translateY(-2px);
+    -moz-transform: translateY(-2px);
+    -ms-transform: translateY(-2px);
+    -o-transform: translateY(-2px);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     border-color: #007bff;
 }
 
 .food-item {
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
     transition: all 0.3s ease;
 }
 
@@ -374,12 +405,19 @@
 
 .ape-avatar {
     cursor: pointer;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
     transition: all 0.3s ease;
     padding: 10px;
     border-radius: 8px;
 }
 
 .ape-avatar:hover {
+    -webkit-transform: scale(1.05);
+    -moz-transform: scale(1.05);
+    -ms-transform: scale(1.05);
+    -o-transform: scale(1.05);
     transform: scale(1.05);
     background-color: #f8f9fa;
 }
@@ -410,6 +448,9 @@
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid #dee2e6;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
     transition: all 0.3s ease;
 }
 
@@ -807,5 +848,23 @@ document.addEventListener('keypress', function(e) {
         searchFoods();
     }
 });
+
+// Date quick selection functions
+function setDateToYesterday() {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    document.getElementById('feedingDate').value = yesterday.toISOString().split('T')[0];
+}
+
+function setDateToToday() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('feedingDate').value = today;
+}
+
+function setDateToTomorrow() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('feedingDate').value = tomorrow.toISOString().split('T')[0];
+}
 </script>
 {% endblock %}

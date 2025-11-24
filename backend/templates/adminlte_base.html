@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Ape Wellness Tracker{% endblock %}</title>
     <!-- Google Font: Source Sans Pro -->
@@ -12,35 +13,146 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <!-- Custom CSS for consistent sidebar behavior -->
     <style>
+        /* Compatibility fixes for older browsers */
+        * {
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+        
         /* Ensure consistent sidebar behavior across all pages */
         .main-sidebar {
+            -webkit-transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+            -moz-transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+            -o-transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
             transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
         }
         
         .content-wrapper {
+            -webkit-transition: margin-left 0.3s ease-in-out;
+            -moz-transition: margin-left 0.3s ease-in-out;
+            -o-transition: margin-left 0.3s ease-in-out;
             transition: margin-left 0.3s ease-in-out;
         }
         
-        /* Prevent layout shifts from content changes */
+        /* Prevent layout shifts from content changes - with fallback for older browsers */
         .content-wrapper .content {
+            min-height: 500px; /* Fallback for browsers that don't support calc() */
+            min-height: -webkit-calc(100vh - 157px);
+            min-height: -moz-calc(100vh - 157px);
             min-height: calc(100vh - 157px);
         }
         
-        /* Ensure scrollbars don't affect layout */
+        /* Ensure scrollbars don't affect layout - with fallback */
         .card-body {
-            scrollbar-gutter: stable;
+            overflow-y: auto;
+            /* scrollbar-gutter is not supported in older browsers, so we use overflow instead */
+        }
+        
+        /* Modern browsers can use scrollbar-gutter */
+        @supports (scrollbar-gutter: stable) {
+            .card-body {
+                scrollbar-gutter: stable;
+            }
         }
         
         /* User profile link styling */
         .user-panel .info a {
             color: #c2c7d0;
             text-decoration: none;
+            -webkit-transition: color 0.3s ease;
+            -moz-transition: color 0.3s ease;
+            -o-transition: color 0.3s ease;
             transition: color 0.3s ease;
         }
         
         .user-panel .info a:hover {
             color: #fff;
             text-decoration: none;
+        }
+        
+        /* Flexbox fallbacks for older browsers */
+        .d-flex {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+        }
+        
+        /* Ensure images scale properly in older browsers */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Fix for rounded corners in older IE */
+        .rounded, .rounded-circle {
+            -webkit-border-radius: 0.25rem;
+            -moz-border-radius: 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        .rounded-circle {
+            -webkit-border-radius: 50%;
+            -moz-border-radius: 50%;
+            border-radius: 50%;
+        }
+        
+        /* Transform fallbacks */
+        .meal-details:hover {
+            -webkit-transform: translateY(-1px);
+            -moz-transform: translateY(-1px);
+            -ms-transform: translateY(-1px);
+            -o-transform: translateY(-1px);
+            transform: translateY(-1px);
+        }
+        
+        /* Global compatibility fixes for transforms and transitions */
+        /* Note: Inline styles and class-based transforms are handled by individual rules */
+        
+        /* Fix for flexbox gaps in older browsers */
+        .d-grid.gap-2 > * {
+            margin-bottom: 0.5rem;
+        }
+        
+        .d-grid.gap-2 > *:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+    
+    <!-- Compatibility stylesheet for older browsers -->
+    <style>
+        /* Override any transitions/transforms without vendor prefixes */
+        .ape-avatar, .metric-card, .food-card, .food-item, .avatar-circle {
+            -webkit-transition: all 0.3s ease;
+            -moz-transition: all 0.3s ease;
+            -o-transition: all 0.3s ease;
+            transition: all 0.3s ease;
+        }
+        
+        .ape-avatar:hover, .food-card:hover {
+            -webkit-transform: translateY(-2px) scale(1.05);
+            -moz-transform: translateY(-2px) scale(1.05);
+            -ms-transform: translateY(-2px) scale(1.05);
+            -o-transform: translateY(-2px) scale(1.05);
+            transform: translateY(-2px) scale(1.05);
+        }
+        
+        .metric-card:hover {
+            -webkit-transform: translateY(-2px);
+            -moz-transform: translateY(-2px);
+            -ms-transform: translateY(-2px);
+            -o-transform: translateY(-2px);
+            transform: translateY(-2px);
+        }
+        
+        /* Fix for slide animations */
+        [style*="translateX"] {
+            -webkit-transform: translateX(0);
+            -moz-transform: translateX(0);
+            -ms-transform: translateX(0);
+            -o-transform: translateX(0);
+            transform: translateX(0);
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -106,7 +218,7 @@
                     <li class="nav-header">MANAGEMENT</li>
                     <li class="nav-item">
                         <a href="{{ url_for('site.all_apes') }}" class="nav-link {% if request.endpoint == 'site.all_apes' %}active{% endif %}">
-                            <i class="nav-icon fas fa-users"></i>
+                            <i class="nav-icon fas fa-list"></i>
                             <p>All Apes</p>
                         </a>
                     </li>
@@ -196,7 +308,7 @@
                     <i class="fas fa-chart-bar"></i> View Reports
                 </a>
                 <a href="{{ url_for('site.all_apes') }}" class="btn btn-success btn-sm">
-                    <i class="fas fa-users"></i> View Apes
+                    <i class="fas fa-list"></i> View Apes
                 </a>
                 <a href="{{ url_for('site.manage_foods') }}" class="btn btn-info btn-sm">
                     <i class="fas fa-apple-alt"></i> Manage Foods
@@ -225,14 +337,39 @@
 </div>
 <!-- ./wrapper -->
 
-<!-- jQuery -->
+<!-- jQuery with fallback -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Fallback if jQuery fails to load from CDN
+    if (typeof jQuery === 'undefined') {
+        document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"><\/script>');
+    }
+</script>
 <!-- Bootstrap 4 -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <!-- AdminLTE App -->
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 
 <script>
+// Compatibility fixes for older browsers
+(function() {
+    // Polyfill for addEventListener if needed (IE8 and below)
+    if (!document.addEventListener) {
+        document.addEventListener = function(type, listener) {
+            return document.attachEvent('on' + type, listener);
+        };
+    }
+    
+    // Ensure console exists for older browsers
+    if (typeof console === 'undefined') {
+        window.console = {
+            log: function() {},
+            error: function() {},
+            warn: function() {}
+        };
+    }
+})();
+
 function showKeyboardShortcuts() {
     alert('Keyboard Shortcuts:\n\n' +
           'Ctrl/Cmd + F: Log Feeding\n' +
@@ -242,19 +379,31 @@ function showKeyboardShortcuts() {
           'Ctrl/Cmd + C: Clear All (on feeding page)');
 }
 
-// Global keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + F for feeding log
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-        window.location.href = "{{ url_for('site.log_feeding') }}";
-    }
-    // Ctrl/Cmd + A for all apes
-    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-        e.preventDefault();
-        window.location.href = "{{ url_for('site.all_apes') }}";
-    }
-});
+// Global keyboard shortcuts with compatibility
+(function() {
+    var addEvent = document.addEventListener || function(type, handler) {
+        return document.attachEvent('on' + type, handler);
+    };
+    
+    addEvent('keydown', function(e) {
+        e = e || window.event;
+        var ctrlKey = e.ctrlKey || e.metaKey;
+        var key = e.key || e.keyCode;
+        
+        // Ctrl/Cmd + F for feeding log
+        if (ctrlKey && (key === 'f' || key === 70)) {
+            if (e.preventDefault) e.preventDefault();
+            else e.returnValue = false;
+            window.location.href = "{{ url_for('site.log_feeding') }}";
+        }
+        // Ctrl/Cmd + A for all apes
+        if (ctrlKey && (key === 'a' || key === 65)) {
+            if (e.preventDefault) e.preventDefault();
+            else e.returnValue = false;
+            window.location.href = "{{ url_for('site.all_apes') }}";
+        }
+    });
+})();
 </script>
 
 {% block extra_js %}{% endblock %}

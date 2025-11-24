@@ -11,12 +11,13 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory, User
 from backend.helpers import add_to_db, query_db
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from flask_security import login_required, roles_required, current_user
+from collections import defaultdict
+from sqlalchemy import func
 import io
 import os
 import csv
-import json
 import zipfile
 from werkzeug.utils import secure_filename
 
@@ -246,7 +247,6 @@ def edit_ape(ape_id):
 
 
 @site.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
-@roles_required("Admin")
 def edit_recipe(recipe_id):
     """
     Display and handle the form for editing an existing recipe.
@@ -272,7 +272,6 @@ def edit_recipe(recipe_id):
 
 
 @site.route('/meals/<int:meal_id>/edit', methods=['GET', 'POST'])
-@roles_required("Admin")
 def edit_meal(meal_id):
     """
     Display and handle the form for editing an existing meal.
@@ -359,7 +358,6 @@ def archived_apes():
 
 
 @site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
-@roles_required("Admin")
 def delete_recipe_form(recipe_id):
     """
     Delete a recipe from the database via form submission.
@@ -384,7 +382,6 @@ def delete_recipe_form(recipe_id):
         return redirect(url_for('site.manage_foods'))
 
 @site.route('/meals/<int:meal_id>/delete', methods=['POST'])
-@roles_required("Admin")
 def delete_meal(meal_id):
     """
     Delete a meal from the database.
@@ -449,7 +446,8 @@ def save_feeding():
         ape_ids = data.get('ape_ids', [])
         feeding_items = data.get('feeding_items', [])
         feeding_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
-        feeding_period = data.get('feeding_period', 'morning')
+<<<<<<< HEAD
+        feeding_period = data.get('feeding_period', 'morning')  # Default to morning
         
         if not ape_ids:
             return jsonify({'success': False, 'error': 'No apes selected'}), 400
@@ -520,6 +518,7 @@ def save_feeding():
                     ape_id=int(ape_id),
                     recipe_id=recipe.id,
                     date=feeding_datetime,
+                    feeding_period=feeding_period,
                     user_id=current_user.id
                 )
                 add_to_db(meal, "meal")
@@ -570,9 +569,6 @@ def ape_profile_page(ape_id):
     avg_calories_per_meal = total_calories_week / len(recent_meals_week) if recent_meals_week else 0
     
     # Prepare chart data for pie charts
-    from collections import defaultdict
-    from sqlalchemy import func
-    
     # Food category distribution (all time)
     category_data = db.session.query(
         Recipe.food_category,
@@ -932,10 +928,6 @@ def get_categories():
 @login_required
 def reports():
     """Display aggregate reports for all apes"""
-    from datetime import datetime, timedelta
-    from collections import defaultdict
-    from sqlalchemy import func
-    
     # Get date range from query parameters (default to today)
     date_range = request.args.get('range', 'today')
     custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
@@ -1061,11 +1053,7 @@ def reports():
 @site.route('/reports/download/<format>')
 @login_required
 def download_reports(format):
-    """Download nutrition reports data in CSV or JSON format"""
-    from datetime import datetime, timedelta
-    from collections import defaultdict
-    from sqlalchemy import func
-    
+    """Download nutrition reports data in CSV format"""
     # Get the same date range parameters as the reports route
     date_range = request.args.get('range', 'today')
     custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
@@ -1171,11 +1159,8 @@ def download_reports(format):
     if format.lower() == 'csv':
         return generate_csv_report(filename_date_range, apes, ape_stats, category_data, daily_data, 
                                  total_calories, total_meals, avg_calories_per_meal, start_date, end_date)
-    elif format.lower() == 'json':
-        return generate_json_report(filename_date_range, apes, ape_stats, category_data, daily_data,
-                                  total_calories, total_meals, avg_calories_per_meal, start_date, end_date)
     else:
-        flash('Invalid download format. Please choose CSV or JSON.', 'error')
+        flash('Invalid download format. Please choose CSV.', 'error')
         return redirect(url_for('site.reports'))
 
 
@@ -1246,64 +1231,47 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     )
 
 
-def generate_json_report(filename_date_range, apes, ape_stats, category_data, daily_data,
-                        total_calories, total_meals, avg_calories_per_meal, start_date, end_date):
-    """Generate JSON report"""
-    report_data = {
-        'report_info': {
-            'generated': datetime.now().isoformat(),
-            'date_range': {
-                'start': start_date.strftime('%Y-%m-%d'),
-                'end': end_date.strftime('%Y-%m-%d')
-            }
-        },
-        'summary_statistics': {
-            'total_calories': total_calories,
-            'total_meals': total_meals,
-            'avg_calories_per_meal': round(avg_calories_per_meal, 1),
-            'active_apes': len(apes)
-        },
-        'per_ape_statistics': [
-            {
-                'ape_name': ape_stats[ape.id]['name'],
-                'total_calories': ape_stats[ape.id]['calories'],
-                'total_meals': ape_stats[ape.id]['meal_count'],
-                'avg_calories_per_meal': round(ape_stats[ape.id]['avg_calories'], 1),
-                'percentage_of_total': round(ape_stats[ape.id]['percentage_of_total'], 1)
-            }
-            for ape in apes
-        ],
-        'food_category_distribution': [
-            {
-                'category': cat['category'],
-                'meals': cat['count'],
-                'total_calories': cat['calories'],
-                'percentage_of_total': round(cat['percentage'], 1)
-            }
-            for cat in category_data
-        ],
-        'daily_breakdown': daily_data
-    }
-    
-    # Prepare response
-    mem = io.BytesIO()
-    mem.write(json.dumps(report_data, indent=2).encode('utf-8'))
-    mem.seek(0)
-    
-    filename = f"nutrition_report_{filename_date_range}.json"
-    return send_file(
-        mem,
-        as_attachment=True,
-        download_name=filename,
-        mimetype='application/json'
-    )
-
-
 @site.route('/reports/download/raw')
 @login_required
 def download_raw_data():
-    """Download raw database data as CSV files in a zip archive"""
+    """Download raw database data as CSV files in a zip archive with optional date filtering"""
     try:
+        
+        # Get date range parameters (optional)
+        date_range = request.args.get('range', 'all')
+        custom_date = request.args.get('date', '')
+        custom_start_date = request.args.get('start_date', '')
+        custom_end_date = request.args.get('end_date', '')
+        include_denormalized = request.args.get('denormalized', 'false').lower() == 'true'
+        
+        # Calculate date range for filtering meals
+        start_date = None
+        end_date = None
+        
+        if date_range == 'today':
+            start_date = datetime.now().date()
+            end_date = datetime.now().date()
+        elif date_range == 'week':
+            start_date = datetime.now().date() - timedelta(days=7)
+            end_date = datetime.now().date()
+        elif date_range == 'month':
+            start_date = datetime.now().date() - timedelta(days=30)
+            end_date = datetime.now().date()
+        elif date_range == 'custom' and custom_date:
+            try:
+                start_date = datetime.strptime(custom_date, '%Y-%m-%d').date()
+                end_date = start_date
+            except ValueError:
+                pass
+        elif date_range == 'custom_range' and custom_start_date and custom_end_date:
+            try:
+                start_date = datetime.strptime(custom_start_date, '%Y-%m-%d').date()
+                end_date = datetime.strptime(custom_end_date, '%Y-%m-%d').date()
+                if start_date > end_date:
+                    start_date, end_date = end_date, start_date
+            except ValueError:
+                pass
+        
         # Create a BytesIO object for the zip file
         zip_buffer = io.BytesIO()
         
@@ -1332,13 +1300,19 @@ def download_raw_data():
             
             zip_file.writestr('Ape_Information.csv', apes_csv.getvalue())
             
-            # 2. Meal_Logs.csv from Meals table
-            meals_data = Meals.query.all()
+            # 2. Meal_Logs.csv from Meals table (with optional date filtering)
+            meals_query = Meals.query
+            if start_date and end_date:
+                meals_query = meals_query.filter(
+                    db.func.date(Meals.date) >= start_date,
+                    db.func.date(Meals.date) <= end_date
+                )
+            meals_data = meals_query.all()
             meals_csv = io.StringIO()
             meals_writer = csv.writer(meals_csv)
             
             # Write header
-            meals_writer.writerow(['id', 'ape_id', 'recipe_id', 'date', 'user_id'])
+            meals_writer.writerow(['id', 'ape_id', 'recipe_id', 'date', 'feeding_period', 'user_id'])
             
             # Write data rows
             for meal in meals_data:
@@ -1347,9 +1321,11 @@ def download_raw_data():
                     meal.ape_id,
                     meal.recipe_id,
                     meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
+                    meal.feeding_period if meal.feeding_period else '',
                     meal.user_id
                 ])
             
+            meals_csv_content = meals_csv.getvalue()
             zip_file.writestr('Meal_Logs.csv', meals_csv.getvalue())
             
             # 3. Meal_Definitions.csv from Recipe table
@@ -1396,13 +1372,75 @@ def download_raw_data():
                 ])
             
             zip_file.writestr('Food_Categories.csv', categories_csv.getvalue())
+            
+            # 5. Denormalized export (all meal data in one table) - optional
+            if include_denormalized:
+                denormalized_csv = io.StringIO()
+                denormalized_writer = csv.writer(denormalized_csv)
+                
+                # Write header with all relevant fields
+                denormalized_writer.writerow([
+                    'meal_id', 'meal_date', 'feeding_period',
+                    'ape_id', 'ape_name', 'ape_birthday', 'ape_age_at_meal', 'ape_weight', 'ape_mother',
+                    'recipe_id', 'meal_name', 'meal_description', 'calories', 'food_category', 'category_name',
+                    'user_id', 'logged_by_email'
+                ])
+                
+                # Create lookup dictionaries for performance
+                apes_dict = {ape.id: ape for ape in apes_data}
+                recipes_dict = {recipe.id: recipe for recipe in recipes_data}
+                categories_dict = {cat.id: cat for cat in categories_data}
+                users_dict = {user.id: user for user in User.query.all()}
+                
+                # Write data rows
+                for meal in meals_data:
+                    ape = apes_dict.get(meal.ape_id)
+                    recipe = recipes_dict.get(meal.recipe_id)
+                    category = categories_dict.get(recipe.category_id) if recipe and recipe.category_id else None
+                    user = users_dict.get(meal.user_id)
+                    
+                    # Calculate age at meal time
+                    age_at_meal = None
+                    if ape and ape.birthday and meal.date:
+                        meal_date = meal.date.date() if isinstance(meal.date, datetime) else meal.date
+                        age_at_meal = meal_date.year - ape.birthday.year
+                        if meal_date < date(meal_date.year, ape.birthday.month, ape.birthday.day):
+                            age_at_meal -= 1
+                    
+                    denormalized_writer.writerow([
+                        meal.id,
+                        meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
+                        meal.feeding_period if meal.feeding_period else '',
+                        meal.ape_id,
+                        ape.ape_name if ape else '',
+                        ape.birthday.strftime('%Y-%m-%d') if ape and ape.birthday else '',
+                        age_at_meal if age_at_meal is not None else '',
+                        ape.weight if ape else '',
+                        ape.mother if ape else '',
+                        meal.recipe_id,
+                        recipe.meal_name if recipe else '',
+                        recipe.description if recipe else '',
+                        recipe.calories if recipe else '',
+                        recipe.food_category if recipe else '',
+                        category.name if category else '',
+                        meal.user_id,
+                        user.email if user else ''
+                    ])
+                
+                zip_file.writestr('Meal_Data_Denormalized.csv', denormalized_csv.getvalue())
         
         # Prepare the zip file for download
         zip_buffer.seek(0)
         
-        # Generate filename with timestamp
+        # Generate filename with timestamp and date range info
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"bonobo_feeding_log_raw_data_{timestamp}.zip"
+        date_suffix = ''
+        if start_date and end_date:
+            if start_date == end_date:
+                date_suffix = f"_{start_date.strftime('%Y%m%d')}"
+            else:
+                date_suffix = f"_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}"
+        filename = f"bonobo_feeding_log_raw_data{date_suffix}_{timestamp}.zip"
         
         return send_file(
             zip_buffer,

@@ -22,7 +22,7 @@
                     </div>
                     <div class="col-md-3 col-sm-6 mb-3">
                         <a href="{{ url_for('site.all_apes') }}" class="btn btn-lg btn-success w-100 h-100 d-flex flex-column justify-content-center align-items-center">
-                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <i class="fas fa-list fa-2x mb-2"></i>
                             <span>View Apes</span>
                             <small class="text-light">Profiles & data</small>
                         </a>
@@ -51,7 +51,7 @@
 <div class="row">
     <div class="col-12 col-sm-6 col-md-3">
         <div class="info-box">
-            <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+            <span class="info-box-icon bg-info"><i class="fas fa-list"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">Active Apes</span>
                 <span class="info-box-number">{{ apes|length }}</span>
@@ -273,7 +273,16 @@
                         <div>
                             <i class="fas fa-utensils bg-primary"></i>
                             <div class="timeline-item">
-                                <span class="time"><i class="fas fa-clock"></i> {{ get_time_period_display(meal.date) }}</span>
+                                {% set inferred_period = get_time_period_display(meal.date) %}
+                                {% set inferred_parts = inferred_period.split(' - ') %}
+                                <span class="time">
+                                    <i class="fas fa-clock"></i> 
+                                    {% if meal.feeding_period %}
+                                        {{ meal.feeding_period_display }}
+                                    {% else %}
+                                        {{ inferred_parts|last }}
+                                    {% endif %}
+                                </span>
                                 <h3 class="timeline-header">
                                     <a href="#">{{ meal.ape.ape_name }}</a> had {{ meal.recipe.meal_name }}
                                 </h3>
@@ -302,7 +311,7 @@
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-users mr-2"></i>Apes Overview
+                    <i class="fas fa-list mr-2"></i>Apes Overview
                 </h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -392,7 +401,7 @@
                                 <i class="fas fa-utensils mr-2"></i>Full Feeding Log
                             </a>
                             <a href="{{ url_for('site.all_apes') }}" class="list-group-item list-group-item-action">
-                                <i class="fas fa-users mr-2"></i>View All Apes
+                                <i class="fas fa-list mr-2"></i>View All Apes
                             </a>
                             <button class="list-group-item list-group-item-action" onclick="showRecentActivity()">
                                 <i class="fas fa-history mr-2"></i>Recent Activity

@@ -1,5 +1,5 @@
-from flask import Flask
 import os
+from flask import Flask
 from backend.extensions import db
 from backend.security import init_security
 from backend.routes.main import site
@@ -7,6 +7,9 @@ from backend.helpers import get_time_period_display
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True, static_folder='static', static_url_path='/static')
+    
+    # Ensure instance folder exists
+    os.makedirs(app.instance_path, exist_ok=True)
 
     # Ensure instance directory exists
     os.makedirs(app.instance_path, exist_ok=True)
@@ -20,6 +23,7 @@ def create_app():
     app.config["SECURITY_PASSWORD_HASH"] = "bcrypt"
     app.config["SECURITY_REGISTERABLE"] = True
     app.config["SECURITY_SEND_REGISTER_EMAIL"] = False
+    
 
 
     db.init_app(app)

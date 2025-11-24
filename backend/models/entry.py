@@ -5,6 +5,14 @@ from datetime import datetime, date
 from flask import url_for
 import uuid
 
+# Feeding period constants
+FEEDING_PERIODS = {
+    'morning': 'Morning (6 AM - 12 PM)',
+    'afternoon': 'Afternoon (12 PM - 6 PM)', 
+    'evening': 'Evening (6 PM - 12 AM)',
+    'night': 'Night (12 AM - 6 AM)'
+}
+
 class Apes(db.Model):
     """
     Represents an ape in the wellness tracker.
@@ -132,6 +140,7 @@ class Meals(db.Model):
         ape_id (int): Foreign key to Apes.
         recipe_id (int): Foreign key to Recipe.
         date (datetime): Date and time of the meal.
+        feeding_period (str): Time period when feeding occurred (Morning, Afternoon, Evening, Night).
         user_id (int): Foreign key to User - tracks who entered the data.
     Relationships:
         ape: The associated Apes object.
@@ -143,12 +152,20 @@ class Meals(db.Model):
     ape_id = db.Column(db.Integer, sa.ForeignKey('apes.id'), nullable=False)
     recipe_id = db.Column(db.Integer, sa.ForeignKey('recipe.id'), nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=sa.func.now())
+    feeding_period = db.Column(db.String(20), nullable=True)  # Morning, Afternoon, Evening, Night
     user_id = db.Column(db.Integer, sa.ForeignKey('user.id'), nullable=False)
 
     # Relationships
     ape = db.relationship('Apes', backref='meals')
     recipe = db.relationship('Recipe', backref='meals')
     user = db.relationship('User', backref='meals')
+    
+    @property
+    def feeding_period_display(self):
+        """Get the display name for the feeding period"""
+        if self.feeding_period:
+            return FEEDING_PERIODS.get(self.feeding_period, self.feeding_period)
+        return "Not specified"
 
 
 roles_users = db.Table(

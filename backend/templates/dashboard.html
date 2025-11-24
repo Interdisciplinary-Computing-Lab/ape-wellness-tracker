@@ -25,7 +25,7 @@
                             <p>Total Apes</p>
                         </div>
                         <div class="icon">
-                            <i class="fas fa-users"></i>
+                            <i class="fas fa-list"></i>
                         </div>
                         <a href="{{ url_for('site.all_apes') }}" class="small-box-footer">
                             View All <i class="fas fa-arrow-circle-right"></i>
@@ -82,7 +82,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">
-                                <i class="fas fa-users mr-1"></i>
+                                <i class="fas fa-list mr-1"></i>
                                 Ape Profiles
                             </h3>
                             <div class="card-tools">
@@ -190,7 +190,19 @@
                                     <tbody>
                                         {% for meal in recent_meals %}
                                         <tr>
-                                            <td>{{ get_time_period_display(meal.date) }}</td>
+                                            {% set inferred_period = get_time_period_display(meal.date) %}
+                                            {% set inferred_parts = inferred_period.split(' - ') %}
+                                            <td>
+                                                {{ meal.date.strftime('%m/%d/%Y') }}
+                                                <br>
+                                                <small class="text-muted">
+                                                    {% if meal.feeding_period %}
+                                                        {{ meal.feeding_period_display }}
+                                                    {% else %}
+                                                        {{ inferred_parts|last }}
+                                                    {% endif %}
+                                                </small>
+                                            </td>
                                             <td>
                                                 <a href="{{ url_for('site.ape_profile_page', ape_id=meal.ape.id) }}">
                                                     {{ meal.ape.ape_name }}

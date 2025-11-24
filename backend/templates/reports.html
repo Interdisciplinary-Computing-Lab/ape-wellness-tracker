@@ -26,17 +26,66 @@
     <!-- Download Section -->
     <div class="row">
         <div class="col-12">
-            <div class="alert alert-info">
-                <h5><i class="fas fa-download mr-2"></i>Export Data</h5>
-                <div class="mt-2">
-                    <a href="{{ url_for('site.download_raw_data') }}" 
-                       class="btn btn-warning">
-                        <i class="fas fa-database mr-1"></i>
-                        Download Full Database (ZIP)
-                    </a>
-                    <small class="form-text text-dark font-weight-normal">
-                        Complete unfiltered tables for technical or backup use.
-                    </small>
+            <div class="card card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-download mr-2"></i>Export Data for Researchers
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-database mr-2"></i>Raw Data Export (ZIP)</h5>
+                            <p class="text-muted">Complete database tables in normalized CSV format.</p>
+                            
+                            <form method="GET" action="{{ url_for('site.download_raw_data') }}" class="mb-3">
+                                <input type="hidden" name="range" value="{{ date_range }}">
+                                <input type="hidden" name="date" value="{{ custom_date }}">
+                                <input type="hidden" name="start_date" value="{{ custom_start_date }}">
+                                <input type="hidden" name="end_date" value="{{ custom_end_date }}">
+                                
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="denormalized" value="true" id="denormalizedCheck">
+                                        <label class="form-check-label" for="denormalizedCheck">
+                                            <strong>Include Denormalized Export</strong>
+                                            <br>
+                                            <small class="text-muted">Add a joined table with all meal data in one file (includes age at meal time, calculated fields)</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-database mr-1"></i>
+                                    Download Raw Data (ZIP)
+                                </button>
+                                <small class="form-text text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Exports include: Ape_Information.csv, Meal_Logs.csv (with feeding_period), 
+                                    Meal_Definitions.csv, Food_Categories.csv
+                                    {% if date_range != 'all' %}
+                                    <br><strong>Filtered by:</strong> {{ date_range }}
+                                    {% if custom_date %}({{ custom_date }}){% endif %}
+                                    {% if custom_start_date and custom_end_date %}({{ custom_start_date }} to {{ custom_end_date }}){% endif %}
+                                    {% endif %}
+                                </small>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-file-csv mr-2"></i>Aggregated Report Export</h5>
+                            <p class="text-muted">Summary statistics and aggregated data for the selected date range.</p>
+                            
+                            <a href="{{ url_for('site.download_reports', format='csv', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}" 
+                               class="btn btn-success">
+                                <i class="fas fa-download mr-1"></i>
+                                Download CSV Report
+                            </a>
+                            <small class="form-text text-muted d-block mt-2">
+                                <i class="fas fa-info-circle"></i> 
+                                Includes summary statistics, per-ape stats, category distribution, and daily breakdown
+                            </small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -67,13 +116,13 @@
                             </div>
                             
                             <!-- Single Custom Date -->
-                            <div class="col-md-3 mb-3" id="customDateGroup" style="display: {% if date_range == 'custom' %}block{% else %}none{% endif %};">
+                            <div class="col-md-3 mb-3" id="customDateGroup" data-initial-display="{{ 'block' if date_range == 'custom' else 'none' }}">
                                 <label for="date" class="form-label">Date:</label>
                                 <input type="date" name="date" id="date" class="form-control" value="{{ custom_date }}">
                             </div>
                             
                             <!-- Custom Date Range -->
-                            <div class="col-md-6 mb-3" id="customRangeGroup" style="display: {% if date_range == 'custom_range' %}block{% else %}none{% endif %};">
+                            <div class="col-md-6 mb-3" id="customRangeGroup" data-initial-display="{{ 'block' if date_range == 'custom_range' else 'none' }}">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <label for="start_date" class="form-label">Start Date:</label>
@@ -150,7 +199,7 @@
                     <p>Active Apes</p>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-users"></i>
+                    <i class="fas fa-list"></i>
                 </div>
             </div>
         </div>
@@ -198,7 +247,7 @@
                                     <td>
                                         <div class="progress">
                                             <div class="progress-bar bg-success" 
-                                                 style="width: {{ "%.1f"|format(stats.percentage_of_total) }}%">
+                                                 data-width="{{ "%.1f"|format(stats.percentage_of_total) }}">
                                                 {{ "%.1f"|format(stats.percentage_of_total) }}%
                                             </div>
                                         </div>
@@ -253,7 +302,7 @@
                                     <td>
                                         <div class="progress">
                                             <div class="progress-bar bg-info" 
-                                                 style="width: {{ "%.1f"|format(category.percentage) }}%">
+                                                 data-width="{{ "%.1f"|format(category.percentage) }}">
                                                 {{ "%.1f"|format(category.percentage) }}%
                                             </div>
                                         </div>
@@ -392,6 +441,22 @@ function handleRangeChange() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Set initial display state for custom date groups
+    const customDateGroup = document.getElementById('customDateGroup');
+    const customRangeGroup = document.getElementById('customRangeGroup');
+    if (customDateGroup) {
+        customDateGroup.style.display = customDateGroup.getAttribute('data-initial-display');
+    }
+    if (customRangeGroup) {
+        customRangeGroup.style.display = customRangeGroup.getAttribute('data-initial-display');
+    }
+    
+    // Set progress bar widths from data attributes
+    document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+    
     toggleCustomDate();
     
     // Add event listeners for auto-submit
