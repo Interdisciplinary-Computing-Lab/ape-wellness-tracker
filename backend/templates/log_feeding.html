@@ -484,14 +484,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize date field with today's date
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('feedingDate').value = today;
+    const feedingDateEl = document.getElementById('feedingDate');
+    if (feedingDateEl) {
+        feedingDateEl.value = today;
+    }
     
     // Pre-fill custom food if provided
     {% if pre_filled_food %}
-    document.getElementById('customFoodName').value = '{{ pre_filled_food|e }}';
+    const customFoodNameEl = document.getElementById('customFoodName');
+    if (customFoodNameEl) {
+        customFoodNameEl.value = '{{ pre_filled_food|e }}';
+    }
     {% endif %}
     {% if pre_filled_calories %}
-    document.getElementById('customCalories').value = '{{ pre_filled_calories|e }}';
+    const customCaloriesEl = document.getElementById('customCalories');
+    if (customCaloriesEl) {
+        customCaloriesEl.value = '{{ pre_filled_calories|e }}';
+    }
     {% endif %}
     
     // Pre-select ape if provided in URL

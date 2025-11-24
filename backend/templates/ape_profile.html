@@ -52,7 +52,7 @@
                                     
                                     {% if ape.has_image() %}
                                     <button type="button" class="btn btn-sm btn-outline-danger ml-2" 
-                                            onclick="removeImage({{ ape.id }})">
+                                            onclick="removeImage({{ ape.id|tojson }})">
                                         <i class="fas fa-trash mr-1"></i>Remove
                                     </button>
                                     {% endif %}
@@ -102,7 +102,7 @@
                                 </a>
                                 
                                 <button type="button" class="btn btn-secondary btn-block mt-2" 
-                                        onclick="confirmArchive('{{ ape.ape_name }}', {{ ape.id }})">
+                                        onclick="confirmArchive({{ ape.ape_name|tojson }}, {{ ape.id|tojson }})">
                                     <i class="fas fa-archive mr-1"></i><b>Archive Ape</b>
                                 </button>
                             </div>
@@ -535,7 +535,7 @@ document.addEventListener('keydown', function(e) {
     // Ctrl/Cmd + A to archive ape
     if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         e.preventDefault();
-        confirmArchive('{{ ape.ape_name }}', {{ ape.id }});
+        confirmArchive({{ ape.ape_name|tojson }}, {{ ape.id|tojson }});
     }
 
 });
