@@ -27,6 +27,12 @@ def build_executable():
     """Build the executable using PyInstaller"""
     print("Building desktop executable...")
     
+    # Determine the separator for add-data based on OS
+    if sys.platform == 'win32':
+        sep = ';'
+    else:
+        sep = ':'
+    
     # PyInstaller command
     cmd = [
         sys.executable, "-m", "PyInstaller",
@@ -34,15 +40,23 @@ def build_executable():
         "--windowed",  # Hide console window on Windows
         "--name", "ApeWellnessTracker",
         # "--icon", "backend/static/images/bonobo-placeholder.jpg",  # App icon (commented out due to format issue)
-        "--add-data", "backend;backend",  # Include backend directory
-        "--add-data", "instance;instance",  # Include instance directory
-        "--add-data", "backend/templates;backend/templates",  # Include templates
-        "--add-data", "backend/static;backend/static",  # Include static files
+        "--add-data", f"backend{sep}backend",  # Include backend directory
+        "--add-data", f"backend/templates{sep}backend/templates",  # Include templates
+        "--add-data", f"backend/static{sep}backend/static",  # Include static files
+        "--hidden-import", "webview",
         "--hidden-import", "flaskwebgui",
         "--hidden-import", "flask",
         "--hidden-import", "flask_security",
+        "--hidden-import", "flask_security.too",
+        "--hidden-import", "flask_wtf",
         "--hidden-import", "sqlalchemy",
         "--hidden-import", "bcrypt",
+        "--hidden-import", "pandas",
+        "--hidden-import", "pyarrow",
+        "--hidden-import", "jinja2",
+        "--hidden-import", "werkzeug",
+        "--collect-all", "flask",
+        "--collect-all", "flask_security",
         "desktop_app.py"
     ]
     
@@ -55,16 +69,34 @@ def build_executable():
         return False
 
 def copy_to_distribution():
-    """Copy the built executable to the distribution folder"""
+    """Copy the built executable and documentation to the distribution folder"""
     import shutil
+    from datetime import datetime
     
     # Ensure distribution directory exists
     if not os.path.exists('distribution'):
         os.makedirs('distribution')
     
+    # Determine executable name based on platform
+    if sys.platform == 'win32':
+        exe_name = 'ApeWellnessTracker.exe'
+    elif sys.platform == 'darwin':
+        exe_name = 'ApeWellnessTracker'
+        # For macOS, we need to handle .app bundle
+        app_bundle = 'dist/Ape Wellness Tracker.app'
+        if os.path.exists(app_bundle):
+            dest_bundle = 'distribution/Ape Wellness Tracker.app'
+            if os.path.exists(dest_bundle):
+                shutil.rmtree(dest_bundle)
+            shutil.copytree(app_bundle, dest_bundle)
+            print(f"Copied app bundle to: {dest_bundle}")
+            return
+    else:
+        exe_name = 'ApeWellnessTracker'
+    
     # Copy executable
-    source = 'dist/ApeWellnessTracker.exe'
-    destination = 'distribution/ApeWellnessTracker.exe'
+    source = f'dist/{exe_name}'
+    destination = f'distribution/{exe_name}'
     
     if os.path.exists(source):
         try:
@@ -77,9 +109,118 @@ def copy_to_distribution():
             print(f"Warning: Could not copy executable: {e}")
     else:
         print(f"Warning: Source executable not found: {source}")
+    
+    # Copy researcher instructions if they exist
+    if os.path.exists('distribution/RESEARCHER_INSTRUCTIONS.txt'):
+        print("Researcher instructions already exist in distribution folder")
+    else:
+        # Create default researcher instructions if they don't exist
+        create_researcher_instructions()
+    
+    # Update build date in researcher instructions
+    update_build_date()
+
+def create_researcher_instructions():
+    """Create researcher-friendly instructions"""
+    from datetime import datetime
+    build_date = datetime.now().strftime("%Y-%m-%d")
+    
+    instructions = '''APE WELLNESS TRACKER - RESEARCHER INSTRUCTIONS
+===============================================
+
+A desktop application for tracking ape nutrition and wellness data.
+
+QUICK START:
+1. Double-click ApeWellnessTracker.exe
+2. Register a new account (first time only)
+3. Start tracking your apes' nutrition!
+
+FEATURES:
+- Add and manage ape profiles with photos
+- Log feeding sessions and meals
+- Track nutrition data and calories
+- Generate comprehensive reports
+- Export data in multiple formats (CSV, ZIP)
+- User authentication and data security
+- Archive inactive apes
+- Recipe management system
+
+SYSTEM REQUIREMENTS:
+- Windows 10 or later (or macOS 10.13+)
+- 200MB free disk space
+- No internet connection required (runs locally)
+- No Python installation needed
+
+FIRST TIME SETUP:
+1. Run ApeWellnessTracker.exe
+2. Click "Register" to create your account
+3. Login with your credentials
+4. Start adding your apes and logging data
+
+USING THE APPLICATION:
+- Dashboard: Overview of all apes and recent activity
+- Add Ape: Create new ape profiles with photos and details
+- Log Meal: Record feeding sessions with recipes
+- Reports: Generate nutrition and wellness reports
+- Export: Download your data for analysis
+
+DATA MANAGEMENT:
+- All data is stored locally on your computer
+- Data is automatically saved in the application
+- You can export data anytime for external analysis
+- Each user has their own separate data
+- Database file location: Same folder as the executable
+
+TROUBLESHOOTING:
+- If the app doesn't start: Try running as administrator
+- If you get security warnings: Allow the app through Windows Defender/Antivirus
+- If the window is too small: Resize by dragging the corners
+- If you lose your password: Contact the administrator
+- If port 5003 is in use: Close other instances of the app
+
+SUPPORT:
+For technical support or questions, contact:
+dylandaner@me.com
+zmielko@highlands.edu
+
+VERSION: 1.0.0
+BUILD DATE: {build_date}
+
+IMPORTANT NOTES:
+- This application runs completely offline
+- Your data is stored securely on your local machine
+- No data is sent to external servers
+- You can export your data at any time
+- The application includes built-in help and documentation
+- First launch may take 5-10 seconds (this is normal)
+'''
+    instructions = instructions.format(build_date=build_date)
+    
+    dist_file = 'distribution/RESEARCHER_INSTRUCTIONS.txt'
+    with open(dist_file, 'w') as f:
+        f.write(instructions)
+    print(f"Created {dist_file}")
+
+def update_build_date():
+    """Update build date in researcher instructions"""
+    from datetime import datetime
+    build_date = datetime.now().strftime("%Y-%m-%d")
+    
+    instructions_file = 'distribution/RESEARCHER_INSTRUCTIONS.txt'
+    if os.path.exists(instructions_file):
+        with open(instructions_file, 'r') as f:
+            content = f.read()
+        
+        # Update build date
+        import re
+        content = re.sub(r'BUILD DATE: .*', f'BUILD DATE: {build_date}', content)
+        
+        with open(instructions_file, 'w') as f:
+            f.write(content)
+        print(f"Updated build date in {instructions_file}")
 
 def create_installer_script():
-    """Create a simple installer script"""
+    """Create a simple installer script (for development only)"""
     installer_content = '''@echo off
 echo Installing Ape Wellness Tracker Desktop App...
 echo.
@@ -95,14 +236,6 @@ if errorlevel 1 (
 REM Install dependencies
 echo Installing dependencies...
 pip install -r requirements.txt
-
-REM Create desktop shortcut (Windows)
-if exist "%USERPROFILE%\\Desktop" (
-    echo Creating desktop shortcut...
-    echo [InternetShortcut] > "%USERPROFILE%\\Desktop\\Ape Wellness Tracker.url"
-    echo URL=file:///%CD%\\launch_desktop.py >> "%USERPROFILE%\\Desktop\\Ape Wellness Tracker.url"
-    echo IconFile=%CD%\\backend\\static\\images\\bonobo-placeholder.jpg >> "%USERPROFILE%\\Desktop\\Ape Wellness Tracker.url"
-)
 
 echo.
 echo Installation complete!
@@ -138,13 +271,23 @@ def main():
         # Copy executable to distribution folder
         copy_to_distribution()
         
-        # Create installer script
+        # Create installer script (for development)
         create_installer_script()
         
+        print("\n" + "=" * 60)
+        print("BUILD SUCCESSFUL!")
+        print("=" * 60)
+        print("\nDistribution package ready in 'distribution/' folder:")
+        print("  - Executable: distribution/ApeWellnessTracker.exe")
+        print("  - Instructions: distribution/RESEARCHER_INSTRUCTIONS.txt")
+        print("\nTo distribute to researchers:")
+        print("  1. Zip the entire 'distribution' folder")
+        print("  2. Send the zip file to researchers")
+        print("  3. Researchers extract and run ApeWellnessTracker.exe")
         print("\nNext steps:")
-        print("1. Test the executable: distribution/ApeWellnessTracker.exe")
-        print("2. Distribute the entire 'distribution' folder")
-        print("3. Or use install_desktop.bat for easy installation")
+        print("  1. Test the executable: distribution/ApeWellnessTracker.exe")
+        print("  2. Verify all features work correctly")
+        print("  3. Create zip file for distribution")
     else:
         print("Build failed. Please check the error messages above.")
 

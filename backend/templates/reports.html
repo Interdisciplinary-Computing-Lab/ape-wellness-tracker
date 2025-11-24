@@ -104,7 +104,7 @@
                 <div class="card-body">
                     <form method="GET" action="{{ url_for('site.reports') }}">
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="range" class="form-label">Time Period:</label>
                                 <select name="range" id="range" class="form-control" onchange="toggleCustomDate()">
                                     <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
@@ -115,14 +115,14 @@
                                 </select>
                             </div>
                             
-                            <!-- Single Custom Date -->
-                            <div class="col-md-3 mb-3" id="customDateGroup" data-initial-display="{{ 'block' if date_range == 'custom' else 'none' }}">
+                            <!-- Single Custom Date (only shown when "Custom Date" is selected) -->
+                            <div class="col-md-3 mb-3" id="customDateGroup" style="display: {{ 'block' if date_range == 'custom' else 'none' }};">
                                 <label for="date" class="form-label">Date:</label>
                                 <input type="date" name="date" id="date" class="form-control" value="{{ custom_date }}">
                             </div>
                             
-                            <!-- Custom Date Range -->
-                            <div class="col-md-6 mb-3" id="customRangeGroup" data-initial-display="{{ 'block' if date_range == 'custom_range' else 'none' }}">
+                            <!-- Custom Date Range (only shown when "Custom Date Range" is selected) -->
+                            <div class="col-md-6 mb-3" id="customRangeGroup" style="display: {{ 'block' if date_range == 'custom_range' else 'none' }};">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <label for="start_date" class="form-label">Start Date:</label>
@@ -441,28 +441,29 @@ function handleRangeChange() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Set initial display state for custom date groups
-    const customDateGroup = document.getElementById('customDateGroup');
-    const customRangeGroup = document.getElementById('customRangeGroup');
-    if (customDateGroup) {
-        customDateGroup.style.display = customDateGroup.getAttribute('data-initial-display');
-    }
-    if (customRangeGroup) {
-        customRangeGroup.style.display = customRangeGroup.getAttribute('data-initial-display');
-    }
-    
     // Set progress bar widths from data attributes
     document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
         const width = bar.getAttribute('data-width');
         bar.style.width = width + '%';
     });
     
+    // Initialize the display state based on current selection
     toggleCustomDate();
     
     // Add event listeners for auto-submit
-    document.getElementById('date').addEventListener('change', handleDateChange);
-    document.getElementById('start_date').addEventListener('change', handleRangeChange);
-    document.getElementById('end_date').addEventListener('change', handleRangeChange);
+    const dateInput = document.getElementById('date');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (dateInput) {
+        dateInput.addEventListener('change', handleDateChange);
+    }
+    if (startDateInput) {
+        startDateInput.addEventListener('change', handleRangeChange);
+    }
+    if (endDateInput) {
+        endDateInput.addEventListener('change', handleRangeChange);
+    }
 });
 </script>
 

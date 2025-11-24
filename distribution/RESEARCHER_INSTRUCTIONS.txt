@@ -54,7 +54,7 @@ dylandaner@me.com
 zmielko@highlands.edu
 
 VERSION: 1.0.0
-BUILD DATE: 10/15/2025
+BUILD DATE: 2025-11-24
 
 IMPORTANT NOTES:
 - This application runs completely offline
