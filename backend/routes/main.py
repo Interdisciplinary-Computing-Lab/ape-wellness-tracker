@@ -446,7 +446,6 @@ def save_feeding():
         ape_ids = data.get('ape_ids', [])
         feeding_items = data.get('feeding_items', [])
         feeding_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
-<<<<<<< HEAD
         feeding_period = data.get('feeding_period', 'morning')  # Default to morning
         
         if not ape_ids:
