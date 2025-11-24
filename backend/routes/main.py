@@ -247,7 +247,6 @@ def edit_ape(ape_id):
 
 
 @site.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
-@roles_required("Admin")
 def edit_recipe(recipe_id):
     """
     Display and handle the form for editing an existing recipe.
@@ -273,7 +272,6 @@ def edit_recipe(recipe_id):
 
 
 @site.route('/meals/<int:meal_id>/edit', methods=['GET', 'POST'])
-@roles_required("Admin")
 def edit_meal(meal_id):
     """
     Display and handle the form for editing an existing meal.
@@ -360,7 +358,6 @@ def archived_apes():
 
 
 @site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
-@roles_required("Admin")
 def delete_recipe_form(recipe_id):
     """
     Delete a recipe from the database via form submission.
@@ -385,7 +382,6 @@ def delete_recipe_form(recipe_id):
         return redirect(url_for('site.manage_foods'))
 
 @site.route('/meals/<int:meal_id>/delete', methods=['POST'])
-@roles_required("Admin")
 def delete_meal(meal_id):
     """
     Delete a meal from the database.
@@ -766,7 +762,6 @@ def add_recipe_form():
 # Food Category Management Routes
 @site.route('/manage_categories')
 @login_required
-@roles_required("Admin")
 def manage_categories():
     """Display food category management page"""
     categories = FoodCategory.query.order_by(FoodCategory.sort_order, FoodCategory.name).all()
@@ -792,7 +787,6 @@ def manage_categories():
 
 @site.route('/categories/add', methods=['POST'])
 @login_required
-@roles_required("Admin")
 def add_category():
     """Add a new food category"""
     try:
@@ -832,7 +826,6 @@ def add_category():
 
 @site.route('/categories/<int:category_id>/edit', methods=['GET', 'POST'])
 @login_required
-@roles_required("Admin")
 def edit_category(category_id):
     """Edit an existing food category"""
     category = FoodCategory.query.get_or_404(category_id)
@@ -876,7 +869,6 @@ def edit_category(category_id):
 
 @site.route('/categories/<int:category_id>/delete', methods=['POST'])
 @login_required
-@roles_required("Admin")
 def delete_category(category_id):
     """Delete a food category"""
     try:
