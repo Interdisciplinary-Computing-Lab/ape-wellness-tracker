@@ -305,17 +305,17 @@
                     <!-- Date and Time Period Selection -->
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="feedingDate" class="form-label">
+                            <label for="feedingDateSummary" class="form-label">
                                 <i class="fas fa-calendar mr-1"></i>Date
                             </label>
-                            <input type="date" class="form-control" id="feedingDate" 
+                            <input type="date" class="form-control" id="feedingDateSummary" 
                                    value="{{ moment().format('YYYY-MM-DD') if moment else '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label for="feedingPeriod" class="form-label">
+                            <label for="feedingPeriodSummary" class="form-label">
                                 <i class="fas fa-clock mr-1"></i>Time Period
                             </label>
-                            <select class="form-control" id="feedingPeriod">
+                            <select class="form-control" id="feedingPeriodSummary">
                                 <option value="morning">Morning (6 AM - 12 PM)</option>
                                 <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
                                 <option value="evening">Evening (6 PM - 12 AM)</option>
@@ -482,11 +482,37 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
     updateStats();
     
-    // Initialize date field with today's date
+    // Initialize date fields with today's date
     const today = new Date().toISOString().split('T')[0];
     const feedingDateEl = document.getElementById('feedingDate');
+    const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
     if (feedingDateEl) {
         feedingDateEl.value = today;
+    }
+    if (feedingDateSummaryEl) {
+        feedingDateSummaryEl.value = today;
+    }
+    
+    // Sync date fields
+    if (feedingDateEl && feedingDateSummaryEl) {
+        feedingDateEl.addEventListener('change', function() {
+            feedingDateSummaryEl.value = this.value;
+        });
+        feedingDateSummaryEl.addEventListener('change', function() {
+            feedingDateEl.value = this.value;
+        });
+    }
+    
+    // Sync period fields
+    const feedingPeriodEl = document.getElementById('feedingPeriod');
+    const feedingPeriodSummaryEl = document.getElementById('feedingPeriodSummary');
+    if (feedingPeriodEl && feedingPeriodSummaryEl) {
+        feedingPeriodEl.addEventListener('change', function() {
+            feedingPeriodSummaryEl.value = this.value;
+        });
+        feedingPeriodSummaryEl.addEventListener('change', function() {
+            feedingPeriodEl.value = this.value;
+        });
     }
     
     // Pre-fill custom food if provided
@@ -514,20 +540,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     {% endif %}
     
-    // Add event listeners to food buttons
-    document.querySelectorAll('.quick-food-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const food = this.getAttribute('data-food');
-            const calories = parseInt(this.getAttribute('data-calories'));
-            const name = this.getAttribute('data-name');
-            addFoodItem(name, calories, 1);
+    // Use event delegation for food buttons (works even when buttons are hidden/shown)
+    document.getElementById('foodsGrid').addEventListener('click', function(e) {
+        const btn = e.target.closest('.quick-food-btn');
+        if (btn) {
+            e.preventDefault();
+            e.stopPropagation();
             
-            // Visual feedback
-            this.classList.add('btn-success');
-            setTimeout(() => {
-                this.classList.remove('btn-success');
-            }, 500);
-        });
+            const food = btn.getAttribute('data-food');
+            const calories = parseInt(btn.getAttribute('data-calories')) || 0;
+            const name = btn.getAttribute('data-name');
+            
+            if (name && calories > 0) {
+                addFoodItem(name, calories, 1);
+                
+                // Visual feedback
+                btn.classList.add('btn-success');
+                setTimeout(() => {
+                    btn.classList.remove('btn-success');
+                }, 500);
+            }
+        }
     });
 });
 
@@ -769,12 +802,14 @@ function saveFeeding() {
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
     saveBtn.disabled = true;
     
-    // Prepare data for server
+    // Prepare data for server (use main date/period fields, fallback to summary fields)
+    const dateEl = document.getElementById('feedingDate') || document.getElementById('feedingDateSummary');
+    const periodEl = document.getElementById('feedingPeriod') || document.getElementById('feedingPeriodSummary');
     const feedingData = {
         ape_ids: Array.from(selectedApes),
         feeding_items: feedingItems,
-        date: document.getElementById('feedingDate').value || new Date().toISOString().split('T')[0],
-        feeding_period: document.getElementById('feedingPeriod').value
+        date: dateEl ? dateEl.value : new Date().toISOString().split('T')[0],
+        feeding_period: periodEl ? periodEl.value : 'morning'
     };
     
     // Send data to server
@@ -862,18 +897,29 @@ document.addEventListener('keypress', function(e) {
 function setDateToYesterday() {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    document.getElementById('feedingDate').value = yesterday.toISOString().split('T')[0];
+    const dateStr = yesterday.toISOString().split('T')[0];
+    const feedingDateEl = document.getElementById('feedingDate');
+    const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
+    if (feedingDateEl) feedingDateEl.value = dateStr;
+    if (feedingDateSummaryEl) feedingDateSummaryEl.value = dateStr;
 }
 
 function setDateToToday() {
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('feedingDate').value = today;
+    const feedingDateEl = document.getElementById('feedingDate');
+    const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
+    if (feedingDateEl) feedingDateEl.value = today;
+    if (feedingDateSummaryEl) feedingDateSummaryEl.value = today;
 }
 
 function setDateToTomorrow() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById('feedingDate').value = tomorrow.toISOString().split('T')[0];
+    const dateStr = tomorrow.toISOString().split('T')[0];
+    const feedingDateEl = document.getElementById('feedingDate');
+    const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
+    if (feedingDateEl) feedingDateEl.value = dateStr;
+    if (feedingDateSummaryEl) feedingDateSummaryEl.value = dateStr;
 }
 </script>
 {% endblock %}
