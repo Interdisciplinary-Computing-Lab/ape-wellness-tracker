@@ -37,12 +37,17 @@ echo     ],
 echo     hiddenimports=[
 echo         'webview',
 echo         'flask',
+echo         'flask_sqlalchemy',
 echo         'flask_security',
+echo         'flask_security.too',
 echo         'flask_wtf',
 echo         'sqlalchemy',
 echo         'bcrypt',
 echo         'pandas',
 echo         'pyarrow',
+echo         'jinja2',
+echo         'werkzeug',
+echo         'flaskwebgui',
 echo     ],
 echo     hookspath=[],
 echo     hooksconfig={},
@@ -81,7 +86,7 @@ echo ^)
 
 REM Build the application
 echo Building application with PyInstaller...
-pyinstaller --clean ape_wellness_tracker.spec
+pyinstaller --clean --collect-all flask --collect-all flask_security ape_wellness_tracker.spec
 
 REM Check if build was successful
 if exist "dist\Ape Wellness Tracker.exe" (

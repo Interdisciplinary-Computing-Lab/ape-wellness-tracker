@@ -48,12 +48,17 @@ a = Analysis(
     hiddenimports=[
         'webview',
         'flask',
+        'flask_sqlalchemy',
         'flask_security',
+        'flask_security.too',
         'flask_wtf',
         'sqlalchemy',
         'bcrypt',
         'pandas',
         'pyarrow',
+        'jinja2',
+        'werkzeug',
+        'flaskwebgui',
     ],
     hookspath=[],
     hooksconfig={},
@@ -108,7 +113,7 @@ EOF
 
 # Build the application
 echo "🔨 Building application with PyInstaller..."
-pyinstaller --clean ape_wellness_tracker.spec
+pyinstaller --clean --collect-all flask --collect-all flask_security ape_wellness_tracker.spec
 
 # Check if build was successful
 if [ -d "dist/Ape Wellness Tracker.app" ]; then
