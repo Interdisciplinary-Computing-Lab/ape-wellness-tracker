@@ -1,6 +1,6 @@
 {% extends "adminlte_base.html" %}
 
-{% block title %}Reports - Ape Wellness Tracker{% endblock %}
+{% block title %}Reports - Ape Meal Tracker{% endblock %}
 
 {% block body %}
     <!-- Page Header -->
@@ -10,7 +10,7 @@
                 <div class="col-sm-6">
                     <h1 class="m-0">
                         <i class="fas fa-chart-bar mr-2"></i>
-                        Nutrition Reports
+                        Meal Reports
                     </h1>
                 </div>
                 <div class="col-sm-6">
@@ -29,7 +29,7 @@
             <div class="card card-primary">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-download mr-2"></i>Export Data for Researchers
+                        <i class="fas fa-download mr-2"></i>Export Database
                     </h3>
                 </div>
                 <div class="card-body">
@@ -211,7 +211,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-user mr-1"></i>
+                        <i class="fas fa-table mr-1"></i>
                         Per-Ape Statistics
                     </h3>
                 </div>
@@ -224,7 +224,6 @@
                                     <th>Calories</th>
                                     <th>Meals</th>
                                     <th>Avg Calories/Meal</th>
-                                    <th>% of Total</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -243,14 +242,6 @@
                                     </td>
                                     <td>
                                         <span class="badge badge-warning">{{ "%.1f"|format(stats.avg_calories) }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="progress">
-                                            <div class="progress-bar bg-success" 
-                                                 data-width="{{ "%.1f"|format(stats.percentage_of_total) }}">
-                                                {{ "%.1f"|format(stats.percentage_of_total) }}%
-                                            </div>
-                                        </div>
                                     </td>
                                     <td>
                                         <a href="{{ url_for('site.ape_profile_page', ape_id=ape.id) }}" 
@@ -365,7 +356,7 @@
             <div class="alert alert-info">
                 <h5><i class="icon fas fa-info"></i> No Data Available</h5>
                 No meals have been logged for the selected date range. 
-                <a href="{{ url_for('site.log_feeding') }}" class="alert-link">Log some feeding data</a> to see reports.
+                <a href="{{ url_for('site.log_feeding') }}" class="alert-link">Log some meal data</a> to see reports.
             </div>
         </div>
     </div>
