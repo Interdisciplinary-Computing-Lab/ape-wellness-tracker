@@ -1686,28 +1686,3 @@ def forbidden():
     return render_template('security/forbidden.html')
 
 
-
-            flash('Current password is incorrect.', 'error')
-            return redirect(url_for('site.user_profile'))
-        
-        # Change the password using Flask-Security's method
-        from flask_security.utils import hash_password
-        current_user.password = hash_password(new_password)
-        db.session.commit()
-        
-        flash('Password changed successfully!', 'success')
-        return redirect(url_for('site.user_profile'))
-        
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error changing password: {str(e)}', 'error')
-        return redirect(url_for('site.user_profile'))
-
-
-@site.route('/forbidden')
-@login_required
-def forbidden():
-    """Custom forbidden page with navigation options"""
-    return render_template('security/forbidden.html')
-
-
