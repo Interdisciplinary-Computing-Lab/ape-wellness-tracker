@@ -116,6 +116,9 @@ class Recipe(db.Model):
         meal_name (str): Unique name of the meal.
         description (str): Description of the meal.
         calories (int): Calorie count (must be non-negative).
+        quantity (float): Base quantity for which calories are calculated (default: 1.0).
+        unit_of_measurement (str): Unit indicating what quantity=1 means (e.g., "1 cup", "1 piece", "100g").
+        source (str): Data source for the nutritional information (e.g., "USDA Foundation Foods").
         food_category (str): Category of food (fruits, vegetables, protein, etc.).
         category_id (int): Foreign key to FoodCategory.
     """
@@ -124,6 +127,9 @@ class Recipe(db.Model):
     meal_name = db.Column(db.String(30), unique=True, nullable=False)
     description = db.Column(db.String)
     calories = db.Column(db.Integer, nullable=False)
+    quantity = db.Column(db.Float, nullable=False, default=1.0)
+    unit_of_measurement = db.Column(db.String(50), nullable=True)
+    source = db.Column(db.String(200), nullable=True)
     food_category = db.Column(db.String(50), nullable=True, default='Other')  # Legacy field for backward compatibility
     category_id = db.Column(db.Integer, sa.ForeignKey('food_categories.id'), nullable=True)
 
@@ -131,6 +137,20 @@ class Recipe(db.Model):
     __table_args__ = (
         sa.CheckConstraint('calories >= 0', name='check_calories_non_negative'),
     )
+    
+    def format_quantity(self):
+        """
+        Format quantity to avoid displaying too many decimal places.
+        Returns a string representation of the quantity with appropriate precision.
+        """
+        if self.quantity is None:
+            return "1"
+        # If it's a whole number, display without decimals
+        if self.quantity == int(self.quantity):
+            return str(int(self.quantity))
+        # Otherwise, display with up to 2 decimal places, removing trailing zeros
+        formatted = f"{self.quantity:.2f}".rstrip('0').rstrip('.')
+        return formatted
 
 class Meals(db.Model):
     """

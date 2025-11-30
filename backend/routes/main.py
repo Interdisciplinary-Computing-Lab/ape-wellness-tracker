@@ -257,6 +257,13 @@ def edit_recipe(recipe_id):
             recipe.meal_name = request.form['meal_name']
             recipe.description = request.form.get('description', '')
             recipe.calories = int(request.form['calories'])
+            quantity = request.form.get('quantity', '1.0')
+            try:
+                recipe.quantity = float(quantity)
+            except (ValueError, TypeError):
+                recipe.quantity = 1.0
+            recipe.unit_of_measurement = request.form.get('unit_of_measurement', '')
+            recipe.source = request.form.get('source', '')
             recipe.food_category = request.form.get('food_category', 'Other')
             
             db.session.commit()
@@ -507,6 +514,7 @@ def save_feeding():
                     meal_name=food_name,
                     description=f"Quick added: {food_name}",
                     calories=calories,
+                    quantity=1.0,
                     food_category=food_category
                 )
                 add_to_db(recipe, "recipe")
@@ -635,9 +643,13 @@ def create_recipe():
             return jsonify({'success': False, 'message': 'Food name and calories are required'})
         
         # Create new recipe
+        quantity = float(data.get('quantity', 1.0))
         new_recipe = Recipe(
             meal_name=data['meal_name'],
             calories=int(data['calories']),
+            quantity=quantity,
+            unit_of_measurement=data.get('unit_of_measurement', ''),
+            source=data.get('source', ''),
             food_category=data.get('food_category', 'Other'),
             description=data.get('description', '')
         )
@@ -664,6 +676,12 @@ def update_recipe(recipe_id):
             recipe.meal_name = data['meal_name']
         if data.get('calories'):
             recipe.calories = int(data['calories'])
+        if data.get('quantity') is not None:
+            recipe.quantity = float(data['quantity'])
+        if data.get('unit_of_measurement') is not None:
+            recipe.unit_of_measurement = data['unit_of_measurement']
+        if data.get('source') is not None:
+            recipe.source = data['source']
         if data.get('food_category'):
             recipe.food_category = data['food_category']
         if data.get('description') is not None:
@@ -689,6 +707,9 @@ def get_recipe(recipe_id):
                 'id': recipe.id,
                 'meal_name': recipe.meal_name,
                 'calories': recipe.calories,
+                'quantity': recipe.quantity,
+                'unit_of_measurement': recipe.unit_of_measurement,
+                'source': recipe.source,
                 'food_category': recipe.food_category,
                 'description': recipe.description
             }
@@ -707,6 +728,9 @@ def test_get_recipe(recipe_id):
                 'id': recipe.id,
                 'meal_name': recipe.meal_name,
                 'calories': recipe.calories,
+                'quantity': recipe.quantity,
+                'unit_of_measurement': recipe.unit_of_measurement,
+                'source': recipe.source,
                 'food_category': recipe.food_category,
                 'description': recipe.description
             }
@@ -741,6 +765,9 @@ def add_recipe_form():
     try:
         meal_name = request.form.get('meal_name')
         calories = request.form.get('calories')
+        quantity = request.form.get('quantity', '1.0')
+        unit_of_measurement = request.form.get('unit_of_measurement', '')
+        source = request.form.get('source', '')
         food_category = request.form.get('food_category')
         description = request.form.get('description', '')
         
@@ -754,9 +781,17 @@ def add_recipe_form():
             flash(f'A food item named "{meal_name}" already exists.', 'error')
             return redirect(url_for('site.manage_foods'))
         
+        try:
+            quantity_float = float(quantity)
+        except (ValueError, TypeError):
+            quantity_float = 1.0
+        
         new_recipe = Recipe(
             meal_name=meal_name,
             calories=int(calories),
+            quantity=quantity_float,
+            unit_of_measurement=unit_of_measurement,
+            source=source,
             food_category=food_category,
             description=description
         )
@@ -1052,7 +1087,7 @@ def reports():
 @site.route('/reports/download/<format>')
 @login_required
 def download_reports(format):
-    """Download nutrition reports data in CSV format"""
+    """Download meal reports data in CSV format"""
     # Get the same date range parameters as the reports route
     date_range = request.args.get('range', 'today')
     custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
@@ -1170,7 +1205,7 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     writer = csv.writer(output)
     
     # Report header
-    writer.writerow(['Ape Wellness Tracker - Nutrition Report'])
+    writer.writerow(['Ape Meal Tracker - Meal Report'])
     writer.writerow(['Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
     writer.writerow(['Date Range:', f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"])
     writer.writerow([])
@@ -1185,15 +1220,14 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     
     # Per-ape statistics
     writer.writerow(['PER-APE STATISTICS'])
-    writer.writerow(['Ape Name', 'Total Calories', 'Total Meals', 'Avg Calories/Meal', '% of Total'])
+    writer.writerow(['Ape Name', 'Total Calories', 'Total Meals', 'Avg Calories/Meal'])
     for ape in apes:
         stats = ape_stats[ape.id]
         writer.writerow([
             stats['name'],
             stats['calories'],
             stats['meal_count'],
-            f"{stats['avg_calories']:.1f}",
-            f"{stats['percentage_of_total']:.1f}%"
+            f"{stats['avg_calories']:.1f}"
         ])
     writer.writerow([])
     
@@ -1630,6 +1664,31 @@ def change_password():
         
         # Verify current password
         if not current_user.verify_password(current_password):
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('site.user_profile'))
+        
+        # Change the password using Flask-Security's method
+        from flask_security.utils import hash_password
+        current_user.password = hash_password(new_password)
+        db.session.commit()
+        
+        flash('Password changed successfully!', 'success')
+        return redirect(url_for('site.user_profile'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error changing password: {str(e)}', 'error')
+        return redirect(url_for('site.user_profile'))
+
+
+@site.route('/forbidden')
+@login_required
+def forbidden():
+    """Custom forbidden page with navigation options"""
+    return render_template('security/forbidden.html')
+
+
+
             flash('Current password is incorrect.', 'error')
             return redirect(url_for('site.user_profile'))
         

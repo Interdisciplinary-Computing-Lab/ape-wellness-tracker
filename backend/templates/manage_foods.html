@@ -95,6 +95,12 @@
                     <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
                     <span class="badge badge-success">{{ recipe.calories }} cal</span>
                 </div>
+                <div class="mb-2">
+                    <span class="badge badge-info">{{ recipe.format_quantity() }}{% if recipe.unit_of_measurement %} {{ recipe.unit_of_measurement }}{% endif %}</span>
+                    {% if recipe.source %}
+                    <span class="badge badge-secondary" title="Data source: {{ recipe.source }}">Source</span>
+                    {% endif %}
+                </div>
                 <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="badge category-badge"
@@ -107,6 +113,9 @@
                                 data-name="{{ recipe.meal_name }}" 
                                 data-category="{{ recipe.food_category or 'Other' }}" 
                                 data-calories="{{ recipe.calories }}" 
+                                data-quantity="{{ recipe.quantity or 1.0 }}"
+                                data-unit="{{ recipe.unit_of_measurement or '' }}"
+                                data-source="{{ recipe.source or '' }}"
                                 data-description="{{ recipe.description or '' }}">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -155,6 +164,21 @@
                         <input type="number" class="form-control" id="calories" name="calories" min="0" required>
                     </div>
                     <div class="form-group">
+                        <label for="quantity">Quantity *</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" step="0.01" min="0" value="1.0" required>
+                        <small class="form-text text-muted">Base quantity for which calories are calculated (e.g., 1.0, 0.5, 100)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="unit_of_measurement">Unit of Measurement</label>
+                        <input type="text" class="form-control" id="unit_of_measurement" name="unit_of_measurement" placeholder="e.g., 1 cup, 1 piece, 100g">
+                        <small class="form-text text-muted">What does quantity=1 mean? (e.g., "1 cup", "1 piece", "100g")</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="source">Data Source</label>
+                        <input type="text" class="form-control" id="source" name="source" placeholder="e.g., USDA Foundation Foods">
+                        <small class="form-text text-muted">Source of nutritional data (e.g., "USDA Foundation Foods")</small>
+                    </div>
+                    <div class="form-group">
                         <label for="description">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                     </div>
@@ -200,6 +224,21 @@
                     <div class="form-group">
                         <label for="editCalories">Calories *</label>
                         <input type="number" class="form-control" id="editCalories" name="calories" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editQuantity">Quantity *</label>
+                        <input type="number" class="form-control" id="editQuantity" name="quantity" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Base quantity for which calories are calculated (e.g., 1.0, 0.5, 100)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUnitOfMeasurement">Unit of Measurement</label>
+                        <input type="text" class="form-control" id="editUnitOfMeasurement" name="unit_of_measurement" placeholder="e.g., 1 cup, 1 piece, 100g">
+                        <small class="form-text text-muted">What does quantity=1 mean? (e.g., "1 cup", "1 piece", "100g")</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSource">Data Source</label>
+                        <input type="text" class="form-control" id="editSource" name="source" placeholder="e.g., USDA Foundation Foods">
+                        <small class="form-text text-muted">Source of nutritional data (e.g., "USDA Foundation Foods")</small>
                     </div>
                     <div class="form-group">
                         <label for="editDescription">Description</label>
@@ -656,12 +695,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const recipeName = this.getAttribute('data-name');
             const recipeCategory = this.getAttribute('data-category');
             const recipeCalories = this.getAttribute('data-calories');
+            const recipeQuantity = this.getAttribute('data-quantity') || '1.0';
+            const recipeUnit = this.getAttribute('data-unit') || '';
+            const recipeSource = this.getAttribute('data-source') || '';
             const recipeDescription = this.getAttribute('data-description');
             
             // Populate the edit form
             document.getElementById('editFoodName').value = recipeName;
             document.getElementById('editFoodCategory').value = recipeCategory || 'Other';
             document.getElementById('editCalories').value = recipeCalories;
+            document.getElementById('editQuantity').value = recipeQuantity;
+            document.getElementById('editUnitOfMeasurement').value = recipeUnit;
+            document.getElementById('editSource').value = recipeSource;
             document.getElementById('editDescription').value = recipeDescription || '';
             
             // Set the form action
