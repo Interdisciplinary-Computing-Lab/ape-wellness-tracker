@@ -32,7 +32,7 @@ A full-stack diet and wellness tracking app for Ape Initiative, built with Flask
 3. **Initialize the database**
    The database will be automatically created in the `instance/` folder when you first run the app. However, if you want to explicitly initialize it:
    ```bash
-   python init_db.py
+   python scripts/init_db.py
    ```
 
 4. **Run the application**
@@ -45,9 +45,9 @@ A full-stack diet and wellness tracking app for Ape Initiative, built with Flask
 ### First Time Setup
 
 After starting the app for the first time, you may want to:
-- Create an admin user: `python create_admin.py`
-- Create a test user: `python create_user.py`
-- Seed sample data: `python seed_data.py`
+- Create an admin user: `python scripts/create_admin.py`
+- Create a test user: `python scripts/create_user.py`
+- Seed sample data: `python scripts/seed_data.py`
 
 ## 💻 Desktop Application
 
@@ -74,7 +74,7 @@ This will launch the Flask app in a native desktop window using pywebview.
 
 2. **Run the build script:**
    ```bash
-   ./build_mac.sh
+   ./build_scripts/build_mac.sh
    ```
 
 3. **The application bundle will be created at:**
@@ -103,7 +103,7 @@ This will launch the Flask app in a native desktop window using pywebview.
 
 2. **Run the build script:**
    ```powershell
-   .\build_windows.bat
+   .\build_scripts\build_windows.bat
    ```
 
 3. **The executable will be created at:**
@@ -132,12 +132,32 @@ ape-wellness-tracker/
 │   ├── models/              # Database models
 │   └── forms/               # Form classes using Flask-WTF
 │
+├── scripts/                 # Utility and management scripts
+│   ├── init_db.py           # Database initialization
+│   ├── create_admin.py      # Create admin users
+│   ├── seed_data.py         # Seed sample data
+│   └── migrate_*.py         # Database migration scripts
+│
+├── build_scripts/           # Build and packaging scripts
+│   ├── build_desktop.py     # PyInstaller build script
+│   ├── build_mac.sh         # macOS build script
+│   ├── build_windows.bat    # Windows build script
+│   └── package_*.py         # Distribution packaging scripts
+│
+├── config/                  # Configuration files
+│   └── export_config.py     # Export system configuration
+│
+├── docs/                    # Documentation files
+│   ├── DESKTOP_BUILD.md     # Desktop build instructions
+│   └── *.md                 # Additional documentation
+│
+├── tests/                   # Test files
+│
 ├── instance/                # Instance-specific files (created automatically)
 │   └── database.db          # SQLite database file
 │
 ├── run.py                   # Main entry point to start the Flask app
 ├── desktop_app.py           # Desktop application entry point (pywebview)
-├── build_mac.sh             # macOS build script
-├── build_windows.bat        # Windows build script
-├── init_db.py               # Database initialization script
+├── launch_desktop.py        # Desktop app launcher
 ├── requirements.txt         # Python dependencies
+└── LICENSE                  # License file
