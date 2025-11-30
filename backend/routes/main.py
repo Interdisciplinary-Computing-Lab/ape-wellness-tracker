@@ -1025,8 +1025,7 @@ def reports():
             'name': ape.ape_name,
             'calories': ape_calories,
             'meal_count': ape_meal_count,
-            'avg_calories': ape_avg_calories,
-            'percentage_of_total': (ape_calories / total_calories * 100) if total_calories > 0 else 0
+            'avg_calories': ape_avg_calories
         }
     
     # Food category distribution
@@ -1148,8 +1147,7 @@ def download_reports(format):
             'name': ape.ape_name,
             'calories': ape_calories,
             'meal_count': ape_meal_count,
-            'avg_calories': ape_avg_calories,
-            'percentage_of_total': (ape_calories / total_calories * 100) if total_calories > 0 else 0
+            'avg_calories': ape_avg_calories
         }
     
     # Food category distribution
