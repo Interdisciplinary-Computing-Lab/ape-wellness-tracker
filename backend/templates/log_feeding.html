@@ -1,6 +1,6 @@
 {% extends 'adminlte_base.html' %}
-{% block title %}Log Feeding - Ape Wellness Tracker{% endblock %}
-{% block page_title %}Enhanced Log Feeding{% endblock %}
+{% block title %}Log Meals - Ape Meal Tracker{% endblock %}
+{% block page_title %}Log Meals{% endblock %}
 {% block body %}
 <!-- Date Selection Header -->
 <div class="row mb-3">
@@ -22,7 +22,6 @@
                                     </label>
                                     <div class="input-group">
                                         <input type="date" class="form-control" id="feedingDate" 
-                                               value="{{ moment().format('YYYY-MM-DD') if moment else '' }}" 
                                                style="max-width: 180px;">
                                         <div class="input-group-append">
                                             <div class="btn-group" role="group">
@@ -272,7 +271,7 @@
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-list mr-2"></i>Current Feeding
+                    <i class="fas fa-list mr-2"></i>Current Meals
                 </h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool btn-sm" onclick="clearFeedingList()">
@@ -304,38 +303,16 @@
                 </div>
                 
                 <div class="p-3">
-                    <!-- Date and Time Period Selection -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="feedingDateSummary" class="form-label">
-                                <i class="fas fa-calendar mr-1"></i>Date
-                            </label>
-                            <input type="date" class="form-control" id="feedingDateSummary" 
-                                   value="{{ moment().format('YYYY-MM-DD') if moment else '' }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="feedingPeriodSummary" class="form-label">
-                                <i class="fas fa-clock mr-1"></i>Time Period
-                            </label>
-                            <select class="form-control" id="feedingPeriodSummary">
-                                <option value="morning">Morning (6 AM - 12 PM)</option>
-                                <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
-                                <option value="evening">Evening (6 PM - 12 AM)</option>
-                                <option value="night">Night (12 AM - 6 AM)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
                     <div class="alert alert-warning" id="noApesSelected" style="display: none;">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
                         Please select at least one ape
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-lg" id="saveFeedingBtn" onclick="saveFeeding()" disabled>
+                        <button type="button" class="btn btn-success btn-lg" id="saveFeedingBtn" onclick="saveFeeding(); return false;" style="pointer-events: auto !important; z-index: 100; position: relative;" disabled>
                             <i class="fas fa-save mr-2"></i>Save Feeding
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="clearAll()">
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearAll(); return false;">
                             <i class="fas fa-eraser mr-2"></i>Clear All
                         </button>
                     </div>
@@ -352,14 +329,14 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-check-circle mr-2"></i>Feeding Logged Successfully
+                    <i class="fas fa-check-circle mr-2"></i>Meals Logged Successfully
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <p>Feeding data has been saved for <span id="savedApeCount">0</span> ape(s).</p>
+                <p>Meal data has been saved for <span id="savedApeCount">0</span> ape(s).</p>
                 <p class="mb-0">Total calories logged: <strong id="savedTotalCalories">0</strong></p>
             </div>
             <div class="modal-footer">
@@ -506,14 +483,30 @@ let currentCategory = 'all';
 
 // Global function for inline onclick handlers (most reliable) - defined first
 function addFoodFromButton(btn) {
-    console.log('addFoodFromButton called with:', btn);
-    const food = btn.getAttribute('data-food');
-    const calories = parseInt(btn.getAttribute('data-calories'));
-    const name = btn.getAttribute('data-name');
-    
-    console.log('Food data:', {name, calories, food});
-    
-    if (name && calories) {
+    try {
+        console.log('addFoodFromButton called with:', btn);
+        
+        // Try multiple ways to get the data
+        const food = btn.getAttribute('data-food') || btn.dataset.food;
+        const caloriesStr = btn.getAttribute('data-calories') || btn.dataset.calories;
+        const name = btn.getAttribute('data-name') || btn.dataset.name || food;
+        
+        const calories = parseInt(caloriesStr, 10);
+        
+        console.log('Food data:', {name, calories, food, caloriesStr});
+        
+        if (!name) {
+            console.error('Missing food name');
+            alert('Error: Missing food name. Please try again.');
+            return false;
+        }
+        
+        if (isNaN(calories) || calories <= 0) {
+            console.error('Invalid calories:', caloriesStr);
+            alert('Error: Invalid calories value. Please try again.');
+            return false;
+        }
+        
         addFoodItem(name, calories, 1);
         
         // Visual feedback
@@ -521,48 +514,25 @@ function addFoodFromButton(btn) {
         setTimeout(() => {
             btn.classList.remove('btn-success');
         }, 500);
-    } else {
-        console.error('Missing food data:', {name, calories, food});
-        alert('Error: Missing food data. Please try again.');
+        
+        return false;
+    } catch (error) {
+        console.error('Error in addFoodFromButton:', error);
+        alert('Error adding food item. Please try again.');
+        return false;
     }
-    return false;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
     updateStats();
+    updateSaveButton();
     
-    // Initialize date fields with today's date
+    // Initialize date field with today's date
     const today = new Date().toISOString().split('T')[0];
     const feedingDateEl = document.getElementById('feedingDate');
-    const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
     if (feedingDateEl) {
         feedingDateEl.value = today;
-    }
-    if (feedingDateSummaryEl) {
-        feedingDateSummaryEl.value = today;
-    }
-    
-    // Sync date fields
-    if (feedingDateEl && feedingDateSummaryEl) {
-        feedingDateEl.addEventListener('change', function() {
-            feedingDateSummaryEl.value = this.value;
-        });
-        feedingDateSummaryEl.addEventListener('change', function() {
-            feedingDateEl.value = this.value;
-        });
-    }
-    
-    // Sync period fields
-    const feedingPeriodEl = document.getElementById('feedingPeriod');
-    const feedingPeriodSummaryEl = document.getElementById('feedingPeriodSummary');
-    if (feedingPeriodEl && feedingPeriodSummaryEl) {
-        feedingPeriodEl.addEventListener('change', function() {
-            feedingPeriodSummaryEl.value = this.value;
-        });
-        feedingPeriodSummaryEl.addEventListener('change', function() {
-            feedingPeriodEl.value = this.value;
-        });
     }
     
     // Pre-fill custom food if provided
@@ -602,16 +572,39 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = false;
         btn.setAttribute('tabindex', '0');
         
-        // Add backup event handler (inline onclick is primary)
-        if (!btn.onclick || !btn.getAttribute('onclick')) {
-            btn.addEventListener('click', function(e) {
+        // Always add backup event handler to ensure buttons work
+        // Use capture phase and make sure it doesn't interfere with inline onclick
+        btn.addEventListener('click', function(e) {
+            // Only handle if inline onclick didn't work (check if event wasn't handled)
+            if (!e.defaultPrevented) {
                 e.preventDefault();
                 e.stopPropagation();
                 addFoodFromButton(this);
-            });
+            }
+        }, false);
+        
+        // Also ensure onclick attribute is set as backup
+        if (!btn.getAttribute('onclick')) {
+            btn.setAttribute('onclick', 'addFoodFromButton(this); return false;');
         }
     });
-    console.log('Initialized', foodButtons.length, 'food buttons with inline onclick handlers');
+    console.log('Initialized', foodButtons.length, 'food buttons with event handlers');
+    
+    // Ensure save button is clickable
+    const saveBtn = document.getElementById('saveFeedingBtn');
+    if (saveBtn) {
+        saveBtn.style.pointerEvents = 'auto';
+        saveBtn.style.cursor = 'pointer';
+        saveBtn.style.zIndex = '100';
+        saveBtn.style.position = 'relative';
+        
+        // Add backup event listener
+        saveBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            saveFeeding();
+        });
+    }
 });
 
 // Ape selection functions
@@ -652,7 +645,10 @@ function clearSelection() {
 }
 
 function updateSelectedCount() {
-    document.getElementById('selectedCount').textContent = selectedApes.size;
+    const selectedCountEl = document.getElementById('selectedCount');
+    if (selectedCountEl) {
+        selectedCountEl.textContent = selectedApes.size;
+    }
 }
 
 function updateStats() {
@@ -664,11 +660,14 @@ function updateSaveButton() {
     const saveBtn = document.getElementById('saveFeedingBtn');
     const noApesAlert = document.getElementById('noApesSelected');
     
-    if (selectedApes.size === 0) {
+    // Button should be enabled only if both apes are selected AND food items are added
+    if (selectedApes.size === 0 || feedingItems.length === 0) {
         saveBtn.disabled = true;
         // Only show warning if we're not in the middle of clearing after a successful save
-        if (!window.isClearingAfterSave) {
+        if (!window.isClearingAfterSave && selectedApes.size === 0) {
             noApesAlert.style.display = 'block';
+        } else {
+            noApesAlert.style.display = 'none';
         }
     } else {
         saveBtn.disabled = false;
@@ -779,6 +778,7 @@ function addFoodItem(name, calories, quantity) {
     }
     
     updateFeedingSummary();
+    updateSaveButton();
     updateStats();
 }
 
@@ -810,12 +810,14 @@ function updateFeedingSummary() {
 function removeFoodItem(index) {
     feedingItems.splice(index, 1);
     updateFeedingSummary();
+    updateSaveButton();
     updateStats();
 }
 
 function clearFeedingList() {
     feedingItems = [];
     updateFeedingSummary();
+    updateSaveButton();
     updateStats();
 }
 
@@ -834,7 +836,7 @@ function clearAll() {
     }, 100);
 }
 
-// Save feeding function (same as original)
+// Save feeding function - must be global for inline onclick
 function saveFeeding() {
     if (selectedApes.size === 0) {
         alert('Please select at least one ape');
@@ -852,9 +854,9 @@ function saveFeeding() {
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
     saveBtn.disabled = true;
     
-    // Prepare data for server (use main date/period fields, fallback to summary fields)
-    const dateEl = document.getElementById('feedingDate') || document.getElementById('feedingDateSummary');
-    const periodEl = document.getElementById('feedingPeriod') || document.getElementById('feedingPeriodSummary');
+    // Prepare data for server
+    const dateEl = document.getElementById('feedingDate');
+    const periodEl = document.getElementById('feedingPeriod');
     const feedingData = {
         ape_ids: Array.from(selectedApes),
         feeding_items: feedingItems,
@@ -882,14 +884,14 @@ function saveFeeding() {
             // Clear the form after successful save
             clearAll();
             
-            console.log('Feeding saved successfully:', data);
+            console.log('Meals saved successfully:', data);
         } else {
-            alert('Error saving feeding: ' + (data.error || 'Unknown error'));
+            alert('Error saving meals: ' + (data.error || 'Unknown error'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Failed to save feeding. Please try again.');
+        alert('Failed to save meals. Please try again.');
     })
     .finally(() => {
         // Restore button state

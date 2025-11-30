@@ -1,6 +1,6 @@
 {% extends "adminlte_base.html" %}
 
-{% block title %}Dashboard - Ape Wellness Tracker{% endblock %}
+{% block title %}Dashboard - Ape Meal Tracker{% endblock %}
 
 {% block body %}
             <!-- Birthday Alerts -->
@@ -42,7 +42,7 @@
                             <i class="fas fa-utensils"></i>
                         </div>
                         <a href="{{ url_for('site.log_feeding') }}" class="small-box-footer">
-                            Log Feeding <i class="fas fa-arrow-circle-right"></i>
+                            Log Meals <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </div>
                 </div>
@@ -152,7 +152,7 @@
                                                 </a>
                                                 <a href="{{ url_for('site.log_feeding', ape=ape.id) }}" 
                                                    class="btn btn-success btn-sm">
-                                                    <i class="fas fa-plus mr-1"></i>Log Feeding
+                                                    <i class="fas fa-plus mr-1"></i>Log Meals
                                                 </a>
                                             </div>
                                         </div>

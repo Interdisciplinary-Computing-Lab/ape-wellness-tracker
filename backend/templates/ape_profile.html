@@ -7,7 +7,7 @@
             <div class="alert alert-success alert-dismissible" id="managementInfoAlert" style="display: none;">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true" onclick="dismissAlert('managementInfo')">×</button>
                 <h5><i class="icon fas fa-user-edit"></i> Ape Management</h5>
-                You can edit {{ ape.ape_name }}'s information or log feeding sessions from this profile page.
+                You can edit {{ ape.ape_name }}'s information or log meal sessions from this profile page.
             </div>
             
             <!-- Birthday Alert -->
@@ -92,7 +92,7 @@
                             </ul>
 
                             <a href="{{ url_for('site.log_feeding', ape=ape.id) }}" class="btn btn-primary btn-block">
-                                <b>Log Feeding</b>
+                                <b>Log Meals</b>
                             </a>
                             
                             <!-- Edit and Delete Buttons -->
@@ -522,7 +522,7 @@ function dismissAlert(alertType) {
 
 // Keyboard shortcuts for this page
 document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + L to log feeding for this ape
+    // Ctrl/Cmd + L to log meals for this ape
     if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
         e.preventDefault();
         window.location.href = "{{ url_for('site.log_feeding') }}?ape={{ ape.id }}";

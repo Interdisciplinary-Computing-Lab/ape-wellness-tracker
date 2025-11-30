@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Ape Wellness Tracker{% endblock %}</title>
+    <title>{% block title %}Ape Meal Tracker{% endblock %}</title>
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
@@ -183,7 +183,7 @@
         <!-- Brand Logo -->
         <a href="{{ url_for('site.dashboard') }}" class="brand-link">
             <i class="fas fa-monkey brand-image img-circle elevation-3" style="opacity: .8"></i>
-            <span class="brand-text font-weight-light">Ape Wellness</span>
+            <span class="brand-text font-weight-light">Ape Meal Tracker</span>
         </a>
         <!-- Sidebar -->
         <div class="sidebar">
@@ -212,7 +212,7 @@
                     <li class="nav-item">
                         <a href="{{ url_for('site.log_feeding') }}" class="nav-link {% if request.endpoint == 'site.log_feeding' %}active{% endif %}">
                             <i class="nav-icon fas fa-utensils"></i>
-                            <p>Log Feeding</p>
+                            <p>Log Meals</p>
                         </a>
                     </li>
                     <li class="nav-header">MANAGEMENT</li>
@@ -250,7 +250,7 @@
                     <li class="nav-item">
                         <a href="{{ url_for('site.reports') }}" class="nav-link {% if request.endpoint == 'site.reports' %}active{% endif %}">
                             <i class="nav-icon fas fa-chart-bar"></i>
-                            <p>Nutrition Reports</p>
+                            <p>Meal Reports</p>
                         </a>
                     </li>
                     <li class="nav-header">ACCOUNT</li>
@@ -302,7 +302,7 @@
             <p>Quick access to common tasks.</p>
             <div class="d-grid gap-2">
                 <a href="{{ url_for('site.log_feeding') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus"></i> Log Feeding
+                    <i class="fas fa-plus"></i> Log Meals
                 </a>
                 <a href="{{ url_for('site.reports') }}" class="btn btn-warning btn-sm">
                     <i class="fas fa-chart-bar"></i> View Reports
@@ -320,7 +320,7 @@
             <hr>
             <h6>Keyboard Shortcuts</h6>
             <small class="text-muted">
-                <div><kbd>Ctrl/Cmd</kbd> + <kbd>F</kbd> - Log Feeding</div>
+                <div><kbd>Ctrl/Cmd</kbd> + <kbd>F</kbd> - Log Meals</div>
                 <div><kbd>Ctrl/Cmd</kbd> + <kbd>A</kbd> - All Apes</div>
                 <div><kbd>Ctrl/Cmd</kbd> + <kbd>Q</kbd> - Quick Add</div>
             </small>
@@ -330,9 +330,9 @@
     <!-- Main Footer -->
     <footer class="main-footer">
         <div class="float-right d-none d-sm-inline">
-            Ape Wellness Tracker
+            Ape Meal Tracker
         </div>
-        <strong>&copy; 2024 Ape Wellness Tracker.</strong> All rights reserved.
+        <strong>&copy; 2024 Ape Meal Tracker.</strong> All rights reserved.
     </footer>
 </div>
 <!-- ./wrapper -->
@@ -372,11 +372,11 @@
 
 function showKeyboardShortcuts() {
     alert('Keyboard Shortcuts:\n\n' +
-          'Ctrl/Cmd + F: Log Feeding\n' +
+          'Ctrl/Cmd + F: Log Meals\n' +
           'Ctrl/Cmd + A: All Apes\n' +
           'Ctrl/Cmd + Q: Quick Add\n' +
-          'Ctrl/Cmd + S: Save (on feeding page)\n' +
-          'Ctrl/Cmd + C: Clear All (on feeding page)');
+          'Ctrl/Cmd + S: Save (on meal log page)\n' +
+          'Ctrl/Cmd + C: Clear All (on meal log page)');
 }
 
 // Global keyboard shortcuts with compatibility
@@ -390,7 +390,7 @@ function showKeyboardShortcuts() {
         var ctrlKey = e.ctrlKey || e.metaKey;
         var key = e.key || e.keyCode;
         
-        // Ctrl/Cmd + F for feeding log
+        // Ctrl/Cmd + F for meal log
         if (ctrlKey && (key === 'f' || key === 70)) {
             if (e.preventDefault) e.preventDefault();
             else e.returnValue = false;
