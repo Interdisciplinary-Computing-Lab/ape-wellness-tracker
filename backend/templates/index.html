@@ -398,7 +398,7 @@
                         <h6>Quick Actions</h6>
                         <div class="list-group">
                             <a href="{{ url_for('site.log_feeding') }}" class="list-group-item list-group-item-action">
-                                <i class="fas fa-utensils mr-2"></i>Full Feeding Log
+                                <i class="fas fa-utensils mr-2"></i>Full Meal Log
                             </a>
                             <a href="{{ url_for('site.all_apes') }}" class="list-group-item list-group-item-action">
                                 <i class="fas fa-list mr-2"></i>View All Apes
@@ -431,7 +431,7 @@ function quickAddMeal() {
 }
 
 function quickAddFood(food, calories) {
-    // Redirect to feeding log with pre-filled data
+    // Redirect to meal log with pre-filled data
     window.location.href = "{{ url_for('site.log_feeding') }}?food=" + food + "&calories=" + calories;
 }
 
@@ -449,7 +449,7 @@ function showRecentActivity() {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + F for feeding log
+    // Ctrl/Cmd + F for meal log
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
         window.location.href = "{{ url_for('site.log_feeding') }}";

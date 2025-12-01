@@ -224,6 +224,8 @@
                                     <th>Calories</th>
                                     <th>Meals</th>
                                     <th>Avg Calories/Meal</th>
+                                    <th>Protein (g)</th>
+                                    <th>Fiber (g)</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -242,6 +244,12 @@
                                     </td>
                                     <td>
                                         <span class="badge badge-warning">{{ "%.1f"|format(stats.avg_calories) }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-success">{{ stats.protein_g }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-primary">{{ stats.fiber_g }}</span>
                                     </td>
                                     <td>
                                         <a href="{{ url_for('site.ape_profile_page', ape_id=ape.id) }}" 

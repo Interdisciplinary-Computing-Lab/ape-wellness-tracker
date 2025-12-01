@@ -168,7 +168,8 @@ def ensure_standard_food_data():
         {'meal_name': 'Green Beans', 'description': 'Fresh green beans', 'calories': 31, 'food_category': 'Vegetables'},
         {'meal_name': 'Zucchini', 'description': 'Fresh zucchini', 'calories': 17, 'food_category': 'Vegetables'},
         {'meal_name': 'Tomato', 'description': 'Fresh tomato', 'calories': 22, 'food_category': 'Vegetables'},
-        {'meal_name': 'Trash Lettuce', 'description': 'Cabbage', 'calories': 22, 'food_category': 'Vegetables'},
+        {'meal_name': 'Cabbage', 'description': 'Fresh cabbage', 'calories': 22, 'food_category': 'Vegetables'},
+        {'meal_name': 'Trash Lettuce', 'description': 'Brussels sprouts', 'calories': 38, 'food_category': 'Vegetables'},
         {'meal_name': 'Corn', 'description': 'Fresh corn kernels', 'calories': 86, 'food_category': 'Vegetables'},
         
         # Grains & Starches

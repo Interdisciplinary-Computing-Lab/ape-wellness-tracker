@@ -13,6 +13,7 @@ Flask-WTF
 bcrypt==4.3.0
 pandas>=1.5.0
 pyarrow>=10.0.0
+openpyxl>=3.0.0
 flaskwebgui>=1.0.0
 pyinstaller>=5.0.0
 pywebview>=4.4.1

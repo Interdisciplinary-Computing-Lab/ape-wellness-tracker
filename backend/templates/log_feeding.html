@@ -126,8 +126,8 @@
                 <div class="mb-4">
                     <ul class="nav nav-pills nav-fill" id="categoryTabs" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="all-tab" data-toggle="pill" href="#all" 
-                               role="tab" aria-controls="all" aria-selected="true" onclick="filterByCategory('all')">
+                            <a class="nav-link" id="all-tab" data-toggle="pill" href="#all" 
+                               role="tab" aria-controls="all" aria-selected="false" onclick="filterByCategory('all', this)">
                                 <i class="fas fa-th-list"></i> All ({{ recipes|length }})
                             </a>
                         </li>
@@ -136,7 +136,7 @@
                             <a class="nav-link" id="{{ category_name|lower|replace(' ', '-')|replace('&', 'and') }}-tab" 
                                data-toggle="pill" href="#{{ category_name|lower|replace(' ', '-')|replace('&', 'and') }}" 
                                role="tab" aria-controls="{{ category_name|lower|replace(' ', '-')|replace('&', 'and') }}" 
-                               aria-selected="false" onclick="filterByCategory('{{ category_name }}')">
+                               aria-selected="false" onclick="filterByCategory('{{ category_name }}', this)">
                                 {% if category_name == 'Fruits' %}<i class="fas fa-apple-alt"></i>
                                 {% elif category_name == 'Vegetables' %}<i class="fas fa-carrot"></i>
                                 {% elif category_name == 'Protein Sources' %}<i class="fas fa-egg"></i>
@@ -165,6 +165,9 @@
                             <button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card" 
                                     data-food="{{ recipe.meal_name }}" 
                                     data-calories="{{ recipe.calories }}" 
+                                    data-quantity="{{ recipe.quantity or 1.0 }}"
+                                    data-unit="{{ recipe.unit_of_measurement or '' }}"
+                                    data-source="{{ recipe.source or '' }}"
                                     data-name="{{ recipe.meal_name }}" 
                                     data-category="{{ recipe.food_category or 'Other' }}"
                                     title="{{ recipe.description or 'No description' }}"
@@ -191,17 +194,6 @@
                             </button>
                         </div>
                         {% endfor %}
-                        
-                        <!-- Custom Food Entry Card -->
-                        <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb-2">
-                            <button class="btn btn-outline-secondary w-100 h-100 py-2" onclick="showCustomFoodModal()">
-                                <div class="text-center">
-                                    <i class="fas fa-plus mb-1"></i>
-                                    <div class="d-block small font-weight-bold">Custom Food</div>
-                                    <small class="text-muted">Add new</small>
-                                </div>
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -210,7 +202,7 @@
                     <i class="fas fa-search fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">No foods found</h5>
                     <p class="text-muted">Try adjusting your search or category filter</p>
-                    <button class="btn btn-outline-primary" onclick="clearSearch(); filterByCategory('all')">
+                    <button class="btn btn-outline-primary" onclick="clearSearch(); filterByCategory('all', this)">
                         <i class="fas fa-redo mr-1"></i>Show All Foods
                     </button>
                 </div>
@@ -231,19 +223,32 @@
                             </div>
                             <div class="card-body">
                                 <form id="customFoodForm" class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <input type="text" class="form-control" id="customFoodName" 
                                                placeholder="Food name..." value="{{ pre_filled_food }}">
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="input-group">
-                                            <input type="number" class="form-control" id="customQuantity" value="1" min="1" max="99">
+                                            <input type="number" class="form-control" id="customQuantity" value="1.0" step="0.01" min="0.01">
                                             <div class="input-group-append">
                                                 <span class="input-group-text">qty</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
+                                        <select class="form-control" id="customUnit" title="Unit of measurement">
+                                            <option value="piece" selected>piece</option>
+                                            <option value="cup">cup</option>
+                                            <option value="g">g</option>
+                                            <option value="oz">oz</option>
+                                            <option value="tbsp">tbsp</option>
+                                            <option value="tsp">tsp</option>
+                                            <option value="slice">slice</option>
+                                            <option value="serving">serving</option>
+                                            <option value="lb">lb</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
                                         <div class="input-group">
                                             <input type="number" class="form-control" id="customCalories" 
                                                    placeholder="Calories" min="0" max="999" value="{{ pre_filled_calories }}">
@@ -252,7 +257,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-3">
                                         <button type="button" class="btn btn-primary w-100" onclick="addCustomFood()">
                                             <i class="fas fa-plus"></i> Add
                                         </button>
@@ -266,7 +271,7 @@
         </div>
     </div>
 
-    <!-- Current Feeding Summary -->
+    <!-- Current Meals Summary -->
     <div class="col-lg-4">
         <div class="card">
             <div class="card-header">
@@ -286,6 +291,7 @@
                             <tr>
                                 <th>Food</th>
                                 <th>Qty</th>
+                                <th>Unit</th>
                                 <th>Cal</th>
                                 <th></th>
                             </tr>
@@ -296,7 +302,7 @@
                         <tfoot class="table-primary">
                             <tr>
                                 <td colspan="2" class="font-weight-bold">Total Calories</td>
-                                <td colspan="2" class="font-weight-bold" id="totalCalories">0</td>
+                                <td colspan="3" class="font-weight-bold" id="totalCalories">0</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -310,7 +316,7 @@
                     
                     <div class="d-grid gap-2">
                         <button type="button" class="btn btn-success btn-lg" id="saveFeedingBtn" onclick="saveFeeding(); return false;" style="pointer-events: auto !important; z-index: 100; position: relative;" disabled>
-                            <i class="fas fa-save mr-2"></i>Save Feeding
+                            <i class="fas fa-save mr-2"></i>Save Meals
                         </button>
                         <button type="button" class="btn btn-outline-secondary" onclick="clearAll(); return false;">
                             <i class="fas fa-eraser mr-2"></i>Clear All
@@ -479,7 +485,107 @@
 <script>
 let selectedApes = new Set();
 let feedingItems = [];
-let currentCategory = 'all';
+let currentCategory = ''; // Start with no category selected (hide all foods until clicked)
+
+// Helper function to format quantity to avoid floating point precision issues
+function formatQuantity(qty) {
+    if (qty === null || qty === undefined || isNaN(qty)) {
+        return '1';
+    }
+    // Round to 2 decimal places to avoid precision issues
+    const rounded = Math.round(qty * 100) / 100;
+    // If it's a whole number, display without decimals
+    if (rounded === Math.floor(rounded)) {
+        return String(Math.floor(rounded));
+    }
+    // Otherwise, display with up to 2 decimal places, removing trailing zeros
+    return rounded.toFixed(2).replace(/\.?0+$/, '');
+}
+
+// Helper function to normalize units (remove "1 ", "100", etc.)
+function normalizeUnit(unit) {
+    if (!unit || !unit.trim()) return 'piece'; // Default to 'piece' if no unit
+    
+    // Remove leading "1 " or "100" patterns
+    let normalized = unit.trim();
+    
+    // Remove "1 " prefix (e.g., "1 cup" -> "cup")
+    if (normalized.startsWith('1 ')) {
+        normalized = normalized.substring(2).trim();
+    }
+    // Remove "100" prefix (e.g., "100g" -> "g")
+    if (normalized.startsWith('100')) {
+        normalized = normalized.substring(3).trim();
+    }
+    
+    return normalized || 'piece'; // Default to 'piece' if empty after normalization
+}
+
+// Unit conversion factors (all conversions to a base unit, then to target unit)
+// Base units: cup (volume), g (weight), piece (count)
+function convertUnit(quantity, fromUnit, toUnit) {
+    if (fromUnit === toUnit) return quantity;
+    if (!fromUnit || !toUnit) return quantity; // Can't convert if units are missing
+    
+    // Convert to base units first, then to target
+    let baseQuantity = quantity;
+    
+    // Convert fromUnit to base unit
+    const volumeToCup = {
+        'cup': 1,
+        'tbsp': 0.0625,      // 1 tbsp = 0.0625 cups (16 tbsp = 1 cup)
+        'tsp': 0.0208333     // 1 tsp = 0.0208333 cups (48 tsp = 1 cup)
+    };
+    
+    const weightToG = {
+        'g': 1,
+        'oz': 28.3495,       // 1 oz = 28.3495 g
+        'lb': 453.592        // 1 lb = 453.592 g
+    };
+    
+    const countUnits = ['piece', 'slice', 'serving'];
+    
+    // Determine unit categories
+    const fromIsVolume = volumeToCup.hasOwnProperty(fromUnit);
+    const fromIsWeight = weightToG.hasOwnProperty(fromUnit);
+    const fromIsCount = countUnits.includes(fromUnit);
+    
+    const toIsVolume = volumeToCup.hasOwnProperty(toUnit);
+    const toIsWeight = weightToG.hasOwnProperty(toUnit);
+    const toIsCount = countUnits.includes(toUnit);
+    
+    // Can't convert between different categories (volume <-> weight <-> count)
+    if ((fromIsVolume && !toIsVolume) || (fromIsWeight && !toIsWeight) || (fromIsCount && !toIsCount)) {
+        // If converting between incompatible types, assume 1:1 ratio (user's responsibility)
+        return quantity;
+    }
+    
+    // Convert volume units
+    if (fromIsVolume && toIsVolume) {
+        // Convert to cups (base)
+        const cups = baseQuantity * (volumeToCup[fromUnit] || 1);
+        // Convert from cups to target unit
+        const toCupFactor = volumeToCup[toUnit] || 1;
+        return cups / toCupFactor;
+    }
+    
+    // Convert weight units
+    if (fromIsWeight && toIsWeight) {
+        // Convert to grams (base)
+        const grams = baseQuantity * (weightToG[fromUnit] || 1);
+        // Convert from grams to target unit
+        const toGramsFactor = weightToG[toUnit] || 1;
+        return grams / toGramsFactor;
+    }
+    
+    // Count units - assume 1:1 ratio
+    if (fromIsCount && toIsCount) {
+        return quantity;
+    }
+    
+    // Default: no conversion possible, return original quantity
+    return quantity;
+}
 
 // Global function for inline onclick handlers (most reliable) - defined first
 function addFoodFromButton(btn) {
@@ -489,11 +595,15 @@ function addFoodFromButton(btn) {
         // Try multiple ways to get the data
         const food = btn.getAttribute('data-food') || btn.dataset.food;
         const caloriesStr = btn.getAttribute('data-calories') || btn.dataset.calories;
+        const quantityStr = btn.getAttribute('data-quantity') || btn.dataset.quantity || '1.0';
+        const unit = btn.getAttribute('data-unit') || btn.dataset.unit || '';
+        const source = btn.getAttribute('data-source') || btn.dataset.source || '';
         const name = btn.getAttribute('data-name') || btn.dataset.name || food;
         
         const calories = parseInt(caloriesStr, 10);
+        const quantity = parseFloat(quantityStr) || 1.0;
         
-        console.log('Food data:', {name, calories, food, caloriesStr});
+        console.log('Food data:', {name, calories, quantity, unit, source, food, caloriesStr});
         
         if (!name) {
             console.error('Missing food name');
@@ -507,7 +617,15 @@ function addFoodFromButton(btn) {
             return false;
         }
         
-        addFoodItem(name, calories, 1);
+        if (isNaN(quantity) || quantity <= 0) {
+            console.error('Invalid quantity:', quantityStr);
+            alert('Error: Invalid quantity value. Please try again.');
+            return false;
+        }
+        
+        // Normalize unit and set quantity to 1.0 when adding from button
+        const normalizedUnit = normalizeUnit(unit);
+        addFoodItem(name, calories, 1.0, normalizedUnit, source);
         
         // Visual feedback
         btn.classList.add('btn-success');
@@ -527,6 +645,12 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
     updateStats();
     updateSaveButton();
+    
+    // Hide all food items initially - user must click "All" or a category to see foods
+    const foodItems = document.querySelectorAll('.food-item');
+    foodItems.forEach(function(item) {
+        item.classList.add('hidden');
+    });
     
     // Initialize date field with today's date
     const today = new Date().toISOString().split('T')[0];
@@ -573,14 +697,12 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.setAttribute('tabindex', '0');
         
         // Always add backup event handler to ensure buttons work
-        // Use capture phase and make sure it doesn't interfere with inline onclick
+        // This fires as a backup if inline onclick doesn't work
         btn.addEventListener('click', function(e) {
-            // Only handle if inline onclick didn't work (check if event wasn't handled)
-            if (!e.defaultPrevented) {
-                e.preventDefault();
-                e.stopPropagation();
-                addFoodFromButton(this);
-            }
+            e.preventDefault();
+            e.stopPropagation();
+            addFoodFromButton(this);
+            return false;
         }, false);
         
         // Also ensure onclick attribute is set as backup
@@ -603,6 +725,23 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             e.stopPropagation();
             saveFeeding();
+        });
+    }
+    
+    // Add event delegation for unit select changes (backup in case individual listeners don't work)
+    const feedingSummaryBody = document.getElementById('feedingSummaryBody');
+    if (feedingSummaryBody) {
+        feedingSummaryBody.addEventListener('change', function(e) {
+            if (e.target.tagName === 'SELECT' && e.target.dataset.index !== undefined) {
+                e.stopPropagation();
+                const itemIndex = parseInt(e.target.dataset.index);
+                const selectedValue = e.target.value;
+                console.log('Delegated unit change event:', {itemIndex, newUnit: selectedValue});
+                if (!isNaN(itemIndex) && itemIndex >= 0 && itemIndex < feedingItems.length) {
+                    const currentRow = e.target.closest('tr');
+                    updateItemUnit(itemIndex, selectedValue, currentRow);
+                }
+            }
         });
     }
 });
@@ -685,8 +824,10 @@ function searchFoods() {
         const foodName = item.getAttribute('data-name');
         const foodDescription = item.getAttribute('data-description');
         const matchesSearch = foodName.includes(searchTerm) || foodDescription.includes(searchTerm);
-        const matchesCategory = currentCategory === 'all' || item.getAttribute('data-category') === currentCategory;
-        const isVisible = matchesSearch && matchesCategory;
+        // If currentCategory is empty, show nothing unless searching
+        const matchesCategory = (currentCategory === 'all' || (currentCategory && item.getAttribute('data-category') === currentCategory));
+        // Only show if category is selected (not empty) and matches
+        const isVisible = currentCategory && matchesSearch && matchesCategory;
         
         if (isVisible) {
             item.classList.remove('hidden');
@@ -699,7 +840,12 @@ function searchFoods() {
     // Show/hide no results message
     const noResults = document.getElementById('noResults');
     if (visibleCount === 0) {
-        noResults.style.display = 'block';
+        if (currentCategory === '' && searchTerm === '') {
+            // Don't show "no results" if no category is selected and no search term
+            noResults.style.display = 'none';
+        } else {
+            noResults.style.display = 'block';
+        }
     } else {
         noResults.style.display = 'none';
     }
@@ -711,20 +857,43 @@ function clearSearch() {
 }
 
 // Category filtering
-function filterByCategory(category) {
+function filterByCategory(category, clickedElement) {
     currentCategory = category;
     const foodItems = document.querySelectorAll('.food-item');
     const searchTerm = document.getElementById('foodSearch').value.toLowerCase();
     let visibleCount = 0;
     
+    // Update active tab state
+    document.querySelectorAll('.nav-link').forEach(function(navLink) {
+        navLink.classList.remove('active');
+        navLink.setAttribute('aria-selected', 'false');
+    });
+    
+    // Find and activate the clicked tab
+    if (clickedElement) {
+        const clickedTab = clickedElement.closest('.nav-link');
+        if (clickedTab) {
+            clickedTab.classList.add('active');
+            clickedTab.setAttribute('aria-selected', 'true');
+        }
+    } else if (category === 'all') {
+        const allTab = document.getElementById('all-tab');
+        if (allTab) {
+            allTab.classList.add('active');
+            allTab.setAttribute('aria-selected', 'true');
+        }
+    }
+    
     foodItems.forEach(function(item) {
         const itemCategory = item.getAttribute('data-category');
         const foodName = item.getAttribute('data-name');
         const foodDescription = item.getAttribute('data-description');
-        const matchesCategory = category === 'all' || itemCategory === category;
+        // If category is empty string, show nothing (unless it's 'all')
+        const matchesCategory = category === 'all' || (category && itemCategory === category);
         const matchesSearch = foodName.includes(searchTerm) || foodDescription.includes(searchTerm);
         
-        if (matchesCategory && matchesSearch) {
+        // Only show items if a category is selected (not empty string)
+        if (category && matchesCategory && matchesSearch) {
             item.classList.remove('hidden');
             visibleCount++;
         } else {
@@ -735,7 +904,12 @@ function filterByCategory(category) {
     // Show/hide no results message
     const noResults = document.getElementById('noResults');
     if (visibleCount === 0) {
-        noResults.style.display = 'block';
+        if (category === '' || (!category && currentCategory === '')) {
+            // Don't show "no results" if no category is selected (initial state)
+            noResults.style.display = 'none';
+        } else {
+            noResults.style.display = 'block';
+        }
     } else {
         noResults.style.display = 'none';
     }
@@ -744,7 +918,9 @@ function filterByCategory(category) {
 // Food management functions
 function addCustomFood() {
     const name = document.getElementById('customFoodName').value.trim();
-    const quantity = parseInt(document.getElementById('customQuantity').value);
+    const quantity = parseFloat(document.getElementById('customQuantity').value) || 1.0;
+    const unitSelect = document.getElementById('customUnit');
+    const unit = unitSelect.options[unitSelect.selectedIndex].value.trim();
     const calories = parseInt(document.getElementById('customCalories').value);
     
     if (!name || !calories) {
@@ -752,28 +928,93 @@ function addCustomFood() {
         return;
     }
     
-    addFoodItem(name, calories, quantity);
+    if (isNaN(quantity) || quantity <= 0) {
+        alert('Please enter a valid quantity (must be greater than 0)');
+        return;
+    }
+    
+    // Normalize unit
+    const normalizedUnit = normalizeUnit(unit);
+    
+    // For custom foods, the user enters total calories for the quantity they want to log
+    // We'll treat this as: base quantity = 1.0, base calories = calories/quantity
+    // This way, 1.0 unit = (calories/quantity) calories
+    const baseCalories = calories / quantity; // Calories per unit
+    const caloriesPerUnit = baseCalories;
+    
+    // Check if item already exists (by name and unit)
+    const existingIndex = feedingItems.findIndex(item => item.name === name && item.unit === normalizedUnit);
+    if (existingIndex !== -1) {
+        // Item already exists - reset to quantity 1.0 (don't increment)
+        feedingItems[existingIndex].quantity = 1.0;
+        feedingItems[existingIndex].totalCalories = feedingItems[existingIndex].caloriesPerUnit * 1.0;
+    } else {
+        // Add new item with quantity = 1.0
+        feedingItems.push({
+            name: name,
+            calories: baseCalories, // Base calories for 1.0 unit
+            recipeQuantity: 1.0, // Base quantity is 1.0 for custom foods
+            caloriesPerUnit: caloriesPerUnit,
+            quantity: 1.0, // Always start with quantity = 1.0
+            unit: normalizedUnit, // Normalized unit of measurement
+            originalRecipeUnit: normalizedUnit, // Store the original unit for conversions
+            source: '',
+            isFromRecipe: false, // Flag to indicate this is custom food (unit can be changed)
+            totalCalories: caloriesPerUnit * 1.0 // Start with 1.0 * caloriesPerUnit
+        });
+    }
     
     // Clear form
     document.getElementById('customFoodName').value = '';
-    document.getElementById('customQuantity').value = '1';
+    document.getElementById('customQuantity').value = '1.0';
+    document.getElementById('customUnit').selectedIndex = 0; // Reset to "piece"
     document.getElementById('customCalories').value = '';
+    
+    updateFeedingSummary();
+    updateSaveButton();
+    updateStats();
 }
 
-function addFoodItem(name, calories, quantity) {
-    const totalCalories = calories * quantity;
+function addFoodItem(name, calories, recipeQuantity, unit, source) {
+    // Parameters:
+    // - name: food name
+    // - calories: total calories for recipeQuantity amount (from recipe)
+    // - recipeQuantity: the base quantity from recipe (e.g., 1.0 for "1 cup")
+    // - unit: unit of measurement (normalized, e.g., "cup")
+    // - source: data source
     
-    // Check if item already exists
-    const existingIndex = feedingItems.findIndex(item => item.name === name);
+    // Normalize unit and set defaults
+    const normalizedUnit = normalizeUnit(unit);
+    recipeQuantity = recipeQuantity || 1.0;
+    source = source || '';
+    
+    // Calculate calories per unit of the recipe's base quantity
+    // If recipe says: calories=100, quantity=1.0, unit="cup"
+    // Then caloriesPerUnit = 100/1.0 = 100 calories per cup
+    const caloriesPerUnit = calories / recipeQuantity;
+    
+    // Check if item already exists (by name and unit)
+    const existingIndex = feedingItems.findIndex(item => 
+        item.name === name && item.unit === normalizedUnit
+    );
+    
     if (existingIndex !== -1) {
-        feedingItems[existingIndex].quantity += quantity;
-        feedingItems[existingIndex].totalCalories = feedingItems[existingIndex].calories * feedingItems[existingIndex].quantity;
+        // Item already exists - reset to quantity 1.0 (don't increment)
+        feedingItems[existingIndex].quantity = 1.0;
+        feedingItems[existingIndex].totalCalories = feedingItems[existingIndex].caloriesPerUnit * 1.0;
     } else {
+        // Add new item with quantity = 1.0
         feedingItems.push({
             name: name,
-            calories: calories,
-            quantity: quantity,
-            totalCalories: totalCalories
+            calories: calories, // Base calories from recipe (for recipeQuantity amount)
+            recipeQuantity: recipeQuantity, // Recipe's base quantity
+            caloriesPerUnit: caloriesPerUnit, // Calories per unit of recipeQuantity
+            quantity: 1.0, // Always start with quantity = 1.0
+            unit: normalizedUnit,
+            originalRecipeUnit: normalizedUnit, // Store the original recipe unit for conversions
+            source: source,
+            isFromRecipe: true, // Flag to indicate this came from a recipe (unit should be read-only)
+            totalCalories: caloriesPerUnit * 1.0 // Start with 1.0 * caloriesPerUnit
         });
     }
     
@@ -788,23 +1029,311 @@ function updateFeedingSummary() {
     
     let totalCalories = 0;
     
+    // Common unit options (simplified, no "1 " or "100" prefixes)
+    const unitOptions = ['piece', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'serving', 'lb'];
+    
     feedingItems.forEach(function(item, index) {
         const row = document.createElement('tr');
+        const formattedQty = formatQuantity(item.quantity);
+        const unitDisplay = item.unit || '';
+        
+        // Create quantity input
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.className = 'form-control form-control-sm';
+        // Ensure quantity defaults to 1.0 if not set
+        qtyInput.value = item.quantity || 1.0;
+        if (!item.quantity || item.quantity <= 0) {
+            item.quantity = 1.0;
+        }
+        qtyInput.step = '0.01';
+        qtyInput.min = '0.01';
+        qtyInput.style.width = '80px';
+        qtyInput.dataset.index = index;
+        // Update on change, input, and blur to ensure calories update immediately
+        qtyInput.addEventListener('change', function() {
+            const newQty = parseFloat(this.value) || item.quantity;
+            if (newQty > 0) {
+                updateItemQuantity(index, newQty);
+            }
+        });
+        qtyInput.addEventListener('input', function() {
+            const newQty = parseFloat(this.value);
+            if (!isNaN(newQty) && newQty > 0) {
+                updateItemQuantity(index, newQty);
+            }
+        });
+        qtyInput.addEventListener('blur', function() {
+            const newQty = parseFloat(this.value);
+            if (isNaN(newQty) || newQty <= 0) {
+                this.value = item.quantity || 1.0;
+                updateItemQuantity(index, item.quantity || 1.0);
+            } else if (newQty !== item.quantity) {
+                // Only update if quantity actually changed
+                updateItemQuantity(index, newQty);
+            }
+        });
+        
+        // Create unit select
+        const unitSelect = document.createElement('select');
+        unitSelect.className = 'form-control form-control-sm';
+        unitSelect.style.width = '120px';
+        unitSelect.style.pointerEvents = 'auto';
+        unitSelect.style.zIndex = '10';
+        unitSelect.dataset.index = index;
+        unitSelect.disabled = false; // Explicitly enable the select
+        
+        // Allow unit editing for all items at checkout
+        // Note: Calories are calculated based on the original recipe unit, 
+        // so changing the unit here is for display/reference only
+        if (item.isFromRecipe === true) {
+            unitSelect.title = 'Note: Calories are based on the original recipe unit';
+        }
+        
+        unitOptions.forEach(function(opt) {
+            const option = document.createElement('option');
+            option.value = opt;
+            option.textContent = opt;
+            if (opt === item.unit) {
+                option.selected = true;
+            }
+            unitSelect.appendChild(option);
+        });
+        
+        // If item.unit is not in the options, add it and select it
+        if (item.unit && !unitOptions.includes(item.unit)) {
+            const option = document.createElement('option');
+            option.value = item.unit;
+            option.textContent = item.unit;
+            option.selected = true;
+            unitSelect.appendChild(option);
+        }
+        
+        // Allow unit changes for all items
+        unitSelect.addEventListener('change', function(e) {
+            e.stopPropagation(); // Prevent any event bubbling (but don't prevent default - let select change)
+            const itemIndex = parseInt(this.dataset.index);
+            const selectedValue = this.value;
+            console.log('Unit change event fired:', {itemIndex, newUnit: selectedValue, feedingItemsLength: feedingItems.length});
+            if (!isNaN(itemIndex) && itemIndex >= 0 && itemIndex < feedingItems.length) {
+                // Store reference to the row for direct update
+                const currentRow = this.closest('tr');
+                updateItemUnit(itemIndex, selectedValue, currentRow);
+            } else {
+                console.error('Invalid item index:', itemIndex);
+            }
+        });
+        
         row.innerHTML = `
             <td title="${item.name}">${item.name.length > 15 ? item.name.substr(0, 15) + '...' : item.name}</td>
-            <td>${item.quantity}</td>
-            <td>${item.totalCalories}</td>
+            <td></td>
+            <td></td>
+            <td>${Math.round(item.totalCalories)}</td>
             <td>
                 <button class="btn btn-sm btn-outline-danger" onclick="removeFoodItem(${index})" title="Remove">
                     <i class="fas fa-times"></i>
                 </button>
             </td>
         `;
+        
+        // Insert editable inputs
+        const cells = row.querySelectorAll('td');
+        cells[1].appendChild(qtyInput);
+        cells[2].appendChild(unitSelect);
+        
         tbody.appendChild(row);
         totalCalories += item.totalCalories;
     });
     
-    document.getElementById('totalCalories').textContent = totalCalories;
+    document.getElementById('totalCalories').textContent = Math.round(totalCalories);
+}
+
+function updateItemQuantity(index, newQuantity) {
+    if (index < 0 || index >= feedingItems.length) return;
+    if (isNaN(newQuantity) || newQuantity <= 0) return;
+    
+    const item = feedingItems[index];
+    if (!item) return;
+    
+    item.quantity = newQuantity;
+    
+    // Ensure we have caloriesPerUnit
+    if (!item.caloriesPerUnit || isNaN(item.caloriesPerUnit)) {
+        if (item.calories && item.recipeQuantity && !isNaN(item.calories) && !isNaN(item.recipeQuantity) && item.recipeQuantity > 0) {
+            item.caloriesPerUnit = item.calories / item.recipeQuantity;
+        } else {
+            updateFeedingSummary();
+            updateSaveButton();
+            updateStats();
+            return;
+        }
+    }
+    
+    // Recalculate total calories based on calories per unit
+    // Protocol: Use current unit (normalized), convert to original recipe unit if different
+    // caloriesPerUnit is based on the original recipe unit
+    const normalizedCurrentUnit = normalizeUnit(item.unit || 'piece');
+    const normalizedOriginalUnit = normalizeUnit(item.originalRecipeUnit || normalizedCurrentUnit);
+    
+    if (normalizedCurrentUnit !== normalizedOriginalUnit) {
+        // Convert quantity from current unit to original recipe unit
+        const quantityInOriginalUnit = convertUnit(newQuantity, normalizedCurrentUnit, normalizedOriginalUnit);
+        if (!isNaN(quantityInOriginalUnit) && quantityInOriginalUnit > 0 && !isNaN(item.caloriesPerUnit)) {
+            item.totalCalories = item.caloriesPerUnit * quantityInOriginalUnit;
+        } else {
+            // If conversion failed, use direct calculation as fallback
+            item.totalCalories = item.caloriesPerUnit * newQuantity;
+        }
+    } else {
+        // Same unit as original, use direct calculation
+        item.totalCalories = item.caloriesPerUnit * newQuantity;
+    }
+    
+    // Ensure totalCalories is a valid number
+    if (isNaN(item.totalCalories) || item.totalCalories < 0) {
+        item.totalCalories = 0;
+    }
+    
+    // Update the calories cell directly without rebuilding the table
+    const tbody = document.getElementById('feedingSummaryBody');
+    if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows[index]) {
+            const cells = rows[index].querySelectorAll('td');
+            if (cells[3]) {
+                cells[3].textContent = Math.round(item.totalCalories);
+            }
+        }
+    }
+    
+    // Update total calories
+    let totalCal = 0;
+    feedingItems.forEach(function(itm) {
+        totalCal += (itm.totalCalories || 0);
+    });
+    const totalCalEl = document.getElementById('totalCalories');
+    if (totalCalEl) {
+        totalCalEl.textContent = Math.round(totalCal);
+    }
+    
+    updateSaveButton();
+    updateStats();
+}
+
+function updateItemUnit(index, newUnit, rowElement) {
+    console.log('updateItemUnit called:', {index, newUnit, feedingItemsLength: feedingItems.length});
+    if (index < 0 || index >= feedingItems.length) {
+        console.error('Invalid index:', index);
+        return;
+    }
+    
+    const item = feedingItems[index];
+    if (!item) {
+        console.error('Item not found at index:', index);
+        return;
+    }
+    
+    const normalizedOldUnit = normalizeUnit(item.unit || 'piece');
+    const normalizedNewUnit = normalizeUnit(newUnit);
+    
+    console.log('Unit comparison:', {oldUnit: item.unit, normalizedOldUnit, newUnit, normalizedNewUnit});
+    
+    if (normalizedOldUnit === normalizedNewUnit) {
+        console.log('Units are the same, no update needed');
+        return;
+    }
+    
+    // Store original recipe unit if not set
+    if (!item.originalRecipeUnit) {
+        item.originalRecipeUnit = normalizedOldUnit;
+    }
+    
+    // Get caloriesPerUnit before unit change
+    if (!item.caloriesPerUnit || isNaN(item.caloriesPerUnit)) {
+        if (item.calories && item.recipeQuantity && item.recipeQuantity > 0) {
+            item.caloriesPerUnit = item.calories / item.recipeQuantity;
+        } else {
+            // If we can't calculate caloriesPerUnit, rebuild the table
+            updateFeedingSummary();
+            return;
+        }
+    }
+    
+    // Convert the current quantity from old unit to new unit to preserve the actual amount
+    // This way, if user has 1 oz and changes to g, quantity becomes 28.35 g (approximately)
+    const convertedQuantity = convertUnit(item.quantity, normalizedOldUnit, normalizedNewUnit);
+    
+    // Update both unit and quantity (convert quantity to match new unit)
+    item.unit = normalizedNewUnit;
+    item.quantity = convertedQuantity;
+    
+    // Convert quantity from new unit to original recipe unit for calorie calculation
+    const normalizedOriginalUnit = normalizeUnit(item.originalRecipeUnit);
+    let quantityInOriginalUnit;
+    
+    if (normalizedNewUnit !== normalizedOriginalUnit) {
+        quantityInOriginalUnit = convertUnit(convertedQuantity, normalizedNewUnit, normalizedOriginalUnit);
+        if (isNaN(quantityInOriginalUnit) || quantityInOriginalUnit <= 0) {
+            quantityInOriginalUnit = convertedQuantity;
+        }
+    } else {
+        quantityInOriginalUnit = convertedQuantity;
+    }
+    
+    // Calculate new calories based on converted quantity
+    item.totalCalories = item.caloriesPerUnit * quantityInOriginalUnit;
+    if (isNaN(item.totalCalories) || item.totalCalories < 0) {
+        item.totalCalories = 0;
+    }
+    
+    // Update the display - calories cell, quantity input, and unit select
+    const tbody = document.getElementById('feedingSummaryBody');
+    if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows[index]) {
+            const cells = rows[index].querySelectorAll('td');
+            // Update calories cell
+            if (cells[3]) {
+                cells[3].textContent = Math.round(item.totalCalories);
+            }
+            // Update quantity input value
+            const qtyInput = cells[1].querySelector('input');
+            if (qtyInput) {
+                qtyInput.value = formatQuantity(convertedQuantity);
+            }
+            // Ensure unit select shows the correct selected value
+            const unitSelect = cells[2].querySelector('select');
+            if (unitSelect) {
+                unitSelect.value = normalizedNewUnit;
+                // Also update the selected attribute on the option
+                const options = unitSelect.querySelectorAll('option');
+                options.forEach(function(opt) {
+                    opt.selected = (opt.value === normalizedNewUnit);
+                });
+            }
+        }
+    }
+    
+    console.log('Unit update complete:', {
+        index,
+        oldUnit: normalizedOldUnit,
+        newUnit: normalizedNewUnit,
+        quantity: convertedQuantity,
+        calories: item.totalCalories
+    });
+    
+    // Update total calories
+    let totalCal = 0;
+    feedingItems.forEach(function(itm) {
+        totalCal += (itm.totalCalories || 0);
+    });
+    const totalCalEl = document.getElementById('totalCalories');
+    if (totalCalEl) {
+        totalCalEl.textContent = Math.round(totalCal);
+    }
+    
+    updateSaveButton();
+    updateStats();
 }
 
 function removeFoodItem(index) {
@@ -828,7 +1357,18 @@ function clearAll() {
     clearSelection();
     clearFeedingList();
     clearSearch();
-    filterByCategory('all');
+    // Reset to no category selected (hide all foods)
+    currentCategory = '';
+    // Remove active state from all tabs
+    document.querySelectorAll('.nav-link').forEach(function(navLink) {
+        navLink.classList.remove('active');
+        navLink.setAttribute('aria-selected', 'false');
+    });
+    // Hide all food items
+    const foodItems = document.querySelectorAll('.food-item');
+    foodItems.forEach(function(item) {
+        item.classList.add('hidden');
+    });
     
     // Reset flag after a short delay to allow the clear operations to complete
     setTimeout(() => {
@@ -836,7 +1376,7 @@ function clearAll() {
     }, 100);
 }
 
-// Save feeding function - must be global for inline onclick
+// Save meals function - must be global for inline onclick
 function saveFeeding() {
     if (selectedApes.size === 0) {
         alert('Please select at least one ape');
@@ -855,11 +1395,43 @@ function saveFeeding() {
     saveBtn.disabled = true;
     
     // Prepare data for server
+    // Transform feedingItems to match backend expectations
+    // Backend expects: {name, calories, quantity}
+    // We have: {name, calories, recipeQuantity, caloriesPerUnit, quantity, unit, source, totalCalories}
+    // 
+    // The backend multiplies: calories * quantity
+    // So if recipe has: calories=100 for quantity=1.0 (1 cup), and user consumed 0.5 cups:
+    // We should send: calories=100, quantity=0.5
+    // Backend calculates: 100 * 0.5 = 50 calories ✓
+    //
+    // But wait, the backend's quantity is a multiplier, not the actual quantity.
+    // If recipe quantity=1.0 and user consumed 0.5, then multiplier = 0.5/1.0 = 0.5
+    // So we send: calories=100, quantity=0.5
+    const transformedItems = feedingItems.map(item => {
+        // item.calories is the base calories from recipe (for recipeQuantity amount)
+        // item.quantity is the actual quantity consumed
+        // item.recipeQuantity is the recipe's base quantity
+        // 
+        // To get the multiplier for the backend:
+        // multiplier = actualQuantity / recipeQuantity
+        const multiplier = item.recipeQuantity > 0 ? item.quantity / item.recipeQuantity : 1.0;
+        
+        // Ensure multiplier is valid (avoid division by zero or invalid values)
+        const safeMultiplier = isNaN(multiplier) || multiplier <= 0 ? 1.0 : multiplier;
+        
+        return {
+            name: item.name,
+            calories: Math.round(item.calories), // Base calories from recipe
+            quantity: safeMultiplier, // Multiplier (actual quantity / recipe quantity)
+            unit: item.unit || ''
+        };
+    });
+    
     const dateEl = document.getElementById('feedingDate');
     const periodEl = document.getElementById('feedingPeriod');
     const feedingData = {
         ape_ids: Array.from(selectedApes),
-        feeding_items: feedingItems,
+        feeding_items: transformedItems,
         date: dateEl ? dateEl.value : new Date().toISOString().split('T')[0],
         feeding_period: periodEl ? periodEl.value : 'morning'
     };
@@ -935,13 +1507,27 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Focus search input when typing (if not in input field)
+// Exclude number inputs in the checkout table to avoid interfering with quantity input
 document.addEventListener('keypress', function(e) {
-    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) && 
-        e.key.match(/[a-zA-Z0-9]/)) {
+    // Don't interfere if user is in any input, textarea, or select
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+        return;
+    }
+    
+    // Don't interfere if the target is inside the checkout table
+    const checkoutTable = document.getElementById('feedingSummaryTable');
+    if (checkoutTable && checkoutTable.contains(e.target)) {
+        return;
+    }
+    
+    // Only focus search for alphanumeric keys
+    if (e.key.match(/[a-zA-Z0-9]/)) {
         const searchInput = document.getElementById('foodSearch');
-        searchInput.focus();
-        searchInput.value = e.key;
-        searchFoods();
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.value = e.key;
+            searchFoods();
+        }
     }
 });
 

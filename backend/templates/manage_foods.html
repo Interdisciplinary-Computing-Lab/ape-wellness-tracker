@@ -95,13 +95,14 @@
                     <h6 class="card-title mb-0">{{ recipe.meal_name }}</h6>
                     <span class="badge badge-success">{{ recipe.calories }} cal</span>
                 </div>
-                <div class="mb-2">
-                    <span class="badge badge-info">{{ recipe.format_quantity() }}{% if recipe.unit_of_measurement %} {{ recipe.unit_of_measurement }}{% endif %}</span>
-                    {% if recipe.source %}
-                    <span class="badge badge-secondary" title="Data source: {{ recipe.source }}">Source</span>
-                    {% endif %}
-                </div>
-                <p class="text-muted small mb-2">{{ recipe.description or 'No description' }}</p>
+                {% if recipe.description %}
+                <p class="text-muted small mb-2">{{ recipe.description }}</p>
+                {% endif %}
+                {% if recipe.source %}
+                <p class="text-info small mb-2">
+                    <i class="fas fa-database mr-1"></i>Source: {{ recipe.source }}
+                </p>
+                {% endif %}
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="badge category-badge"
                         data-category="{{ recipe.food_category or 'Other' }}">
@@ -334,6 +335,16 @@ document.addEventListener('DOMContentLoaded', function() {
             border-radius: 20px;
         }
         
+        /* Default category badge styling - ensures all badges are styled */
+        .category-badge {
+            background-color: #6c757d;
+            color: white;
+            font-weight: 500;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
         /* Category badge colors matching filter tabs */
         .category-badge[data-category="Fruits"] {
             background-color: #28a745;
@@ -345,7 +356,8 @@ document.addEventListener('DOMContentLoaded', function() {
             color: white;
         }
         
-        .category-badge[data-category="Protein Sources"] {
+        .category-badge[data-category="Protein Sources"],
+        .category-badge[data-category="Protein"] {
             background-color: #dc3545;
             color: white;
         }

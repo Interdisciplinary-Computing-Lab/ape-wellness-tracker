@@ -49,16 +49,32 @@ a = Analysis(
         'webview',
         'flask',
         'flask_sqlalchemy',
+        'flask_sqlalchemy._compat',
         'flask_security',
         'flask_security.too',
+        'flask_security.utils',
+        'flask_security.datastore',
         'flask_wtf',
+        'flask_wtf.csrf',
         'sqlalchemy',
+        'sqlalchemy.engine',
+        'sqlalchemy.pool',
+        'sqlalchemy.sql',
         'bcrypt',
         'pandas',
         'pyarrow',
+        'pyarrow.lib',
         'jinja2',
+        'jinja2.ext',
         'werkzeug',
+        'werkzeug.security',
+        'werkzeug.utils',
         'flaskwebgui',
+        'openpyxl',
+        'blinker',
+        'click',
+        'itsdangerous',
+        'markupsafe',
     ],
     hookspath=[],
     hooksconfig={},
@@ -75,17 +91,14 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,  # Use onedir mode for better macOS performance
     name='Ape Wellness Tracker',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     upx_exclude=[],
-    runtime_tmpdir=None,
     console=False,  # No console window
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -94,8 +107,19 @@ exe = EXE(
     entitlements_file=None,
 )
 
-app = BUNDLE(
+coll = COLLECT(
     exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='Ape Wellness Tracker',
+)
+
+app = BUNDLE(
+    coll,
     name='Ape Wellness Tracker.app',
     icon=None,  # Add icon path here if you have one
     bundle_identifier='com.apeinitiative.wellnesstracker',
@@ -107,13 +131,24 @@ app = BUNDLE(
         'CFBundleVersion': '1.0.0',
         'CFBundleShortVersionString': '1.0.0',
         'NSRequiresAquaSystemAppearance': 'False',
+        'LSMinimumSystemVersion': '10.13.0',
     },
 )
 EOF
 
 # Build the application
 echo "🔨 Building application with PyInstaller..."
-pyinstaller --clean --collect-all flask --collect-all flask_security ape_wellness_tracker.spec
+pyinstaller --clean \
+    --collect-all flask \
+    --collect-all flask_security \
+    --collect-all flask_sqlalchemy \
+    --collect-all flask_wtf \
+    --collect-all sqlalchemy \
+    --collect-all werkzeug \
+    --collect-all jinja2 \
+    --collect-all pandas \
+    --collect-all pyarrow \
+    ape_wellness_tracker.spec
 
 # Check if build was successful
 if [ -d "dist/Ape Wellness Tracker.app" ]; then

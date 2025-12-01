@@ -73,7 +73,15 @@ def main():
 
     # Align working directory when packaged
     if getattr(sys, 'frozen', False):
-        os.chdir(os.path.dirname(sys.executable))
+        # For macOS .app bundles, sys.executable is inside Contents/MacOS/
+        # We need to go up to the app bundle root
+        if sys.platform == 'darwin' and '.app/Contents/MacOS/' in sys.executable:
+            # macOS app bundle: go up from Contents/MacOS/executable to .app root
+            app_bundle = Path(sys.executable).parent.parent.parent
+            os.chdir(str(app_bundle))
+        else:
+            # Windows/Linux: executable is in the same directory
+            os.chdir(os.path.dirname(sys.executable))
 
     try:
         launch_with_pywebview(debug_mode)

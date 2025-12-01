@@ -57,7 +57,7 @@ def get_time_period(dt):
 def get_time_period_display(dt):
     """
     Convert a datetime object to a formatted string with date and time period.
-    This matches the time periods used in the log feeding form.
+    This matches the time periods used in the log meals form.
     
     Args:
         dt: datetime object

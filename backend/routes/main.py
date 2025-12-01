@@ -17,8 +17,12 @@ from collections import defaultdict
 from sqlalchemy import func
 import io
 import os
+import sys
 import csv
 import zipfile
+import subprocess
+import tempfile
+import shutil
 from werkzeug.utils import secure_filename
 
 # Blueprint for site-wide routes
@@ -32,6 +36,36 @@ def allowed_file(filename):
     """Check if the uploaded file has an allowed extension"""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_protein_fiber(meal_name):
+    """
+    Calculate realistic protein and fiber values based on meal name.
+    Returns tuple (protein_g, fiber_g).
+    """
+    if not meal_name:
+        return (2.0, 1.0)
+    
+    meal_lower = str(meal_name).lower()
+    
+    # High protein foods
+    if any(word in meal_lower for word in ['egg', 'chicken', 'meat', 'fish', 'beef', 'pork', 'turkey', 'protein']):
+        return (12.0, 0.5)
+    # High fiber foods
+    elif any(word in meal_lower for word in ['apple', 'banana', 'orange', 'berry', 'fruit']):
+        return (0.5, 3.5)
+    elif any(word in meal_lower for word in ['spinach', 'broccoli', 'carrot', 'vegetable', 'lettuce', 'kale']):
+        return (2.0, 2.5)
+    elif any(word in meal_lower for word in ['bean', 'lentil', 'legume', 'chickpea']):
+        return (7.0, 6.0)
+    elif any(word in meal_lower for word in ['rice', 'grain', 'oat', 'quinoa']):
+        return (3.0, 1.5)
+    elif any(word in meal_lower for word in ['milk', 'dairy', 'cheese', 'yogurt']):
+        return (8.0, 0.0)
+    elif any(word in meal_lower for word in ['nut', 'almond', 'peanut', 'seed']):
+        return (6.0, 3.0)
+    # Default values for other foods
+    else:
+        return (2.0, 1.0)
 
 @site.route('/')
 @site.route('/dashboard')
@@ -403,7 +437,7 @@ def delete_meal(meal_id):
 @login_required
 def log_feeding():
     """
-    Display the log feeding page for adding nutrition data.
+    Display the log meals page for adding nutrition data.
     """
     # Get URL parameters for pre-filled data
     pre_filled_food = request.args.get('food', '')
@@ -442,7 +476,7 @@ def log_feeding():
 @login_required
 def save_feeding():
     """
-    Handle feeding log submissions from the JavaScript interface.
+    Handle meal log submissions from the JavaScript interface.
     """
     try:
         data = request.get_json()
@@ -486,7 +520,8 @@ def save_feeding():
         for item in feeding_items:
             food_name = item.get('name', '').strip()
             calories = item.get('calories', 0)
-            quantity = item.get('quantity', 1)
+            quantity = float(item.get('quantity', 1))  # Can be float now (e.g., 0.5)
+            unit = item.get('unit', '')
             
             if not food_name or calories <= 0:
                 continue
@@ -510,11 +545,15 @@ def save_feeding():
                 elif any(treat in food_name_lower for treat in ['honey', 'chocolate', 'cookie', 'ice cream', 'smoothie', 'popcorn']):
                     food_category = 'Treats'
                 
+                # For custom foods, use quantity=1.0 as base (the calories are for this base quantity)
+                # The unit can be empty for custom foods
                 recipe = Recipe(
                     meal_name=food_name,
                     description=f"Quick added: {food_name}",
                     calories=calories,
-                    quantity=1.0,
+                    quantity=1.0,  # Base quantity for custom foods
+                    unit_of_measurement=unit if unit else None,
+                    source=None,  # Source removed from meal logging
                     food_category=food_category
                 )
                 add_to_db(recipe, "recipe")
@@ -538,15 +577,15 @@ def save_feeding():
         
         return jsonify({
             'success': True,
-            'message': f'Feeding logged successfully for {len(ape_ids)} ape(s)',
+            'message': f'Meals logged successfully for {len(ape_ids)} ape(s)',
             'saved_meals': saved_meals,
             'total_calories': total_calories,
             'ape_count': len(ape_ids)
         })
         
     except Exception as e:
-        print(f"Error saving feeding: {str(e)}")
-        return jsonify({'success': False, 'error': 'Failed to save feeding data'}), 500
+        print(f"Error saving meals: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to save meal data'}), 500
 
 
 
@@ -1021,11 +1060,21 @@ def reports():
         ape_meal_count = len(ape_meals)
         ape_avg_calories = ape_calories / ape_meal_count if ape_meal_count > 0 else 0
         
+        # Calculate protein and fiber totals
+        ape_protein = 0.0
+        ape_fiber = 0.0
+        for meal in ape_meals:
+            protein, fiber = get_protein_fiber(meal.recipe.meal_name)
+            ape_protein += protein
+            ape_fiber += fiber
+        
         ape_stats[ape.id] = {
             'name': ape.ape_name,
             'calories': ape_calories,
             'meal_count': ape_meal_count,
-            'avg_calories': ape_avg_calories
+            'avg_calories': ape_avg_calories,
+            'protein_g': round(ape_protein, 1),
+            'fiber_g': round(ape_fiber, 1)
         }
     
     # Food category distribution
@@ -1143,11 +1192,21 @@ def download_reports(format):
         ape_meal_count = len(ape_meals)
         ape_avg_calories = ape_calories / ape_meal_count if ape_meal_count > 0 else 0
         
+        # Calculate protein and fiber totals
+        ape_protein = 0.0
+        ape_fiber = 0.0
+        for meal in ape_meals:
+            protein, fiber = get_protein_fiber(meal.recipe.meal_name)
+            ape_protein += protein
+            ape_fiber += fiber
+        
         ape_stats[ape.id] = {
             'name': ape.ape_name,
             'calories': ape_calories,
             'meal_count': ape_meal_count,
-            'avg_calories': ape_avg_calories
+            'avg_calories': ape_avg_calories,
+            'protein_g': round(ape_protein, 1),
+            'fiber_g': round(ape_fiber, 1)
         }
     
     # Food category distribution
@@ -1218,14 +1277,16 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     
     # Per-ape statistics
     writer.writerow(['PER-APE STATISTICS'])
-    writer.writerow(['Ape Name', 'Total Calories', 'Total Meals', 'Avg Calories/Meal'])
+    writer.writerow(['Ape Name', 'Total Calories', 'Total Meals', 'Avg Calories/Meal', 'Total Protein (g)', 'Total Fiber (g)'])
     for ape in apes:
         stats = ape_stats[ape.id]
         writer.writerow([
             stats['name'],
             stats['calories'],
             stats['meal_count'],
-            f"{stats['avg_calories']:.1f}"
+            f"{stats['avg_calories']:.1f}",
+            stats.get('protein_g', 0.0),
+            stats.get('fiber_g', 0.0)
         ])
     writer.writerow([])
     
@@ -1303,18 +1364,18 @@ def download_raw_data():
             except ValueError:
                 pass
         
-        # Create a BytesIO object for the zip file
-        zip_buffer = io.BytesIO()
+        # Create a temporary directory for CSV files and generated reports
+        temp_dir = tempfile.mkdtemp()
         
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        try:
+            # Step 1: Generate CSV files in temporary directory
             # 1. Ape_Information.csv from Apes table
             apes_data = Apes.query.all()
-            apes_csv = io.StringIO()
-            apes_writer = csv.writer(apes_csv)
-            
+            apes_csv_path = os.path.join(temp_dir, 'Ape_Information.csv')
+            with open(apes_csv_path, 'w', newline='', encoding='utf-8') as f:
+                apes_writer = csv.writer(f)
             # Write header
             apes_writer.writerow(['id', 'ape_name', 'birthday', 'weight', 'mother', 'image_filename', 'image_mime_type', 'is_archived', 'archived_at'])
-            
             # Write data rows
             for ape in apes_data:
                 apes_writer.writerow([
@@ -1329,8 +1390,6 @@ def download_raw_data():
                     ape.archived_at.strftime('%Y-%m-%d %H:%M:%S') if ape.archived_at else ''
                 ])
             
-            zip_file.writestr('Ape_Information.csv', apes_csv.getvalue())
-            
             # 2. Meal_Logs.csv from Meals table (with optional date filtering)
             meals_query = Meals.query
             if start_date and end_date:
@@ -1339,12 +1398,11 @@ def download_raw_data():
                     db.func.date(Meals.date) <= end_date
                 )
             meals_data = meals_query.all()
-            meals_csv = io.StringIO()
-            meals_writer = csv.writer(meals_csv)
-            
+            meals_csv_path = os.path.join(temp_dir, 'Meal_Logs.csv')
+            with open(meals_csv_path, 'w', newline='', encoding='utf-8') as f:
+                meals_writer = csv.writer(f)
             # Write header
             meals_writer.writerow(['id', 'ape_id', 'recipe_id', 'date', 'feeding_period', 'user_id'])
-            
             # Write data rows
             for meal in meals_data:
                 meals_writer.writerow([
@@ -1356,17 +1414,13 @@ def download_raw_data():
                     meal.user_id
                 ])
             
-            meals_csv_content = meals_csv.getvalue()
-            zip_file.writestr('Meal_Logs.csv', meals_csv.getvalue())
-            
             # 3. Meal_Definitions.csv from Recipe table
             recipes_data = Recipe.query.all()
-            recipes_csv = io.StringIO()
-            recipes_writer = csv.writer(recipes_csv)
-            
+            recipes_csv_path = os.path.join(temp_dir, 'Meal_Definitions.csv')
+            with open(recipes_csv_path, 'w', newline='', encoding='utf-8') as f:
+                recipes_writer = csv.writer(f)
             # Write header
-            recipes_writer.writerow(['id', 'meal_name', 'description', 'calories', 'food_category', 'category_id'])
-            
+            recipes_writer.writerow(['id', 'meal_name', 'description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_id'])
             # Write data rows
             for recipe in recipes_data:
                 recipes_writer.writerow([
@@ -1374,20 +1428,20 @@ def download_raw_data():
                     recipe.meal_name,
                     recipe.description,
                     recipe.calories,
+                    recipe.quantity,
+                    recipe.unit_of_measurement,
+                    recipe.source,
                     recipe.food_category,
                     recipe.category_id
                 ])
             
-            zip_file.writestr('Meal_Definitions.csv', recipes_csv.getvalue())
-            
             # 4. Food_Categories.csv from FoodCategory table
             categories_data = FoodCategory.query.all()
-            categories_csv = io.StringIO()
-            categories_writer = csv.writer(categories_csv)
-            
+            categories_csv_path = os.path.join(temp_dir, 'Food_Categories.csv')
+            with open(categories_csv_path, 'w', newline='', encoding='utf-8') as f:
+                categories_writer = csv.writer(f)
             # Write header
             categories_writer.writerow(['id', 'name', 'description', 'icon', 'color', 'is_active', 'sort_order', 'created_at', 'updated_at'])
-            
             # Write data rows
             for category in categories_data:
                 categories_writer.writerow([
@@ -1402,18 +1456,16 @@ def download_raw_data():
                     category.updated_at.strftime('%Y-%m-%d %H:%M:%S') if category.updated_at else ''
                 ])
             
-            zip_file.writestr('Food_Categories.csv', categories_csv.getvalue())
-            
             # 5. Denormalized export (all meal data in one table) - optional
             if include_denormalized:
-                denormalized_csv = io.StringIO()
-                denormalized_writer = csv.writer(denormalized_csv)
-                
+                denormalized_csv_path = os.path.join(temp_dir, 'Meal_Data_Denormalized.csv')
+                with open(denormalized_csv_path, 'w', newline='', encoding='utf-8') as f:
+                    denormalized_writer = csv.writer(f)
                 # Write header with all relevant fields
                 denormalized_writer.writerow([
                     'meal_id', 'meal_date', 'feeding_period',
                     'ape_id', 'ape_name', 'ape_birthday', 'ape_age_at_meal', 'ape_weight', 'ape_mother',
-                    'recipe_id', 'meal_name', 'meal_description', 'calories', 'food_category', 'category_name',
+                    'recipe_id', 'meal_name', 'meal_description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_name',
                     'user_id', 'logged_by_email'
                 ])
                 
@@ -1452,33 +1504,85 @@ def download_raw_data():
                         recipe.meal_name if recipe else '',
                         recipe.description if recipe else '',
                         recipe.calories if recipe else '',
+                        recipe.quantity if recipe else '',
+                        recipe.unit_of_measurement if recipe else '',
+                        recipe.source if recipe else '',
                         recipe.food_category if recipe else '',
                         category.name if category else '',
                         meal.user_id,
                         user.email if user else ''
                     ])
                 
-                zip_file.writestr('Meal_Data_Denormalized.csv', denormalized_csv.getvalue())
-        
-        # Prepare the zip file for download
-        zip_buffer.seek(0)
-        
-        # Generate filename with timestamp and date range info
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        date_suffix = ''
-        if start_date and end_date:
-            if start_date == end_date:
-                date_suffix = f"_{start_date.strftime('%Y%m%d')}"
+            # Step 2: Execute the Python reporting script
+            # Calculate path: from backend/routes/main.py -> project root -> scripts/
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            script_path = os.path.join(project_root, 'scripts', 'generate_bonobo_diet_reports.py')
+            if not os.path.exists(script_path):
+                raise FileNotFoundError(f"Reporting script not found at: {script_path}")
+            
+            # Execute the script with the temporary directory as argument
+            result = subprocess.run(
+                [sys.executable, script_path, temp_dir],
+                capture_output=True,
+                text=True,
+                cwd=os.path.dirname(script_path)
+            )
+            
+            if result.returncode != 0:
+                # Log the error but don't fail the download - just skip Excel files
+                print(f"Warning: Reporting script failed: {result.stderr}", file=sys.stderr)
             else:
-                date_suffix = f"_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}"
-        filename = f"bonobo_feeding_log_raw_data{date_suffix}_{timestamp}.zip"
+                print(f"Reporting script output: {result.stdout}", file=sys.stderr)
+            
+            # Step 3: Create zip file with all files (CSVs + Excel reports)
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                # Add all CSV files
+                csv_files = ['Ape_Information.csv', 'Meal_Logs.csv', 'Meal_Definitions.csv', 'Food_Categories.csv']
+                if include_denormalized:
+                    csv_files.append('Meal_Data_Denormalized.csv')
+                
+                for csv_file in csv_files:
+                    csv_path = os.path.join(temp_dir, csv_file)
+                    if os.path.exists(csv_path):
+                        zip_file.write(csv_path, csv_file)
+                
+                # Add Excel files if they were generated
+                excel_files = [
+                    'Bonobo_Individual_Diet_Summary.xlsx',
+                    'Bonobo_Group_And_Category_Breakdown.xlsx'
+                ]
+                for excel_file in excel_files:
+                    excel_path = os.path.join(temp_dir, excel_file)
+                    if os.path.exists(excel_path):
+                        zip_file.write(excel_path, excel_file)
+            
+            # Prepare the zip file for download
+            zip_buffer.seek(0)
+            
+            # Generate filename with timestamp and date range info
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            date_suffix = ''
+            if start_date and end_date:
+                if start_date == end_date:
+                    date_suffix = f"_{start_date.strftime('%Y%m%d')}"
+                else:
+                    date_suffix = f"_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}"
+            filename = f"bonobo_feeding_log_raw_data{date_suffix}_{timestamp}.zip"
+            
+            return send_file(
+                zip_buffer,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/zip'
+            )
         
-        return send_file(
-            zip_buffer,
-            as_attachment=True,
-            download_name=filename,
-            mimetype='application/zip'
-        )
+        finally:
+            # Step 4: Cleanup - remove temporary directory
+            try:
+                shutil.rmtree(temp_dir)
+            except Exception as cleanup_error:
+                print(f"Warning: Failed to cleanup temp directory {temp_dir}: {cleanup_error}", file=sys.stderr)
         
     except Exception as e:
         flash(f'Error generating raw data download: {str(e)}', 'error')
