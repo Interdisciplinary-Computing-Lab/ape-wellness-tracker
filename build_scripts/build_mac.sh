@@ -42,6 +42,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
+        ('backend', 'backend'),
         ('backend/templates', 'backend/templates'),
         ('backend/static', 'backend/static'),
     ],
@@ -75,6 +76,11 @@ a = Analysis(
         'click',
         'itsdangerous',
         'markupsafe',
+        'passlib',
+        'passlib.handlers',
+        'passlib.handlers.bcrypt',
+        'passlib.context',
+        'passlib.registry',
     ],
     hookspath=[],
     hooksconfig={},
@@ -138,17 +144,7 @@ EOF
 
 # Build the application
 echo "🔨 Building application with PyInstaller..."
-pyinstaller --clean \
-    --collect-all flask \
-    --collect-all flask_security \
-    --collect-all flask_sqlalchemy \
-    --collect-all flask_wtf \
-    --collect-all sqlalchemy \
-    --collect-all werkzeug \
-    --collect-all jinja2 \
-    --collect-all pandas \
-    --collect-all pyarrow \
-    ape_wellness_tracker.spec
+pyinstaller --clean ape_wellness_tracker.spec
 
 # Check if build was successful
 if [ -d "dist/Ape Wellness Tracker.app" ]; then
