@@ -67,14 +67,16 @@
                                             <i class="fas fa-eye mr-1"></i>View Profile
                                         </a>
                                         
-                                        <button type="button" class="btn btn-success btn-sm mb-2" 
-                                                onclick="confirmUnarchive('{{ ape.ape_name }}', {{ ape.id }})">
+                                        <button type="button" class="btn btn-success btn-sm mb-2 unarchive-btn" 
+                                                data-ape-name="{{ ape.ape_name }}"
+                                                data-ape-id="{{ ape.id }}">
                                             <i class="fas fa-undo mr-1"></i>Restore from Archive
                                         </button>
                                         
                                         {% if current_user.has_role('Admin') %}
-                                        <button type="button" class="btn btn-danger btn-sm" 
-                                                onclick="confirmDelete('{{ ape.ape_name }}', {{ ape.id }})">
+                                        <button type="button" class="btn btn-danger btn-sm delete-btn" 
+                                                data-ape-name="{{ ape.ape_name }}"
+                                                data-ape-id="{{ ape.id }}">
                                             <i class="fas fa-trash mr-1"></i>Delete Permanently
                                         </button>
                                         {% endif %}
@@ -130,5 +132,26 @@ function confirmDelete(apeName, apeId) {
         }
     }
 }
+
+// Add event listeners for buttons using data attributes
+document.addEventListener('DOMContentLoaded', function() {
+    // Unarchive buttons
+    document.querySelectorAll('.unarchive-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const apeName = this.getAttribute('data-ape-name');
+            const apeId = this.getAttribute('data-ape-id');
+            confirmUnarchive(apeName, parseInt(apeId));
+        });
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const apeName = this.getAttribute('data-ape-name');
+            const apeId = this.getAttribute('data-ape-id');
+            confirmDelete(apeName, parseInt(apeId));
+        });
+    });
+});
 </script>
 {% endblock %}
