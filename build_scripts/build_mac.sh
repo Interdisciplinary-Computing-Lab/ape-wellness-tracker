@@ -79,8 +79,13 @@ a = Analysis(
         'passlib',
         'passlib.handlers',
         'passlib.handlers.bcrypt',
+        'passlib.handlers.argon2',
+        'passlib.handlers.pbkdf2',
+        'passlib.handlers.sha2_crypt',
+        'passlib.handlers.django',
         'passlib.context',
         'passlib.registry',
+        'passlib.utils',
     ],
     hookspath=[],
     hooksconfig={},
@@ -90,6 +95,7 @@ a = Analysis(
     win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
+    collect_all=['passlib'],
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)

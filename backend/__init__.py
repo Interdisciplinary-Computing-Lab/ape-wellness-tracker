@@ -1,12 +1,44 @@
 import os
+import sys
+from pathlib import Path
 from flask import Flask
 from backend.extensions import db
 from backend.security import init_security
 from backend.routes.main import site
 from backend.helpers import get_time_period_display
 
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    if getattr(sys, 'frozen', False):
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+    else:
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
 def create_app():
-    app = Flask(__name__, instance_relative_config=True, static_folder='static', static_url_path='/static')
+    # Determine template and static folder paths
+    if getattr(sys, 'frozen', False):
+        # When frozen, resources are in _MEIPASS or next to executable
+        if hasattr(sys, '_MEIPASS'):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(sys.executable)
+        
+        template_folder = os.path.join(base_path, 'backend', 'templates')
+        static_folder = os.path.join(base_path, 'backend', 'static')
+    else:
+        # Development mode - use relative paths
+        template_folder = os.path.join(os.path.dirname(__file__), 'templates')
+        static_folder = os.path.join(os.path.dirname(__file__), 'static')
+    
+    app = Flask(
+        __name__, 
+        instance_relative_config=True,
+        template_folder=template_folder,
+        static_folder=static_folder,
+        static_url_path='/static'
+    )
     
     # Ensure instance folder exists
     os.makedirs(app.instance_path, exist_ok=True)
