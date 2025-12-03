@@ -156,7 +156,7 @@ def launch_with_pywebview(debug_mode: bool) -> None:
     print(f"Opening webview window with URL: {server_url}", file=sys.stderr)
 
     window = webview.create_window(
-        "Ape Wellness Tracker",
+        "Ape Meal Tracker",
         server_url,
         width=1400,
         height=900,

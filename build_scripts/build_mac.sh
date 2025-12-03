@@ -28,7 +28,7 @@ fi
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
 rm -rf build/ dist/ *.spec
-rm -rf "Ape Wellness Tracker.app"
+rm -rf "Ape_Meal_Tracker.app"
 
 # Create the spec file for PyInstaller
 echo "📝 Creating PyInstaller spec file..."
@@ -105,7 +105,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,  # Use onedir mode for better macOS performance
-    name='Ape Wellness Tracker',
+    name='Ape_Meal_Tracker',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -127,19 +127,19 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='Ape Wellness Tracker',
+    name='Ape_Meal_Tracker',
 )
 
 app = BUNDLE(
     coll,
-    name='Ape Wellness Tracker.app',
+    name='Ape_Meal_Tracker.app',
     icon=None,  # Add icon path here if you have one
     bundle_identifier='com.apeinitiative.wellnesstracker',
     info_plist={
         'NSPrincipalClass': 'NSApplication',
         'NSHighResolutionCapable': 'True',
-        'CFBundleName': 'Ape Wellness Tracker',
-        'CFBundleDisplayName': 'Ape Wellness Tracker',
+        'CFBundleName': 'Ape_Meal_Tracker',
+        'CFBundleDisplayName': 'Ape_Meal_Tracker',
         'CFBundleVersion': '1.0.0',
         'CFBundleShortVersionString': '1.0.0',
         'NSRequiresAquaSystemAppearance': 'False',
@@ -153,17 +153,17 @@ echo "🔨 Building application with PyInstaller..."
 pyinstaller --clean ape_wellness_tracker.spec
 
 # Check if build was successful
-if [ -d "dist/Ape Wellness Tracker.app" ]; then
+if [ -d "dist/Ape_Meal_Tracker.app" ]; then
     echo ""
     echo "✅ Build successful!"
     echo ""
-    echo "📦 Application bundle created at: dist/Ape Wellness Tracker.app"
+    echo "📦 Application bundle created at: dist/Ape_Meal_Tracker.app"
     echo ""
     echo "To test the application, run:"
-    echo "  open 'dist/Ape Wellness Tracker.app'"
+    echo "  open 'dist/Ape_Meal_Tracker.app'"
     echo ""
     echo "To create a DMG installer, you can use:"
-    echo "  hdiutil create -volname 'Ape Wellness Tracker' -srcfolder 'dist/Ape Wellness Tracker.app' -ov -format UDZO 'dist/Ape Wellness Tracker.dmg'"
+    echo "  hdiutil create -volname 'Ape_Meal_Tracker' -srcfolder 'dist/Ape_Meal_Tracker.app' -ov -format UDZO 'dist/Ape_Meal_Tracker.dmg'"
 else
     echo "❌ Build failed. Check the output above for errors."
     exit 1
