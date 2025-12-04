@@ -1374,21 +1374,21 @@ def download_raw_data():
             apes_csv_path = os.path.join(temp_dir, 'Ape_Information.csv')
             with open(apes_csv_path, 'w', newline='', encoding='utf-8') as f:
                 apes_writer = csv.writer(f)
-            # Write header
-            apes_writer.writerow(['id', 'ape_name', 'birthday', 'weight', 'mother', 'image_filename', 'image_mime_type', 'is_archived', 'archived_at'])
-            # Write data rows
-            for ape in apes_data:
-                apes_writer.writerow([
-                    ape.id,
-                    ape.ape_name,
-                    ape.birthday.strftime('%Y-%m-%d') if ape.birthday else '',
-                    ape.weight,
-                    ape.mother,
-                    ape.image_filename,
-                    ape.image_mime_type,
-                    ape.is_archived,
-                    ape.archived_at.strftime('%Y-%m-%d %H:%M:%S') if ape.archived_at else ''
-                ])
+                # Write header
+                apes_writer.writerow(['id', 'ape_name', 'birthday', 'weight', 'mother', 'image_filename', 'image_mime_type', 'is_archived', 'archived_at'])
+                # Write data rows
+                for ape in apes_data:
+                    apes_writer.writerow([
+                        ape.id,
+                        ape.ape_name,
+                        ape.birthday.strftime('%Y-%m-%d') if ape.birthday else '',
+                        ape.weight,
+                        ape.mother,
+                        ape.image_filename,
+                        ape.image_mime_type,
+                        ape.is_archived,
+                        ape.archived_at.strftime('%Y-%m-%d %H:%M:%S') if ape.archived_at else ''
+                    ])
             
             # 2. Meal_Logs.csv from Meals table (with optional date filtering)
             meals_query = Meals.query
@@ -1401,117 +1401,117 @@ def download_raw_data():
             meals_csv_path = os.path.join(temp_dir, 'Meal_Logs.csv')
             with open(meals_csv_path, 'w', newline='', encoding='utf-8') as f:
                 meals_writer = csv.writer(f)
-            # Write header
-            meals_writer.writerow(['id', 'ape_id', 'recipe_id', 'date', 'feeding_period', 'user_id'])
-            # Write data rows
-            for meal in meals_data:
-                meals_writer.writerow([
-                    meal.id,
-                    meal.ape_id,
-                    meal.recipe_id,
-                    meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
-                    meal.feeding_period if meal.feeding_period else '',
-                    meal.user_id
-                ])
+                # Write header
+                meals_writer.writerow(['id', 'ape_id', 'recipe_id', 'date', 'feeding_period', 'user_id'])
+                # Write data rows
+                for meal in meals_data:
+                    meals_writer.writerow([
+                        meal.id,
+                        meal.ape_id,
+                        meal.recipe_id,
+                        meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
+                        meal.feeding_period if meal.feeding_period else '',
+                        meal.user_id
+                    ])
             
             # 3. Meal_Definitions.csv from Recipe table
             recipes_data = Recipe.query.all()
             recipes_csv_path = os.path.join(temp_dir, 'Meal_Definitions.csv')
             with open(recipes_csv_path, 'w', newline='', encoding='utf-8') as f:
                 recipes_writer = csv.writer(f)
-            # Write header
-            recipes_writer.writerow(['id', 'meal_name', 'description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_id'])
-            # Write data rows
-            for recipe in recipes_data:
-                recipes_writer.writerow([
-                    recipe.id,
-                    recipe.meal_name,
-                    recipe.description,
-                    recipe.calories,
-                    recipe.quantity,
-                    recipe.unit_of_measurement,
-                    recipe.source,
-                    recipe.food_category,
-                    recipe.category_id
-                ])
+                # Write header
+                recipes_writer.writerow(['id', 'meal_name', 'description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_id'])
+                # Write data rows
+                for recipe in recipes_data:
+                    recipes_writer.writerow([
+                        recipe.id,
+                        recipe.meal_name,
+                        recipe.description,
+                        recipe.calories,
+                        recipe.quantity,
+                        recipe.unit_of_measurement,
+                        recipe.source,
+                        recipe.food_category,
+                        recipe.category_id
+                    ])
             
             # 4. Food_Categories.csv from FoodCategory table
             categories_data = FoodCategory.query.all()
             categories_csv_path = os.path.join(temp_dir, 'Food_Categories.csv')
             with open(categories_csv_path, 'w', newline='', encoding='utf-8') as f:
                 categories_writer = csv.writer(f)
-            # Write header
-            categories_writer.writerow(['id', 'name', 'description', 'icon', 'color', 'is_active', 'sort_order', 'created_at', 'updated_at'])
-            # Write data rows
-            for category in categories_data:
-                categories_writer.writerow([
-                    category.id,
-                    category.name,
-                    category.description,
-                    category.icon,
-                    category.color,
-                    category.is_active,
-                    category.sort_order,
-                    category.created_at.strftime('%Y-%m-%d %H:%M:%S') if category.created_at else '',
-                    category.updated_at.strftime('%Y-%m-%d %H:%M:%S') if category.updated_at else ''
-                ])
+                # Write header
+                categories_writer.writerow(['id', 'name', 'description', 'icon', 'color', 'is_active', 'sort_order', 'created_at', 'updated_at'])
+                # Write data rows
+                for category in categories_data:
+                    categories_writer.writerow([
+                        category.id,
+                        category.name,
+                        category.description,
+                        category.icon,
+                        category.color,
+                        category.is_active,
+                        category.sort_order,
+                        category.created_at.strftime('%Y-%m-%d %H:%M:%S') if category.created_at else '',
+                        category.updated_at.strftime('%Y-%m-%d %H:%M:%S') if category.updated_at else ''
+                    ])
             
             # 5. Denormalized export (all meal data in one table) - optional
             if include_denormalized:
                 denormalized_csv_path = os.path.join(temp_dir, 'Meal_Data_Denormalized.csv')
                 with open(denormalized_csv_path, 'w', newline='', encoding='utf-8') as f:
                     denormalized_writer = csv.writer(f)
-                # Write header with all relevant fields
-                denormalized_writer.writerow([
-                    'meal_id', 'meal_date', 'feeding_period',
-                    'ape_id', 'ape_name', 'ape_birthday', 'ape_age_at_meal', 'ape_weight', 'ape_mother',
-                    'recipe_id', 'meal_name', 'meal_description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_name',
-                    'user_id', 'logged_by_email'
-                ])
-                
-                # Create lookup dictionaries for performance
-                apes_dict = {ape.id: ape for ape in apes_data}
-                recipes_dict = {recipe.id: recipe for recipe in recipes_data}
-                categories_dict = {cat.id: cat for cat in categories_data}
-                users_dict = {user.id: user for user in User.query.all()}
-                
-                # Write data rows
-                for meal in meals_data:
-                    ape = apes_dict.get(meal.ape_id)
-                    recipe = recipes_dict.get(meal.recipe_id)
-                    category = categories_dict.get(recipe.category_id) if recipe and recipe.category_id else None
-                    user = users_dict.get(meal.user_id)
-                    
-                    # Calculate age at meal time
-                    age_at_meal = None
-                    if ape and ape.birthday and meal.date:
-                        meal_date = meal.date.date() if isinstance(meal.date, datetime) else meal.date
-                        age_at_meal = meal_date.year - ape.birthday.year
-                        if meal_date < date(meal_date.year, ape.birthday.month, ape.birthday.day):
-                            age_at_meal -= 1
-                    
+                    # Write header with all relevant fields
                     denormalized_writer.writerow([
-                        meal.id,
-                        meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
-                        meal.feeding_period if meal.feeding_period else '',
-                        meal.ape_id,
-                        ape.ape_name if ape else '',
-                        ape.birthday.strftime('%Y-%m-%d') if ape and ape.birthday else '',
-                        age_at_meal if age_at_meal is not None else '',
-                        ape.weight if ape else '',
-                        ape.mother if ape else '',
-                        meal.recipe_id,
-                        recipe.meal_name if recipe else '',
-                        recipe.description if recipe else '',
-                        recipe.calories if recipe else '',
-                        recipe.quantity if recipe else '',
-                        recipe.unit_of_measurement if recipe else '',
-                        recipe.source if recipe else '',
-                        recipe.food_category if recipe else '',
-                        category.name if category else '',
-                        meal.user_id,
-                        user.email if user else ''
+                        'meal_id', 'meal_date', 'feeding_period',
+                        'ape_id', 'ape_name', 'ape_birthday', 'ape_age_at_meal', 'ape_weight', 'ape_mother',
+                        'recipe_id', 'meal_name', 'meal_description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_name',
+                        'user_id', 'logged_by_email'
                     ])
+                    
+                    # Create lookup dictionaries for performance
+                    apes_dict = {ape.id: ape for ape in apes_data}
+                    recipes_dict = {recipe.id: recipe for recipe in recipes_data}
+                    categories_dict = {cat.id: cat for cat in categories_data}
+                    users_dict = {user.id: user for user in User.query.all()}
+                    
+                    # Write data rows
+                    for meal in meals_data:
+                        ape = apes_dict.get(meal.ape_id)
+                        recipe = recipes_dict.get(meal.recipe_id)
+                        category = categories_dict.get(recipe.category_id) if recipe and recipe.category_id else None
+                        user = users_dict.get(meal.user_id)
+                        
+                        # Calculate age at meal time
+                        age_at_meal = None
+                        if ape and ape.birthday and meal.date:
+                            meal_date = meal.date.date() if isinstance(meal.date, datetime) else meal.date
+                            age_at_meal = meal_date.year - ape.birthday.year
+                            if meal_date < date(meal_date.year, ape.birthday.month, ape.birthday.day):
+                                age_at_meal -= 1
+                        
+                        denormalized_writer.writerow([
+                            meal.id,
+                            meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
+                            meal.feeding_period if meal.feeding_period else '',
+                            meal.ape_id,
+                            ape.ape_name if ape else '',
+                            ape.birthday.strftime('%Y-%m-%d') if ape and ape.birthday else '',
+                            age_at_meal if age_at_meal is not None else '',
+                            ape.weight if ape else '',
+                            ape.mother if ape else '',
+                            meal.recipe_id,
+                            recipe.meal_name if recipe else '',
+                            recipe.description if recipe else '',
+                            recipe.calories if recipe else '',
+                            recipe.quantity if recipe else '',
+                            recipe.unit_of_measurement if recipe else '',
+                            recipe.source if recipe else '',
+                            recipe.food_category if recipe else '',
+                            category.name if category else '',
+                            meal.user_id,
+                            user.email if user else ''
+                        ])
                 
             # Step 2: Execute the Python reporting script
             # Calculate path: from backend/routes/main.py -> project root -> scripts/
