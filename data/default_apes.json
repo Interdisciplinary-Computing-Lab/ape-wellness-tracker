@@ -1,0 +1,45 @@
+[
+    {
+        "ape_name": "MAISHA",
+        "birthday": "2000-05-28",
+        "weight": 42.5,
+        "mother": "Matata",
+        "image_filename": "maisha.jpg"
+    },
+    {
+        "ape_name": "TECO",
+        "birthday": "2010-06-01",
+        "weight": 38.2,
+        "mother": null,
+        "image_filename": "teco.jpg"
+    },
+    {
+        "ape_name": "NYOTA",
+        "birthday": "1998-04-04",
+        "weight": 45.8,
+        "mother": null,
+        "image_filename": "nyota.jpg"
+    },
+    {
+        "ape_name": "CLARA",
+        "birthday": "2010-05-27",
+        "weight": 39.1,
+        "mother": null,
+        "image_filename": "clara.jpg"
+    },
+    {
+        "ape_name": "MALI",
+        "birthday": "2007-09-04",
+        "weight": 41.3,
+        "mother": null,
+        "image_filename": "mali.jpg"
+    },
+    {
+        "ape_name": "ELIKYA",
+        "birthday": "1997-06-28",
+        "weight": 44.7,
+        "mother": "Matata",
+        "image_filename": "elikya.jpg"
+    }
+]
+

@@ -1,0 +1,29 @@
+{
+    "feeding_periods": {
+        "morning": {
+            "display_name": "Morning (6 AM - 12 PM)",
+            "default_hour": 9
+        },
+        "afternoon": {
+            "display_name": "Afternoon (12 PM - 6 PM)",
+            "default_hour": 15
+        },
+        "evening": {
+            "display_name": "Evening (6 PM - 12 AM)",
+            "default_hour": 21
+        },
+        "night": {
+            "display_name": "Night (12 AM - 6 AM)",
+            "default_hour": 3
+        }
+    },
+    "nutrition_defaults": {
+        "default_protein_g": 2.0,
+        "default_fiber_g": 1.0
+    },
+    "file_upload": {
+        "max_file_size_mb": 5,
+        "allowed_extensions": ["png", "jpg", "jpeg", "gif", "webp"]
+    }
+}
+
