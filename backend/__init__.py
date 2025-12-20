@@ -56,7 +56,9 @@ def create_app():
     app.config["SECURITY_REGISTERABLE"] = True
     app.config["SECURITY_SEND_REGISTER_EMAIL"] = False
     
-
+    # Ensure CSRF protection is enabled for Flask-Security forms
+    app.config["WTF_CSRF_ENABLED"] = True
+    app.config["WTF_CSRF_TIME_LIMIT"] = None  # No time limit for CSRF tokens
 
     db.init_app(app)
     init_security(app)

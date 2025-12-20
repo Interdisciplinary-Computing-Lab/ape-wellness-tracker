@@ -1,163 +1,46 @@
-# Ape Diet & Wellness Tracker App
-A full-stack diet and wellness tracking app for Ape Initiative, built with Flask, HTML5, Bootstrap 4, Chart.js, and SQLite.
+# Ape Diet & Wellness Tracker
 
-## 🔧 Project Status
+A Flask-based web application for tracking diet and wellness data for apes at Ape Initiative. Built with Flask, Bootstrap, Chart.js, and SQLite.
 
-✅ Core Backend and Authentication Implemented  
-✅ Frontend Integration and Styling Completed  
-✅ Prototype Ready - Professional UI/UX  
+## Getting Started
 
-🚧 Production Configuration Needed  
-📌 Deployment Setup and Final Testing Pending
+You'll need Python 3.7 or higher and pip installed. Once you have that:
 
-## 🚀 Quick Start
+1. Clone the repository and navigate to the project directory
+2. Install the dependencies: `pip install -r requirements.txt`
+3. Run the app: `python run.py`
 
-### Prerequisites
-- Python 3.7 or higher
-- pip (Python package manager)
+The app will start on `http://localhost:5003`. The database gets created automatically in the `instance/` folder the first time you run it, but you can also initialize it manually with `python scripts/init_db.py` if needed.
 
-### Installation Steps
+After starting the app, you might want to create an admin user with `python scripts/create_admin.py`, or create a regular user with `python scripts/create_user.py`. If you want some sample data to work with, run `python scripts/seed_data.py`.
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd ape-wellness-tracker
-   ```
+## Running as a Desktop App
 
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+You can run the app in a desktop window instead of a browser by using `python desktop_app.py`. This wraps the Flask app in a native window using pywebview.
 
-3. **Initialize the database**
-   The database will be automatically created in the `instance/` folder when you first run the app. However, if you want to explicitly initialize it:
-   ```bash
-   python scripts/init_db.py
-   ```
+To build a standalone desktop application:
 
-4. **Run the application**
-   ```bash
-   python run.py
-   ```
-   
-   The app will be available at `http://localhost:5003`
+**On macOS:**
+- Make sure PyInstaller is installed: `pip install pyinstaller`
+- Run the build script: `./build_scripts/build_mac.sh`
+- The app bundle will be in `dist/Ape Wellness Tracker.app`
 
-### First Time Setup
-
-After starting the app for the first time, you may want to:
-- Create an admin user: `python scripts/create_admin.py`
-- Create a test user: `python scripts/create_user.py`
-- Seed sample data: `python scripts/seed_data.py`
-
-## 💻 Desktop Application
-
-The app can be packaged as a standalone desktop application for both macOS and Windows.
-
-### Running as Desktop App (Development)
-
-To run the app in a desktop window during development:
-
+You can also create a DMG file for distribution:
 ```bash
-python desktop_app.py
+hdiutil create -volname "Ape Wellness Tracker" \
+  -srcfolder "dist/Ape Wellness Tracker.app" \
+  -ov -format UDZO "dist/Ape Wellness Tracker.dmg"
 ```
 
-This will launch the Flask app in a native desktop window using pywebview.
+**On Windows:**
+- Install PyInstaller: `pip install pyinstaller`
+- Run the build script: `.\build_scripts\build_windows.bat`
+- The executable will be at `dist\Ape Wellness Tracker.exe`
 
-### Building Standalone Desktop Applications
+The desktop versions are standalone executables that don't require Python to be installed on the end user's machine. Everything is bundled together, including the database which gets stored locally in the app's instance folder.
 
-#### macOS
+## Project Structure
 
-1. **Install build dependencies:**
-   ```bash
-   pip install pyinstaller
-   ```
+The Flask app code lives in the `backend/` folder. Routes, templates, static files, models, and forms are all organized there. The database and other instance-specific files go in `instance/`, which gets created automatically when you first run the app.
 
-2. **Run the build script:**
-   ```bash
-   ./build_scripts/build_mac.sh
-   ```
-
-3. **The application bundle will be created at:**
-   ```
-   dist/Ape Wellness Tracker.app
-   ```
-
-4. **To test the app:**
-   ```bash
-   open "dist/Ape Wellness Tracker.app"
-   ```
-
-5. **Optional: Create a DMG installer:**
-   ```bash
-   hdiutil create -volname "Ape Wellness Tracker" \
-     -srcfolder "dist/Ape Wellness Tracker.app" \
-     -ov -format UDZO "dist/Ape Wellness Tracker.dmg"
-   ```
-
-#### Windows
-
-1. **Install build dependencies:**
-   ```powershell
-   pip install pyinstaller
-   ```
-
-2. **Run the build script:**
-   ```powershell
-   .\build_scripts\build_windows.bat
-   ```
-
-3. **The executable will be created at:**
-   ```
-   dist\Ape Wellness Tracker.exe
-   ```
-
-### Desktop App Features
-
-- ✅ Native window (no browser required)
-- ✅ Cross-platform (macOS and Windows)
-- ✅ Standalone executable (no Python installation needed for end users)
-- ✅ All dependencies bundled
-- ✅ Database stored locally in the app's instance folder
-
-## 🗂 Project Structure
-
-This app uses Flask to serve both backend logic and frontend UI. All app code lives inside the `backend/` folder, while the database and configuration files live in the `instance/` folder.
-```
-ape-wellness-tracker/
-├── backend/                 # Flask app logic and structure
-│   ├── __init__.py          # App factory that initializes Flask
-│   ├── routes/              # Flask route handlers (views)
-│   ├── templates/           # HTML templates rendered by Flask
-│   ├── static/              # CSS, JS, and image assets
-│   ├── models/              # Database models
-│   └── forms/               # Form classes using Flask-WTF
-│
-├── scripts/                 # Utility and management scripts
-│   ├── init_db.py           # Database initialization
-│   ├── create_admin.py      # Create admin users
-│   ├── seed_data.py         # Seed sample data
-│   └── migrate_*.py         # Database migration scripts
-│
-├── build_scripts/           # Build and packaging scripts
-│   ├── build_desktop.py     # PyInstaller build script
-│   ├── build_mac.sh         # macOS build script
-│   ├── build_windows.bat    # Windows build script
-│   └── package_*.py         # Distribution packaging scripts
-│
-├── config/                  # Configuration files
-│   └── export_config.py     # Export system configuration
-│
-├── docs/                    # Documentation files
-│   ├── DESKTOP_BUILD.md     # Desktop build instructions
-│   └── *.md                 # Additional documentation
-│
-├── tests/                   # Test files
-│
-├── instance/                # Instance-specific files (created automatically)
-│   └── database.db          # SQLite database file
-│
-├── run.py                   # Main entry point to start the Flask app
-├── desktop_app.py           # Desktop application entry point (pywebview)
-├── launch_desktop.py        # Desktop app launcher
-├── requirements.txt         # Python dependencies
-└── LICENSE                  # License file
+Utility scripts are in `scripts/`, build scripts for packaging the desktop app are in `build_scripts/`, and configuration files are in `config/`. The main entry point is `run.py`, and `desktop_app.py` is what you use to run it as a desktop application.

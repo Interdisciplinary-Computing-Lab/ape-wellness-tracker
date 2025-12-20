@@ -155,6 +155,24 @@ def launch_with_pywebview(debug_mode: bool) -> None:
     
     print(f"Opening webview window with URL: {server_url}", file=sys.stderr)
 
+    # Enable downloads in webview (required for file downloads in desktop app)
+    # Note: On macOS, downloads may not work natively
+    webview.settings["ALLOW_DOWNLOADS"] = True
+
+    # Create API class for JavaScript-Python bridge to handle downloads
+    class DownloadAPI:
+        def open_url(self, url):
+            """Open URL in system browser (for downloads on macOS)"""
+            import webbrowser
+            try:
+                webbrowser.open(url)
+                return True
+            except Exception as e:
+                print(f"Error opening URL in browser: {e}", file=sys.stderr)
+                return False
+
+    download_api = DownloadAPI()
+
     window = webview.create_window(
         "Ape Meal Tracker",
         server_url,
@@ -166,6 +184,7 @@ def launch_with_pywebview(debug_mode: bool) -> None:
         on_top=False,
         text_select=True,  # macOS option
         easy_drag=True,    # Windows option
+        js_api=download_api  # Expose API to JavaScript
     )
 
     webview.start(debug=debug_mode)

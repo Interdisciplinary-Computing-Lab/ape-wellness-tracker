@@ -55,7 +55,12 @@
                                     </div>
                                 </div>
                                 
-                                <button type="submit" class="btn btn-warning">
+                                <button type="button" class="btn btn-warning download-raw-btn" 
+                                        data-range="{{ date_range }}"
+                                        data-date="{{ custom_date }}"
+                                        data-start-date="{{ custom_start_date }}"
+                                        data-end-date="{{ custom_end_date }}"
+                                        data-action="{{ url_for('site.download_raw_data') }}">
                                     <i class="fas fa-database mr-1"></i>
                                     Download Raw Data (ZIP)
                                 </button>
@@ -75,11 +80,12 @@
                             <h5><i class="fas fa-file-csv mr-2"></i>Aggregated Report Export</h5>
                             <p class="text-muted">Summary statistics and aggregated data for the selected date range.</p>
                             
-                            <a href="{{ url_for('site.download_reports', format='csv', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}" 
-                               class="btn btn-success">
+                            <button type="button" 
+                                    class="btn btn-success download-csv-btn"
+                                    data-url="{{ url_for('site.download_reports', format='csv', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}">
                                 <i class="fas fa-download mr-1"></i>
                                 Download CSV Report
-                            </a>
+                            </button>
                             <small class="form-text text-muted d-block mt-2">
                                 <i class="fas fa-info-circle"></i> 
                                 Includes summary statistics, per-ape stats, category distribution, and daily breakdown
@@ -144,11 +150,12 @@
                             
                             <!-- Download Button -->
                             <div class="col-md-3 mb-3 d-flex align-items-end">
-                                <a href="{{ url_for('site.download_reports', format='csv', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}" 
-                                   class="btn btn-success w-100">
+                                <button type="button" 
+                                        class="btn btn-success w-100 download-csv-btn"
+                                        data-url="{{ url_for('site.download_reports', format='csv', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}">
                                     <i class="fas fa-download mr-1"></i>
                                     Download CSV
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -438,6 +445,92 @@ function handleRangeChange() {
     }
 }
 
+// Force download - use pywebview API if available, otherwise use fetch/blob method
+function forceDownload(url) {
+    console.log('Attempting to download:', url);
+    
+    // Try to use pywebview API to open in system browser (works on macOS)
+    let apiAvailable = false;
+    
+    // Check multiple ways the API might be accessible
+    if (typeof window !== 'undefined' && window.pywebview && window.pywebview.api) {
+        if (window.pywebview.api.open_url) {
+            try {
+                window.pywebview.api.open_url(url);
+                console.log('Opened download via pywebview API (window.pywebview.api)');
+                return;
+            } catch (e) {
+                console.error('Error calling window.pywebview.api.open_url:', e);
+            }
+        }
+    }
+    
+    if (typeof pywebview !== 'undefined' && pywebview.api && pywebview.api.open_url) {
+        try {
+            pywebview.api.open_url(url);
+            console.log('Opened download via pywebview API (pywebview.api)');
+            return;
+        } catch (e) {
+            console.error('Error calling pywebview.api.open_url:', e);
+        }
+    }
+    
+    // Fallback: Use fetch to download file as blob, then trigger download
+    console.log('Using fetch/blob download method');
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // Get filename from Content-Disposition header or use default
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'download';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+            
+            return response.blob().then(blob => ({ blob, filename }));
+        })
+        .then(({ blob, filename }) => {
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            console.log('Download triggered via blob URL');
+        })
+        .catch(error => {
+            console.error('Download error:', error);
+            alert('Download failed. Please try again or use the web version in your browser.');
+        });
+}
+
+function downloadViaIframe(url) {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.top = '-9999px';
+    iframe.style.left = '-9999px';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.style.border = 'none';
+    iframe.style.visibility = 'hidden';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    
+    setTimeout(() => {
+        if (iframe.parentNode) {
+            document.body.removeChild(iframe);
+        }
+    }, 5000);
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Set progress bar widths from data attributes
@@ -463,6 +556,47 @@ document.addEventListener('DOMContentLoaded', function() {
     if (endDateInput) {
         endDateInput.addEventListener('change', handleRangeChange);
     }
+    
+    // Add download handlers for CSV download buttons
+    document.querySelectorAll('.download-csv-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = this.getAttribute('data-url');
+            if (url) {
+                console.log('Download CSV URL:', url);
+                forceDownload(url);
+            }
+            return false;
+        });
+    });
+    
+    // Add download handler for raw data button
+    document.querySelectorAll('.download-raw-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const action = this.getAttribute('data-action');
+            const range = this.getAttribute('data-range');
+            const date = this.getAttribute('data-date');
+            const startDate = this.getAttribute('data-start-date');
+            const endDate = this.getAttribute('data-end-date');
+            const denormalized = document.getElementById('denormalizedCheck') ? 
+                                 (document.getElementById('denormalizedCheck').checked ? 'true' : 'false') : 'false';
+            
+            const params = new URLSearchParams({
+                range: range || 'all',
+                date: date || '',
+                start_date: startDate || '',
+                end_date: endDate || '',
+                denormalized: denormalized
+            });
+            const url = action + '?' + params.toString();
+            console.log('Download Raw Data URL:', url);
+            forceDownload(url);
+            return false;
+        });
+    });
 });
 </script>
 

@@ -84,7 +84,8 @@ def dashboard():
     # Calculate today's statistics
     from datetime import datetime, timedelta
     today = datetime.now().date()
-    today_meals = Meals.query.filter(Meals.date >= today).all()
+    today_start = datetime.combine(today, datetime.min.time())
+    today_meals = Meals.query.filter(Meals.date >= today_start).all()
     total_meals_today = len(today_meals)
     total_calories_today = sum(meal.recipe.calories for meal in today_meals)
     
@@ -1003,9 +1004,11 @@ def reports():
     """Display aggregate reports for all apes"""
     # Get date range from query parameters (default to today)
     date_range = request.args.get('range', 'today')
-    custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-    custom_start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
-    custom_end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+    # Use date() to get just the date part, avoiding timezone issues
+    today_str = datetime.now().date().strftime('%Y-%m-%d')
+    custom_date = request.args.get('date', today_str)
+    custom_start_date = request.args.get('start_date', today_str)
+    custom_end_date = request.args.get('end_date', today_str)
     
     # Calculate date range
     if date_range == 'today':
@@ -1042,9 +1045,13 @@ def reports():
     apes = Apes.query.all()
     
     # Get meals within date range
+    # Convert date objects to datetime for proper comparison with Meals.date (which is datetime)
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
+    
     meals_in_range = Meals.query.filter(
-        Meals.date >= start_date,
-        Meals.date <= end_date + timedelta(days=1)  # Include the entire end date
+        Meals.date >= start_datetime,
+        Meals.date <= end_datetime
     ).all()
     
     # Calculate aggregate statistics
@@ -1138,9 +1145,11 @@ def download_reports(format):
     """Download meal reports data in CSV format"""
     # Get the same date range parameters as the reports route
     date_range = request.args.get('range', 'today')
-    custom_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-    custom_start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
-    custom_end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+    # Use date() to get just the date part, avoiding timezone issues
+    today_str = datetime.now().date().strftime('%Y-%m-%d')
+    custom_date = request.args.get('date', today_str)
+    custom_start_date = request.args.get('start_date', today_str)
+    custom_end_date = request.args.get('end_date', today_str)
     
     # Calculate date range (same logic as reports route)
     if date_range == 'today':
@@ -1174,9 +1183,13 @@ def download_reports(format):
     
     # Get all apes and meals in range
     apes = Apes.query.all()
+    # Convert date objects to datetime for proper comparison with Meals.date (which is datetime)
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
+    
     meals_in_range = Meals.query.filter(
-        Meals.date >= start_date,
-        Meals.date <= end_date + timedelta(days=1)
+        Meals.date >= start_datetime,
+        Meals.date <= end_datetime
     ).all()
     
     # Calculate statistics (same as reports route)
@@ -1308,22 +1321,33 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     for day in daily_data:
         writer.writerow([day['date'], day['calories'], day['meals']])
     
-    # Prepare response
+    # Prepare response with UTF-8 BOM for Excel compatibility
     output.seek(0)
     mem = io.BytesIO()
+    # Add UTF-8 BOM so Excel recognizes the encoding properly
+    mem.write('\ufeff'.encode('utf-8'))
     mem.write(output.getvalue().encode('utf-8'))
     mem.seek(0)
     
     filename = f"nutrition_report_{filename_date_range}.csv"
-    return send_file(
+    response = send_file(
         mem,
         as_attachment=True,
         download_name=filename,
-        mimetype='text/csv'
+        mimetype='text/csv; charset=utf-8'
     )
+    # Add headers to ensure download works in all browsers and pywebview
+    # Use filename* for UTF-8 encoding support
+    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"; filename*=UTF-8\'\'{filename}'
+    response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
-@site.route('/reports/download/raw')
+@site.route('/reports/download/raw', methods=['GET'])
 @login_required
 def download_raw_data():
     """Download raw database data as CSV files in a zip archive with optional date filtering"""
@@ -1372,146 +1396,149 @@ def download_raw_data():
             # 1. Ape_Information.csv from Apes table
             apes_data = Apes.query.all()
             apes_csv_path = os.path.join(temp_dir, 'Ape_Information.csv')
-            with open(apes_csv_path, 'w', newline='', encoding='utf-8') as f:
+            with open(apes_csv_path, 'w', newline='', encoding='utf-8-sig') as f:  # utf-8-sig adds BOM for Excel
                 apes_writer = csv.writer(f)
-            # Write header
-            apes_writer.writerow(['id', 'ape_name', 'birthday', 'weight', 'mother', 'image_filename', 'image_mime_type', 'is_archived', 'archived_at'])
-            # Write data rows
-            for ape in apes_data:
-                apes_writer.writerow([
-                    ape.id,
-                    ape.ape_name,
-                    ape.birthday.strftime('%Y-%m-%d') if ape.birthday else '',
-                    ape.weight,
-                    ape.mother,
-                    ape.image_filename,
-                    ape.image_mime_type,
-                    ape.is_archived,
-                    ape.archived_at.strftime('%Y-%m-%d %H:%M:%S') if ape.archived_at else ''
-                ])
+                # Write header
+                apes_writer.writerow(['id', 'ape_name', 'birthday', 'weight', 'mother', 'image_filename', 'image_mime_type', 'is_archived', 'archived_at'])
+                # Write data rows
+                for ape in apes_data:
+                    apes_writer.writerow([
+                        ape.id,
+                        ape.ape_name,
+                        ape.birthday.strftime('%Y-%m-%d') if ape.birthday else '',
+                        ape.weight,
+                        ape.mother,
+                        ape.image_filename,
+                        ape.image_mime_type,
+                        ape.is_archived,
+                        ape.archived_at.strftime('%Y-%m-%d %H:%M:%S') if ape.archived_at else ''
+                    ])
             
             # 2. Meal_Logs.csv from Meals table (with optional date filtering)
             meals_query = Meals.query
             if start_date and end_date:
+                # Convert date objects to datetime for proper comparison
+                start_datetime = datetime.combine(start_date, datetime.min.time())
+                end_datetime = datetime.combine(end_date, datetime.max.time())
                 meals_query = meals_query.filter(
-                    db.func.date(Meals.date) >= start_date,
-                    db.func.date(Meals.date) <= end_date
+                    Meals.date >= start_datetime,
+                    Meals.date <= end_datetime
                 )
             meals_data = meals_query.all()
             meals_csv_path = os.path.join(temp_dir, 'Meal_Logs.csv')
-            with open(meals_csv_path, 'w', newline='', encoding='utf-8') as f:
+            with open(meals_csv_path, 'w', newline='', encoding='utf-8-sig') as f:  # utf-8-sig adds BOM for Excel
                 meals_writer = csv.writer(f)
-            # Write header
-            meals_writer.writerow(['id', 'ape_id', 'recipe_id', 'date', 'feeding_period', 'user_id'])
-            # Write data rows
-            for meal in meals_data:
-                meals_writer.writerow([
-                    meal.id,
-                    meal.ape_id,
-                    meal.recipe_id,
-                    meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
-                    meal.feeding_period if meal.feeding_period else '',
-                    meal.user_id
-                ])
+                # Write header
+                meals_writer.writerow(['id', 'ape_id', 'recipe_id', 'date', 'feeding_period', 'user_id'])
+                # Write data rows
+                for meal in meals_data:
+                    meals_writer.writerow([
+                        meal.id,
+                        meal.ape_id,
+                        meal.recipe_id,
+                        meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
+                        meal.feeding_period if meal.feeding_period else '',
+                        meal.user_id
+                    ])
             
             # 3. Meal_Definitions.csv from Recipe table
             recipes_data = Recipe.query.all()
             recipes_csv_path = os.path.join(temp_dir, 'Meal_Definitions.csv')
-            with open(recipes_csv_path, 'w', newline='', encoding='utf-8') as f:
+            with open(recipes_csv_path, 'w', newline='', encoding='utf-8-sig') as f:  # utf-8-sig adds BOM for Excel
                 recipes_writer = csv.writer(f)
-            # Write header
-            recipes_writer.writerow(['id', 'meal_name', 'description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_id'])
-            # Write data rows
-            for recipe in recipes_data:
-                recipes_writer.writerow([
-                    recipe.id,
-                    recipe.meal_name,
-                    recipe.description,
-                    recipe.calories,
-                    recipe.quantity,
-                    recipe.unit_of_measurement,
-                    recipe.source,
-                    recipe.food_category,
-                    recipe.category_id
-                ])
+                # Write header
+                recipes_writer.writerow(['id', 'meal_name', 'description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_id'])
+                # Write data rows
+                for recipe in recipes_data:
+                    recipes_writer.writerow([
+                        recipe.id,
+                        recipe.meal_name,
+                        recipe.description,
+                        recipe.calories,
+                        recipe.quantity,
+                        recipe.unit_of_measurement,
+                        recipe.source,
+                        recipe.food_category,
+                        recipe.category_id
+                    ])
             
             # 4. Food_Categories.csv from FoodCategory table
             categories_data = FoodCategory.query.all()
             categories_csv_path = os.path.join(temp_dir, 'Food_Categories.csv')
-            with open(categories_csv_path, 'w', newline='', encoding='utf-8') as f:
+            with open(categories_csv_path, 'w', newline='', encoding='utf-8-sig') as f:  # utf-8-sig adds BOM for Excel
                 categories_writer = csv.writer(f)
-            # Write header
-            categories_writer.writerow(['id', 'name', 'description', 'icon', 'color', 'is_active', 'sort_order', 'created_at', 'updated_at'])
-            # Write data rows
-            for category in categories_data:
-                categories_writer.writerow([
-                    category.id,
-                    category.name,
-                    category.description,
-                    category.icon,
-                    category.color,
-                    category.is_active,
-                    category.sort_order,
-                    category.created_at.strftime('%Y-%m-%d %H:%M:%S') if category.created_at else '',
-                    category.updated_at.strftime('%Y-%m-%d %H:%M:%S') if category.updated_at else ''
-                ])
+                # Write header
+                categories_writer.writerow(['id', 'name', 'description', 'icon', 'color', 'is_active', 'sort_order', 'created_at', 'updated_at'])
+                # Write data rows
+                for category in categories_data:
+                    categories_writer.writerow([
+                        category.id,
+                        category.name,
+                        category.description,
+                        category.icon,
+                        category.color,
+                        category.is_active,
+                        category.sort_order,
+                        category.created_at.strftime('%Y-%m-%d %H:%M:%S') if category.created_at else '',
+                        category.updated_at.strftime('%Y-%m-%d %H:%M:%S') if category.updated_at else ''
+                    ])
             
             # 5. Denormalized export (all meal data in one table) - optional
             if include_denormalized:
                 denormalized_csv_path = os.path.join(temp_dir, 'Meal_Data_Denormalized.csv')
-                with open(denormalized_csv_path, 'w', newline='', encoding='utf-8') as f:
+                with open(denormalized_csv_path, 'w', newline='', encoding='utf-8-sig') as f:  # utf-8-sig adds BOM for Excel
                     denormalized_writer = csv.writer(f)
-                # Write header with all relevant fields
-                denormalized_writer.writerow([
-                    'meal_id', 'meal_date', 'feeding_period',
-                    'ape_id', 'ape_name', 'ape_birthday', 'ape_age_at_meal', 'ape_weight', 'ape_mother',
-                    'recipe_id', 'meal_name', 'meal_description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_name',
-                    'user_id', 'logged_by_email'
-                ])
-                
-                # Create lookup dictionaries for performance
-                apes_dict = {ape.id: ape for ape in apes_data}
-                recipes_dict = {recipe.id: recipe for recipe in recipes_data}
-                categories_dict = {cat.id: cat for cat in categories_data}
-                users_dict = {user.id: user for user in User.query.all()}
-                
-                # Write data rows
-                for meal in meals_data:
-                    ape = apes_dict.get(meal.ape_id)
-                    recipe = recipes_dict.get(meal.recipe_id)
-                    category = categories_dict.get(recipe.category_id) if recipe and recipe.category_id else None
-                    user = users_dict.get(meal.user_id)
-                    
-                    # Calculate age at meal time
-                    age_at_meal = None
-                    if ape and ape.birthday and meal.date:
-                        meal_date = meal.date.date() if isinstance(meal.date, datetime) else meal.date
-                        age_at_meal = meal_date.year - ape.birthday.year
-                        if meal_date < date(meal_date.year, ape.birthday.month, ape.birthday.day):
-                            age_at_meal -= 1
-                    
+                    # Write header with all relevant fields
                     denormalized_writer.writerow([
-                        meal.id,
-                        meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
-                        meal.feeding_period if meal.feeding_period else '',
-                        meal.ape_id,
-                        ape.ape_name if ape else '',
-                        ape.birthday.strftime('%Y-%m-%d') if ape and ape.birthday else '',
-                        age_at_meal if age_at_meal is not None else '',
-                        ape.weight if ape else '',
-                        ape.mother if ape else '',
-                        meal.recipe_id,
-                        recipe.meal_name if recipe else '',
-                        recipe.description if recipe else '',
-                        recipe.calories if recipe else '',
-                        recipe.quantity if recipe else '',
-                        recipe.unit_of_measurement if recipe else '',
-                        recipe.source if recipe else '',
-                        recipe.food_category if recipe else '',
-                        category.name if category else '',
-                        meal.user_id,
-                        user.email if user else ''
+                        'meal_id', 'meal_date', 'feeding_period',
+                        'ape_id', 'ape_name', 'ape_birthday', 'ape_age_at_meal', 'ape_weight', 'ape_mother',
+                        'recipe_id', 'meal_name', 'meal_description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_name',
+                        'user_id', 'logged_by_email'
                     ])
+                    
+                    # Create lookup dictionaries for performance
+                    apes_dict = {ape.id: ape for ape in apes_data}
+                    recipes_dict = {recipe.id: recipe for recipe in recipes_data}
+                    categories_dict = {cat.id: cat for cat in categories_data}
+                    users_dict = {user.id: user for user in User.query.all()}
+                    
+                    # Write data rows
+                    for meal in meals_data:
+                        ape = apes_dict.get(meal.ape_id)
+                        recipe = recipes_dict.get(meal.recipe_id)
+                        category = categories_dict.get(recipe.category_id) if recipe and recipe.category_id else None
+                        user = users_dict.get(meal.user_id)
+                        
+                        # Calculate age at meal time
+                        age_at_meal = None
+                        if ape and ape.birthday and meal.date:
+                            meal_date = meal.date.date() if isinstance(meal.date, datetime) else meal.date
+                            age_at_meal = meal_date.year - ape.birthday.year
+                            if meal_date < date(meal_date.year, ape.birthday.month, ape.birthday.day):
+                                age_at_meal -= 1
+                        
+                        denormalized_writer.writerow([
+                            meal.id,
+                            meal.date.strftime('%Y-%m-%d %H:%M:%S') if meal.date else '',
+                            meal.feeding_period if meal.feeding_period else '',
+                            meal.ape_id,
+                            ape.ape_name if ape else '',
+                            ape.birthday.strftime('%Y-%m-%d') if ape and ape.birthday else '',
+                            age_at_meal if age_at_meal is not None else '',
+                            ape.weight if ape else '',
+                            ape.mother if ape else '',
+                            meal.recipe_id,
+                            recipe.meal_name if recipe else '',
+                            recipe.description if recipe else '',
+                            recipe.calories if recipe else '',
+                            recipe.quantity if recipe else '',
+                            recipe.unit_of_measurement if recipe else '',
+                            recipe.source if recipe else '',
+                            recipe.food_category if recipe else '',
+                            category.name if category else '',
+                            meal.user_id,
+                            user.email if user else ''
+                        ])
                 
             # Step 2: Execute the Python reporting script
             # Calculate path: from backend/routes/main.py -> project root -> scripts/
@@ -1542,10 +1569,12 @@ def download_raw_data():
                 if include_denormalized:
                     csv_files.append('Meal_Data_Denormalized.csv')
                 
+                files_added = 0
                 for csv_file in csv_files:
                     csv_path = os.path.join(temp_dir, csv_file)
                     if os.path.exists(csv_path):
                         zip_file.write(csv_path, csv_file)
+                        files_added += 1
                 
                 # Add Excel files if they were generated
                 excel_files = [
@@ -1556,9 +1585,18 @@ def download_raw_data():
                     excel_path = os.path.join(temp_dir, excel_file)
                     if os.path.exists(excel_path):
                         zip_file.write(excel_path, excel_file)
+                        files_added += 1
+                
+                # Ensure at least some files were added
+                if files_added == 0:
+                    raise ValueError("No files were generated for download")
             
             # Prepare the zip file for download
             zip_buffer.seek(0)
+            
+            # Verify zip file is not empty
+            if zip_buffer.getvalue() == b'':
+                raise ValueError("Generated zip file is empty")
             
             # Generate filename with timestamp and date range info
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -1570,12 +1608,21 @@ def download_raw_data():
                     date_suffix = f"_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}"
             filename = f"bonobo_feeding_log_raw_data{date_suffix}_{timestamp}.zip"
             
-            return send_file(
+            response = send_file(
                 zip_buffer,
                 as_attachment=True,
                 download_name=filename,
                 mimetype='application/zip'
             )
+            # Add headers to ensure download works in all browsers and pywebview
+            # Use filename* for UTF-8 encoding support
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}"; filename*=UTF-8\'\'{filename}'
+            response.headers['Content-Type'] = 'application/zip'
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            response.headers['X-Content-Type-Options'] = 'nosniff'
+            return response
         
         finally:
             # Step 4: Cleanup - remove temporary directory
@@ -1585,6 +1632,10 @@ def download_raw_data():
                 print(f"Warning: Failed to cleanup temp directory {temp_dir}: {cleanup_error}", file=sys.stderr)
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in download_raw_data: {str(e)}", file=sys.stderr)
+        print(f"Traceback: {error_details}", file=sys.stderr)
         flash(f'Error generating raw data download: {str(e)}', 'error')
         return redirect(url_for('site.reports'))
 

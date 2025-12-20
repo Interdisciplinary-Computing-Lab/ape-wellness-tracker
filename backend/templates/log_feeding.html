@@ -652,11 +652,14 @@ document.addEventListener('DOMContentLoaded', function() {
         item.classList.add('hidden');
     });
     
-    // Initialize date field with today's date
-    const today = new Date().toISOString().split('T')[0];
+    // Initialize date field with today's date (using local timezone, not UTC)
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + 
+                     String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                     String(today.getDate()).padStart(2, '0');
     const feedingDateEl = document.getElementById('feedingDate');
     if (feedingDateEl) {
-        feedingDateEl.value = today;
+        feedingDateEl.value = todayStr;
     }
     
     // Pre-fill custom food if provided
@@ -1429,10 +1432,21 @@ function saveFeeding() {
     
     const dateEl = document.getElementById('feedingDate');
     const periodEl = document.getElementById('feedingPeriod');
+    // Get date in local timezone format (YYYY-MM-DD)
+    let dateValue = '';
+    if (dateEl && dateEl.value) {
+        dateValue = dateEl.value;
+    } else {
+        // Fallback to today in local timezone
+        const today = new Date();
+        dateValue = today.getFullYear() + '-' + 
+                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(today.getDate()).padStart(2, '0');
+    }
     const feedingData = {
         ape_ids: Array.from(selectedApes),
         feeding_items: transformedItems,
-        date: dateEl ? dateEl.value : new Date().toISOString().split('T')[0],
+        date: dateValue,
         feeding_period: periodEl ? periodEl.value : 'morning'
     };
     
@@ -1535,7 +1549,9 @@ document.addEventListener('keypress', function(e) {
 function setDateToYesterday() {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const dateStr = yesterday.toISOString().split('T')[0];
+    const dateStr = yesterday.getFullYear() + '-' + 
+                    String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(yesterday.getDate()).padStart(2, '0');
     const feedingDateEl = document.getElementById('feedingDate');
     const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
     if (feedingDateEl) feedingDateEl.value = dateStr;
@@ -1543,17 +1559,22 @@ function setDateToYesterday() {
 }
 
 function setDateToToday() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + 
+                     String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                     String(today.getDate()).padStart(2, '0');
     const feedingDateEl = document.getElementById('feedingDate');
     const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
-    if (feedingDateEl) feedingDateEl.value = today;
-    if (feedingDateSummaryEl) feedingDateSummaryEl.value = today;
+    if (feedingDateEl) feedingDateEl.value = todayStr;
+    if (feedingDateSummaryEl) feedingDateSummaryEl.value = todayStr;
 }
 
 function setDateToTomorrow() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = tomorrow.toISOString().split('T')[0];
+    const dateStr = tomorrow.getFullYear() + '-' + 
+                    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(tomorrow.getDate()).padStart(2, '0');
     const feedingDateEl = document.getElementById('feedingDate');
     const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
     if (feedingDateEl) feedingDateEl.value = dateStr;
