@@ -17,3 +17,4 @@ openpyxl>=3.0.0
 flaskwebgui>=1.0.0
 pyinstaller>=5.0.0
 pywebview>=4.4.1
+python-dotenv>=1.0.0
