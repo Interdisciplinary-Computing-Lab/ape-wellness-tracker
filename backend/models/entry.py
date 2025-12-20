@@ -5,13 +5,24 @@ from datetime import datetime, date
 from flask import url_for
 import uuid
 
-# Feeding period constants
-FEEDING_PERIODS = {
+# Feeding period constants - loaded from config (with fallback defaults)
+# Loaded lazily to avoid circular import issues
+FEEDING_PERIODS_DEFAULT = {
     'morning': 'Morning (6 AM - 12 PM)',
     'afternoon': 'Afternoon (12 PM - 6 PM)', 
     'evening': 'Evening (6 PM - 12 AM)',
     'night': 'Night (12 AM - 6 AM)'
 }
+
+def get_feeding_periods():
+    """Get feeding periods from config file, with fallback to defaults"""
+    try:
+        from backend.utils.config_loader import get_feeding_periods as _get_feeding_periods
+        return _get_feeding_periods()
+    except (ImportError, AttributeError):
+        return FEEDING_PERIODS_DEFAULT
+
+FEEDING_PERIODS = get_feeding_periods()
 
 class Apes(db.Model):
     """
@@ -121,6 +132,8 @@ class Recipe(db.Model):
         source (str): Data source for the nutritional information (e.g., "USDA Foundation Foods").
         food_category (str): Category of food (fruits, vegetables, protein, etc.).
         category_id (int): Foreign key to FoodCategory.
+        protein_g (float): Protein content in grams (default: 2.0).
+        fiber_g (float): Fiber content in grams (default: 1.0).
     """
     __tablename__ = 'recipe'
     id = db.Column(db.Integer, primary_key=True)
@@ -132,6 +145,8 @@ class Recipe(db.Model):
     source = db.Column(db.String(200), nullable=True)
     food_category = db.Column(db.String(50), nullable=True, default='Other')  # Legacy field for backward compatibility
     category_id = db.Column(db.Integer, sa.ForeignKey('food_categories.id'), nullable=True)
+    protein_g = db.Column(db.Float, nullable=True, default=2.0)  # Protein in grams
+    fiber_g = db.Column(db.Float, nullable=True, default=1.0)  # Fiber in grams
 
     # Example constraint: calories must be >=0
     __table_args__ = (
@@ -184,7 +199,9 @@ class Meals(db.Model):
     def feeding_period_display(self):
         """Get the display name for the feeding period"""
         if self.feeding_period:
-            return FEEDING_PERIODS.get(self.feeding_period, self.feeding_period)
+            # Reload periods in case config changed (though this is rare)
+            periods = get_feeding_periods()
+            return periods.get(self.feeding_period, self.feeding_period)
         return "Not specified"
 
 
