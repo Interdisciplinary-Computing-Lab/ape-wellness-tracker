@@ -39,9 +39,9 @@ def migrate_recipe_table():
                     ALTER TABLE recipe 
                     ADD COLUMN quantity REAL DEFAULT 1.0 NOT NULL
                 """))
-                print("✓ Successfully added quantity column")
+                print(" Successfully added quantity column")
             else:
-                print("✓ quantity column already exists")
+                print(" quantity column already exists")
             
             # Add unit_of_measurement column if it doesn't exist
             if 'unit_of_measurement' not in columns:
@@ -50,9 +50,9 @@ def migrate_recipe_table():
                     ALTER TABLE recipe 
                     ADD COLUMN unit_of_measurement VARCHAR(50)
                 """))
-                print("✓ Successfully added unit_of_measurement column")
+                print(" Successfully added unit_of_measurement column")
             else:
-                print("✓ unit_of_measurement column already exists")
+                print(" unit_of_measurement column already exists")
             
             # Add source column if it doesn't exist
             if 'source' not in columns:
@@ -61,9 +61,9 @@ def migrate_recipe_table():
                     ALTER TABLE recipe 
                     ADD COLUMN source VARCHAR(200)
                 """))
-                print("✓ Successfully added source column")
+                print(" Successfully added source column")
             else:
-                print("✓ source column already exists")
+                print(" source column already exists")
             
             # Update existing records to have quantity = 1.0 if it's NULL (shouldn't happen, but just in case)
             db.session.execute(text("""
@@ -73,7 +73,7 @@ def migrate_recipe_table():
             """))
             
             db.session.commit()
-            print("\n✓ Successfully migrated recipe table")
+            print("\n Successfully migrated recipe table")
             
             # Verify the columns were added
             result = db.session.execute(text("PRAGMA table_info(recipe)"))
@@ -83,20 +83,20 @@ def migrate_recipe_table():
             all_present = all(col in new_columns for col in required_columns)
             
             if all_present:
-                print("✓ Column verification successful")
+                print(" Column verification successful")
                 print("\nNew columns in recipe table:")
                 for col in required_columns:
                     print(f"  - {col}")
                 return True
             else:
-                print("❌ Column verification failed")
+                print(" Column verification failed")
                 missing = [col for col in required_columns if col not in new_columns]
                 print(f"Missing columns: {', '.join(missing)}")
                 return False
                 
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Migration failed: {str(e)}")
+            print(f" Migration failed: {str(e)}")
             import traceback
             traceback.print_exc()
             return False
@@ -106,13 +106,13 @@ def main():
     success = migrate_recipe_table()
     
     if success:
-        print("\n✓ Recipe table migration completed successfully!")
+        print("\n Recipe table migration completed successfully!")
         print("The application now supports:")
         print("  - Partial quantities (e.g., 0.5 cups)")
         print("  - Unit of measurement tracking (e.g., '1 cup', '1 piece', '100g')")
         print("  - Data source attribution (e.g., 'USDA Foundation Foods')")
     else:
-        print("\n❌ Recipe table migration failed!")
+        print("\n Recipe table migration failed!")
         sys.exit(1)
 
 if __name__ == '__main__':

@@ -28,13 +28,13 @@ def setup_roles():
                 new_role = Role(name=role_name, description=description)
                 db.session.add(new_role)
                 created_roles.append(role_name)
-                print(f"✅ Created role: {role_name}")
+                print(f"Created role: {role_name}")
             else:
-                print(f"ℹ️  Role already exists: {role_name}")
+                print(f"Role already exists: {role_name}")
         
         if created_roles:
             db.session.commit()
-            print(f"\n✅ Created {len(created_roles)} new roles")
+            print(f"\nCreated {len(created_roles)} new roles")
         
         return len(created_roles)
 
@@ -93,13 +93,13 @@ def setup_apes():
                 new_ape = Apes(**ape_data)
                 db.session.add(new_ape)
                 created_apes.append(ape_data['ape_name'])
-                print(f"✅ Created ape: {ape_data['ape_name']}")
+                print(f"Created ape: {ape_data['ape_name']}")
             else:
-                print(f"ℹ️  Ape already exists: {ape_data['ape_name']}")
+                print(f"Ape already exists: {ape_data['ape_name']}")
         
         if created_apes:
             db.session.commit()
-            print(f"\n✅ Created {len(created_apes)} new apes")
+            print(f"\nCreated {len(created_apes)} new apes")
         
         return len(created_apes)
 
@@ -126,26 +126,26 @@ def setup_admin_user():
             db.session.add(admin_user)
             db.session.commit()
             
-            print("✅ Admin user created successfully!")
+            print("Admin user created successfully!")
             print("Email: admin@apeinitiative.org")
             print("Password: admin123")
             print("Role: Admin")
             return True
         else:
-            print(f"ℹ️  {len(existing_users)} users already exist")
+            print(f"{len(existing_users)} users already exist")
             
             # Check if any user has admin role
             admin_role = Role.query.filter_by(name='Admin').first()
             if admin_role:
                 admin_users = [user for user in existing_users if admin_role in user.roles]
                 if not admin_users:
-                    print("⚠️  No users have admin role. Making first user admin...")
+                    print("Warning: No users have admin role. Making first user admin...")
                     first_user = existing_users[0]
                     first_user.roles.append(admin_role)
                     db.session.commit()
-                    print(f"✅ {first_user.email} is now an admin!")
+                    print(f"{first_user.email} is now an admin!")
                 else:
-                    print(f"✅ {len(admin_users)} admin user(s) found")
+                    print(f"{len(admin_users)} admin user(s) found")
             return False
 
 def system_status():
@@ -180,7 +180,7 @@ def system_status():
 
 def main():
     """Main setup function"""
-    print("🐒 Ape Wellness Tracker - System Setup")
+    print("Ape Wellness Tracker - System Setup")
     print("="*50)
     
     with app.app_context():
@@ -200,7 +200,7 @@ def main():
         system_status()
         
         print("\n" + "="*50)
-        print("✅ SYSTEM SETUP COMPLETE!")
+        print("SYSTEM SETUP COMPLETE!")
         print("="*50)
         print("\nNext steps:")
         print("1. Run the application: python run.py")

@@ -68,7 +68,7 @@ def remove_redundant_items():
                     recipes = Recipe.query.filter_by(category_id=category.id).all()
                     recipe_count = len(recipes)
                     if recipe_count > 0:
-                        print(f"⚠️  Warning: Category '{category.name}' is used by {recipe_count} recipe(s).")
+                        print(f"  Warning: Category '{category.name}' is used by {recipe_count} recipe(s).")
                         print(f"   Setting category_id to NULL for these recipes...")
                         for recipe in recipes:
                             recipe.category_id = None
@@ -83,7 +83,7 @@ def remove_redundant_items():
             # Commit changes
             db.session.commit()
             
-            print("\n✓ Removal completed successfully!")
+            print("\n Removal completed successfully!")
             if removed_foods:
                 print(f"Removed food items: {', '.join(removed_foods)}")
             else:
@@ -98,7 +98,7 @@ def remove_redundant_items():
                 
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Removal failed: {str(e)}")
+            print(f" Removal failed: {str(e)}")
             import traceback
             traceback.print_exc()
             return False
@@ -108,9 +108,9 @@ def main():
     success = remove_redundant_items()
     
     if success:
-        print("\n✓ Redundant items removal completed successfully!")
+        print("\n Redundant items removal completed successfully!")
     else:
-        print("\n❌ Redundant items removal failed!")
+        print("\n Redundant items removal failed!")
         sys.exit(1)
 
 if __name__ == '__main__':

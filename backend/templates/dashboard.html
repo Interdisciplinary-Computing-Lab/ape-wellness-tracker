@@ -8,7 +8,7 @@
             {% if birthday_apes %}
             <div class="alert alert-success alert-dismissible">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                <h5><i class="icon fas fa-birthday-cake"></i> Happy Birthday! 🎉</h5>
+                <h5><i class="icon fas fa-birthday-cake"></i> Happy Birthday!</h5>
                 Today is the birthday of: 
                 {% for ape in birthday_apes %}
                     <strong>{{ ape.ape_name }}</strong>{% if not loop.last %}, {% endif %}

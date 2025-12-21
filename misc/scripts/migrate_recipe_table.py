@@ -34,23 +34,23 @@ def migrate_recipe_table():
             """))
             
             db.session.commit()
-            print("✓ Successfully added category_id column to recipe table")
+            print(" Successfully added category_id column to recipe table")
             
             # Verify the column was added
             result = db.session.execute(text("PRAGMA table_info(recipe)"))
             columns = [row[1] for row in result.fetchall()]
             
             if 'category_id' in columns:
-                print("✓ Column verification successful")
+                print(" Column verification successful")
             else:
-                print("❌ Column verification failed")
+                print(" Column verification failed")
                 return False
                 
             return True
             
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Migration failed: {str(e)}")
+            print(f" Migration failed: {str(e)}")
             return False
 
 def main():
@@ -58,10 +58,10 @@ def main():
     success = migrate_recipe_table()
     
     if success:
-        print("\n✓ Recipe table migration completed successfully!")
+        print("\n Recipe table migration completed successfully!")
         print("The application should now work with the new food category system.")
     else:
-        print("\n❌ Recipe table migration failed!")
+        print("\n Recipe table migration failed!")
         sys.exit(1)
 
 if __name__ == '__main__':

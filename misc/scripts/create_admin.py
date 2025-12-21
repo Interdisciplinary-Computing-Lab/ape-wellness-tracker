@@ -19,9 +19,9 @@ def create_admin_user():
             admin_role = Role(name='Admin', description='Administrator with full access')
             db.session.add(admin_role)
             db.session.commit()
-            print("✅ Admin role created successfully!")
+            print(" Admin role created successfully!")
         else:
-            print("✅ Admin role already exists")
+            print(" Admin role already exists")
         
         # Check existing users
         existing_users = User.query.all()
@@ -33,10 +33,10 @@ def create_admin_user():
             
             # Check if user already has admin role
             if admin_role in user.roles:
-                print(f"    ✅ {user.email} already has Admin role")
+                print(f"     {user.email} already has Admin role")
             else:
                 # Ask if user should be made admin
-                print(f"    ❌ {user.email} does not have Admin role")
+                print(f"     {user.email} does not have Admin role")
         
         # Create new admin user if no users exist
         if not existing_users:
@@ -55,7 +55,7 @@ def create_admin_user():
             db.session.add(admin_user)
             db.session.commit()
             
-            print("✅ Admin user created successfully!")
+            print(" Admin user created successfully!")
             print("Email: admin@apeinitiative.org")
             print("Password: admin123")
             print("Role: Admin")
@@ -71,7 +71,7 @@ def create_admin_user():
                 print(f"\nMaking {first_user.email} an admin...")
                 first_user.roles.append(admin_role)
                 db.session.commit()
-                print(f"✅ {first_user.email} is now an admin!")
+                print(f" {first_user.email} is now an admin!")
 
 if __name__ == "__main__":
     create_admin_user() 

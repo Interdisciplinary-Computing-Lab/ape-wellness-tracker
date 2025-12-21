@@ -33,7 +33,7 @@ def create_test_user():
             db.session.add(test_user)
             db.session.commit()
             
-            print("✅ Test user created successfully!")
+            print(" Test user created successfully!")
             print("Email: admin@apeinitiative.org")
             print("Password: password123")
         else:

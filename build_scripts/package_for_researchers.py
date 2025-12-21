@@ -55,7 +55,7 @@ def create_distribution_package():
     file_size_mb = os.path.getsize(zip_filename) / (1024 * 1024)
     
     print("=" * 60)
-    print(f"✅ Package created successfully!")
+    print(f"Package created successfully!")
     print(f"\nFile: {zip_filename}")
     print(f"Size: {file_size_mb:.1f} MB")
     print(f"\nThis package is ready to send to researchers.")
@@ -73,13 +73,13 @@ def main():
     print()
     
     if create_distribution_package():
-        print("\n✅ Ready to distribute!")
+        print("\nReady to distribute!")
         print("\nNext steps:")
         print("  1. Test the zip file by extracting it")
         print("  2. Verify the executable runs correctly")
         print("  3. Send the zip file to researchers")
     else:
-        print("\n❌ Package creation failed.")
+        print("\nPackage creation failed.")
         print("Please ensure you've built the executable first:")
         print("  python build_desktop.py")
 

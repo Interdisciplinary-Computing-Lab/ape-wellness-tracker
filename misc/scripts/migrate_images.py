@@ -25,18 +25,18 @@ def migrate_database():
     app = create_app()
     
     with app.app_context():
-        print("🔄 Starting database migration for image BLOB storage...")
+        print(" Starting database migration for image BLOB storage...")
         
         # Check if columns already exist
         inspector = db.inspect(db.engine)
         columns = [col['name'] for col in inspector.get_columns('apes')]
         
         if 'image_data' in columns and 'image_mime_type' in columns:
-            print("✅ BLOB columns already exist. Migration not needed.")
+            print(" BLOB columns already exist. Migration not needed.")
             return
         
         # Add new columns
-        print("📝 Adding new BLOB columns to apes table...")
+        print(" Adding new BLOB columns to apes table...")
         try:
             # Add image_data column
             with db.engine.connect() as conn:
@@ -45,7 +45,7 @@ def migrate_database():
                     ADD COLUMN image_data BLOB
                 """))
                 conn.commit()
-            print("✅ Added image_data column")
+            print(" Added image_data column")
             
             # Add image_mime_type column
             with db.engine.connect() as conn:
@@ -54,14 +54,14 @@ def migrate_database():
                     ADD COLUMN image_mime_type VARCHAR(100)
                 """))
                 conn.commit()
-            print("✅ Added image_mime_type column")
+            print(" Added image_mime_type column")
             
         except Exception as e:
-            print(f"❌ Error adding columns: {e}")
+            print(f" Error adding columns: {e}")
             return
         
         # Try to migrate existing image files to BLOB storage
-        print("🖼️  Attempting to migrate existing image files...")
+        print("  Attempting to migrate existing image files...")
         apes = Apes.query.all()
         migrated_count = 0
         
@@ -91,28 +91,28 @@ def migrate_database():
                         ape.image_mime_type = mime_type
                         
                         migrated_count += 1
-                        print(f"✅ Migrated image for {ape.ape_name}: {ape.image_filename}")
+                        print(f" Migrated image for {ape.ape_name}: {ape.image_filename}")
                         
                     except Exception as e:
-                        print(f"⚠️  Could not migrate image for {ape.ape_name}: {e}")
+                        print(f"  Could not migrate image for {ape.ape_name}: {e}")
                 else:
-                    print(f"⚠️  Image file not found for {ape.ape_name}: {ape.image_filename}")
+                    print(f"  Image file not found for {ape.ape_name}: {ape.image_filename}")
         
         # Commit all changes
         try:
             db.session.commit()
-            print(f"✅ Successfully migrated {migrated_count} images to BLOB storage")
+            print(f" Successfully migrated {migrated_count} images to BLOB storage")
         except Exception as e:
-            print(f"❌ Error committing changes: {e}")
+            print(f" Error committing changes: {e}")
             db.session.rollback()
             return
         
-        print("🎉 Database migration completed successfully!")
-        print("\n📋 Summary:")
+        print(" Database migration completed successfully!")
+        print("\n Summary:")
         print(f"   - Added image_data (BLOB) column")
         print(f"   - Added image_mime_type (VARCHAR) column")
         print(f"   - Migrated {migrated_count} existing images to BLOB storage")
-        print("\n💡 The application now supports:")
+        print("\n The application now supports:")
         print("   - Direct image uploads during ape creation")
         print("   - Image uploads/removal from ape profile pages")
         print("   - Secure BLOB storage in the database")
