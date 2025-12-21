@@ -9,7 +9,8 @@ import sys
 import sqlite3
 
 # Add the project root to the Python path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Script is in misc/scripts/, so go up two levels to get project root
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
 
 def migrate_recipe_table_direct():
@@ -21,7 +22,7 @@ def migrate_recipe_table_direct():
     db_path = os.path.join(instance_path, 'database.db')
     
     if not os.path.exists(db_path):
-        print(f"❌ Database file not found at: {db_path}")
+        print(f" Database file not found at: {db_path}")
         print("   The database will be created when you first run the app.")
         return False
     
@@ -35,7 +36,7 @@ def migrate_recipe_table_direct():
         columns = {row[1]: row for row in cursor.fetchall()}
         
         if not columns:
-            print("❌ Recipe table does not exist. Please run the app first to create the tables.")
+            print(" Recipe table does not exist. Please run the app first to create the tables.")
             conn.close()
             return False
         
@@ -46,9 +47,9 @@ def migrate_recipe_table_direct():
                 ALTER TABLE recipe 
                 ADD COLUMN quantity REAL DEFAULT 1.0 NOT NULL
             """)
-            print("✓ Successfully added quantity column")
+            print(" Successfully added quantity column")
         else:
-            print("✓ quantity column already exists")
+            print(" quantity column already exists")
         
         # Add unit_of_measurement column if it doesn't exist
         if 'unit_of_measurement' not in columns:
@@ -57,9 +58,9 @@ def migrate_recipe_table_direct():
                 ALTER TABLE recipe 
                 ADD COLUMN unit_of_measurement VARCHAR(50)
             """)
-            print("✓ Successfully added unit_of_measurement column")
+            print(" Successfully added unit_of_measurement column")
         else:
-            print("✓ unit_of_measurement column already exists")
+            print(" unit_of_measurement column already exists")
         
         # Add source column if it doesn't exist
         if 'source' not in columns:
@@ -68,9 +69,31 @@ def migrate_recipe_table_direct():
                 ALTER TABLE recipe 
                 ADD COLUMN source VARCHAR(200)
             """)
-            print("✓ Successfully added source column")
+            print(" Successfully added source column")
         else:
-            print("✓ source column already exists")
+            print(" source column already exists")
+        
+        # Add protein_g column if it doesn't exist
+        if 'protein_g' not in columns:
+            print("Adding protein_g column to recipe table...")
+            cursor.execute("""
+                ALTER TABLE recipe 
+                ADD COLUMN protein_g REAL DEFAULT 2.0
+            """)
+            print(" Successfully added protein_g column")
+        else:
+            print(" protein_g column already exists")
+        
+        # Add fiber_g column if it doesn't exist
+        if 'fiber_g' not in columns:
+            print("Adding fiber_g column to recipe table...")
+            cursor.execute("""
+                ALTER TABLE recipe 
+                ADD COLUMN fiber_g REAL DEFAULT 1.0
+            """)
+            print(" Successfully added fiber_g column")
+        else:
+            print(" fiber_g column already exists")
         
         # Update existing records to have quantity = 1.0 if it's NULL (shouldn't happen, but just in case)
         cursor.execute("""
@@ -79,31 +102,45 @@ def migrate_recipe_table_direct():
             WHERE quantity IS NULL
         """)
         
+        # Update existing records to have protein_g = 2.0 if it's NULL
+        cursor.execute("""
+            UPDATE recipe 
+            SET protein_g = 2.0 
+            WHERE protein_g IS NULL
+        """)
+        
+        # Update existing records to have fiber_g = 1.0 if it's NULL
+        cursor.execute("""
+            UPDATE recipe 
+            SET fiber_g = 1.0 
+            WHERE fiber_g IS NULL
+        """)
+        
         conn.commit()
         
         # Verify the columns were added
         cursor.execute("PRAGMA table_info(recipe)")
         new_columns = {row[1]: row for row in cursor.fetchall()}
         
-        required_columns = ['quantity', 'unit_of_measurement', 'source']
+        required_columns = ['quantity', 'unit_of_measurement', 'source', 'protein_g', 'fiber_g']
         all_present = all(col in new_columns for col in required_columns)
         
         if all_present:
-            print("✓ Column verification successful")
+            print(" Column verification successful")
             print("\nNew columns in recipe table:")
             for col in required_columns:
                 print(f"  - {col}")
             conn.close()
             return True
         else:
-            print("❌ Column verification failed")
+            print(" Column verification failed")
             missing = [col for col in required_columns if col not in new_columns]
             print(f"Missing columns: {', '.join(missing)}")
             conn.close()
             return False
             
     except Exception as e:
-        print(f"❌ Migration failed: {str(e)}")
+        print(f" Migration failed: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
@@ -113,14 +150,15 @@ def main():
     success = migrate_recipe_table_direct()
     
     if success:
-        print("\n✓ Recipe table migration completed successfully!")
+        print("\n Recipe table migration completed successfully!")
         print("The application now supports:")
         print("  - Partial quantities (e.g., 0.5 cups)")
         print("  - Unit of measurement tracking (e.g., '1 cup', '1 piece', '100g')")
         print("  - Data source attribution (e.g., 'USDA Foundation Foods')")
+        print("  - Protein and fiber tracking (protein_g, fiber_g)")
         print("\nYou can now run the app with: python run.py")
     else:
-        print("\n❌ Recipe table migration failed!")
+        print("\n Recipe table migration failed!")
         sys.exit(1)
 
 if __name__ == '__main__':

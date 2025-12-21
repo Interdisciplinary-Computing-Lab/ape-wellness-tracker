@@ -153,7 +153,7 @@ def archive_ape(ape_id):
     ape.is_archived = True
     ape.archived_at = datetime.now()
     db.session.commit()
-            flash(f'{ape_name} has been archived. You can view archived apes from the main menu.', 'success')
+    flash(f'{ape_name} has been archived. You can view archived apes from the main menu.', 'success')
     return redirect(url_for('site.all_apes'))
 
 

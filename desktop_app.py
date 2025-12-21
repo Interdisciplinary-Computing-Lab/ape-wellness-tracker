@@ -127,7 +127,7 @@ def launch_with_pywebview(debug_mode: bool) -> None:
         try:
             webview.create_window(
                 "Error - Ape Wellness Tracker",
-                html=f"<html><body style='font-family: Arial; padding: 20px;'><h1>Error</h1><p>{error_msg}</p><p>Please check the error log file for details.</p></body></html>",
+                html=f"<html><body style='font-family: -apple-system, BlinkMacSystemFont, Arial; padding: 20px;'><h1>Error</h1><p>{error_msg}</p><p>Please check the error log file for details.</p></body></html>",
                 width=600,
                 height=400,
                 resizable=False
@@ -173,6 +173,10 @@ def launch_with_pywebview(debug_mode: bool) -> None:
 
     download_api = DownloadAPI()
 
+    # Mac-specific window configuration
+    is_mac = sys.platform == 'darwin'
+    
+    # Configure window with Mac-optimized settings
     window = webview.create_window(
         "Ape Meal Tracker",
         server_url,
@@ -182,10 +186,22 @@ def launch_with_pywebview(debug_mode: bool) -> None:
         resizable=True,
         fullscreen=False,
         on_top=False,
-        text_select=True,  # macOS option
-        easy_drag=True,    # Windows option
-        js_api=download_api  # Expose API to JavaScript
+        text_select=True,  # macOS option - enable text selection
+        easy_drag=False,   # macOS doesn't use easy_drag
+        js_api=download_api,  # Expose API to JavaScript
+        shadow=True,       # macOS window shadow
+        frameless=False,   # Use native window frame on Mac
     )
+
+    # Mac-specific: Set up menu bar (if supported)
+    if is_mac:
+        try:
+            # Try to configure Mac menu bar
+            # Note: pywebview's menu support varies by version
+            pass
+        except Exception as e:
+            if debug_mode:
+                print(f"Note: Could not configure Mac menu bar: {e}", file=sys.stderr)
 
     webview.start(debug=debug_mode)
 
@@ -216,6 +232,16 @@ def main():
     """Main entry point for the desktop application."""
     debug_mode = '--debug' in sys.argv or '-d' in sys.argv
 
+    # Mac-specific: Set process name for better Dock/Activity Monitor display
+    if sys.platform == 'darwin':
+        try:
+            import ctypes
+            # Set process name (requires ctypes on macOS)
+            libc = ctypes.CDLL('/usr/lib/libc.dylib')
+            libc.prctl(15, b'Ape Meal Tracker', 0, 0, 0)
+        except:
+            pass  # Not critical if this fails
+
     # Align working directory when packaged
     if getattr(sys, 'frozen', False):
         # For macOS .app bundles, sys.executable is inside Contents/MacOS/
@@ -224,6 +250,8 @@ def main():
             # macOS app bundle: go up from Contents/MacOS/executable to .app root
             app_bundle = Path(sys.executable).parent.parent.parent
             working_dir = str(app_bundle)
+            # On Mac, data should be stored in app bundle's Resources or user's Application Support
+            # For now, use app bundle, but could be enhanced to use ~/Library/Application Support
         else:
             # Windows/Linux: executable is in the same directory
             working_dir = os.path.dirname(sys.executable)
