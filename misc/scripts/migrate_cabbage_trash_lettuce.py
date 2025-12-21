@@ -38,14 +38,14 @@ def migrate_cabbage_trash_lettuce():
                     print("'Cabbage' already exists. Updating its description to 'Fresh cabbage'...")
                     existing_cabbage.description = 'Fresh cabbage'
                     db.session.commit()
-                    print("✓ Updated existing Cabbage entry")
+                    print(" Updated existing Cabbage entry")
                 else:
                     # Rename "Trash Lettuce" to "Cabbage"
                     print("Renaming 'Trash Lettuce' to 'Cabbage'...")
                     trash_lettuce.meal_name = 'Cabbage'
                     trash_lettuce.description = 'Fresh cabbage'
                     db.session.commit()
-                    print("✓ Successfully renamed 'Trash Lettuce' to 'Cabbage'")
+                    print(" Successfully renamed 'Trash Lettuce' to 'Cabbage'")
             else:
                 print("'Trash Lettuce' not found. Checking if 'Cabbage' exists...")
                 existing_cabbage = Recipe.query.filter_by(meal_name='Cabbage').first()
@@ -53,7 +53,7 @@ def migrate_cabbage_trash_lettuce():
                     print("'Cabbage' already exists. Updating description...")
                     existing_cabbage.description = 'Fresh cabbage'
                     db.session.commit()
-                    print("✓ Updated Cabbage entry")
+                    print(" Updated Cabbage entry")
                 else:
                     print("Neither 'Trash Lettuce' nor 'Cabbage' found. Creating 'Cabbage'...")
                     new_cabbage = Recipe(
@@ -65,7 +65,7 @@ def migrate_cabbage_trash_lettuce():
                     )
                     db.session.add(new_cabbage)
                     db.session.commit()
-                    print("✓ Created new 'Cabbage' entry")
+                    print(" Created new 'Cabbage' entry")
             
             # Step 2: Create new "Trash Lettuce" entry with description "Brussels sprouts"
             new_trash_lettuce = Recipe.query.filter_by(meal_name='Trash Lettuce').first()
@@ -74,7 +74,7 @@ def migrate_cabbage_trash_lettuce():
                 print("'Trash Lettuce' already exists. Updating description to 'Brussels sprouts'...")
                 new_trash_lettuce.description = 'Brussels sprouts'
                 db.session.commit()
-                print("✓ Updated 'Trash Lettuce' description to 'Brussels sprouts'")
+                print(" Updated 'Trash Lettuce' description to 'Brussels sprouts'")
             else:
                 print("Creating new 'Trash Lettuce' entry with description 'Brussels sprouts'...")
                 # Brussels sprouts typically have around 38 calories per 100g, but we'll use a reasonable value
@@ -87,7 +87,7 @@ def migrate_cabbage_trash_lettuce():
                 )
                 db.session.add(new_trash_lettuce)
                 db.session.commit()
-                print("✓ Created new 'Trash Lettuce' entry with description 'Brussels sprouts'")
+                print(" Created new 'Trash Lettuce' entry with description 'Brussels sprouts'")
             
             # Verify the changes
             print("\nVerifying changes...")
@@ -95,26 +95,26 @@ def migrate_cabbage_trash_lettuce():
             trash_lettuce = Recipe.query.filter_by(meal_name='Trash Lettuce').first()
             
             if cabbage:
-                print(f"✓ Cabbage: '{cabbage.meal_name}' - Description: '{cabbage.description}'")
+                print(f" Cabbage: '{cabbage.meal_name}' - Description: '{cabbage.description}'")
             else:
-                print("❌ Cabbage not found after migration!")
+                print(" Cabbage not found after migration!")
             
             if trash_lettuce:
-                print(f"✓ Trash Lettuce: '{trash_lettuce.meal_name}' - Description: '{trash_lettuce.description}'")
+                print(f" Trash Lettuce: '{trash_lettuce.meal_name}' - Description: '{trash_lettuce.description}'")
                 # Verify searchability
                 if 'brussels sprouts' in trash_lettuce.description.lower():
-                    print("✓ Trash Lettuce can be searched by 'Brussels sprouts' (description contains it)")
+                    print(" Trash Lettuce can be searched by 'Brussels sprouts' (description contains it)")
                 else:
                     print("⚠ Warning: Trash Lettuce description may not be searchable by 'Brussels sprouts'")
             else:
-                print("❌ Trash Lettuce not found after migration!")
+                print(" Trash Lettuce not found after migration!")
             
-            print("\n✓ Migration completed successfully!")
+            print("\n Migration completed successfully!")
             return True
                 
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Migration failed: {str(e)}")
+            print(f" Migration failed: {str(e)}")
             import traceback
             traceback.print_exc()
             return False
@@ -124,13 +124,13 @@ def main():
     success = migrate_cabbage_trash_lettuce()
     
     if success:
-        print("\n✓ Cabbage and Trash Lettuce migration completed successfully!")
+        print("\n Cabbage and Trash Lettuce migration completed successfully!")
         print("Changes made:")
         print("  - 'Trash Lettuce' (Cabbage) renamed to 'Cabbage' with description 'Fresh cabbage'")
         print("  - New 'Trash Lettuce' entry created with description 'Brussels sprouts'")
         print("  - 'Trash Lettuce' can now be found by searching 'Brussels sprouts'")
     else:
-        print("\n❌ Migration failed!")
+        print("\n Migration failed!")
         sys.exit(1)
 
 if __name__ == '__main__':

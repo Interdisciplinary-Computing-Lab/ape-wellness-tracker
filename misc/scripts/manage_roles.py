@@ -32,7 +32,7 @@ def create_role(role_name, description=""):
     with app.app_context():
         existing_role = Role.query.filter_by(name=role_name).first()
         if existing_role:
-            print(f"❌ Role '{role_name}' already exists")
+            print(f" Role '{role_name}' already exists")
             return False
         
         new_role = Role(name=role_name, description=description)

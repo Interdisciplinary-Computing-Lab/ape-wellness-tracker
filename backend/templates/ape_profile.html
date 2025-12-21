@@ -14,7 +14,7 @@
             {% if ape.is_birthday_today %}
             <div class="alert alert-success alert-dismissible">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                <h5><i class="icon fas fa-birthday-cake"></i> Happy Birthday, {{ ape.ape_name }}! 🎉</h5>
+                <h5><i class="icon fas fa-birthday-cake"></i> Happy Birthday, {{ ape.ape_name }}!</h5>
                 Today is {{ ape.ape_name }}'s birthday! They are now {{ ape.age }} years old.
             </div>
             {% elif ape.days_until_birthday <= 7 %}

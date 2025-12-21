@@ -109,7 +109,7 @@ def main():
             # Create tables
             print("Creating database tables...")
             db.create_all()
-            print("✓ Database tables created successfully")
+            print(" Database tables created successfully")
             
             # Create default categories
             print("\nCreating default food categories...")
@@ -117,8 +117,8 @@ def main():
             
             # Commit changes
             db.session.commit()
-            print(f"✓ Migration completed successfully!")
-            print(f"✓ Created {created_count} new categories")
+            print(f" Migration completed successfully!")
+            print(f" Created {created_count} new categories")
             
             # Show all categories
             print("\nCurrent food categories:")
@@ -128,7 +128,7 @@ def main():
             
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Migration failed: {str(e)}")
+            print(f" Migration failed: {str(e)}")
             sys.exit(1)
 
 if __name__ == '__main__':

@@ -118,7 +118,7 @@ function confirmUnarchive(apeName, apeId) {
 
 // Delete confirmation function (Admin only)
 function confirmDelete(apeName, apeId) {
-    if (confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE ${apeName}?\n\nThis action cannot be undone and will remove all associated data including:\n- All feeding records\n- All meal history\n- Profile information\n\nType 'DELETE' to confirm:`)) {
+    if (confirm(`WARNING: Are you sure you want to PERMANENTLY DELETE ${apeName}?\n\nThis action cannot be undone and will remove all associated data including:\n- All feeding records\n- All meal history\n- Profile information\n\nType 'DELETE' to confirm:`)) {
         const confirmation = prompt(`Type 'DELETE' to confirm permanent deletion of ${apeName}:`);
         if (confirmation === 'DELETE') {
             // Create a form and submit it

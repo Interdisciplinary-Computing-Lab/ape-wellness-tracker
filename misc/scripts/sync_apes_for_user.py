@@ -70,16 +70,16 @@ def ensure_standard_apes():
                 new_ape = Apes(**ape_data)
                 db.session.add(new_ape)
                 created_count += 1
-                print(f"✅ Created ape: {ape_data['ape_name']}")
+                print(f" Created ape: {ape_data['ape_name']}")
             else:
                 existing_count += 1
-                print(f"ℹ️  Ape already exists: {ape_data['ape_name']}")
+                print(f"  Ape already exists: {ape_data['ape_name']}")
         
         if created_count > 0:
             db.session.commit()
-            print(f"\n✅ Created {created_count} new apes")
+            print(f"\n Created {created_count} new apes")
         
-        print(f"ℹ️  {existing_count} apes already existed")
+        print(f"  {existing_count} apes already existed")
         return created_count + existing_count
 
 def sync_apes_for_user(user_email=None):
@@ -91,7 +91,7 @@ def sync_apes_for_user(user_email=None):
         if user_email:
             user = User.query.filter_by(email=user_email).first()
             if not user:
-                print(f"❌ User '{user_email}' not found")
+                print(f" User '{user_email}' not found")
                 return False
             users = [user]
         else:
@@ -163,7 +163,7 @@ Examples:
         list_ape_access()
     
     else:
-        print(f"❌ Unknown command: {command}")
+        print(f" Unknown command: {command}")
         print("Run 'python sync_apes_for_user.py' for usage information")
 
 if __name__ == "__main__":

@@ -1405,7 +1405,7 @@ function saveFeeding() {
     // The backend multiplies: calories * quantity
     // So if recipe has: calories=100 for quantity=1.0 (1 cup), and user consumed 0.5 cups:
     // We should send: calories=100, quantity=0.5
-    // Backend calculates: 100 * 0.5 = 50 calories ✓
+    // Backend calculates: 100 * 0.5 = 50 calories
     //
     // But wait, the backend's quantity is a multiplier, not the actual quantity.
     // If recipe quantity=1.0 and user consumed 0.5, then multiplier = 0.5/1.0 = 0.5

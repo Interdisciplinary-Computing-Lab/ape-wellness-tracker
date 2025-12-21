@@ -153,37 +153,37 @@
                                                 <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
                                                 {% endfor %}
                                             </optgroup>
-                                            <optgroup label="🥚 Protein Sources">
+                                            <optgroup label="Protein Sources">
                                                 {% for recipe in recipes|selectattr('food_category', 'equalto', 'Protein Sources') %}
                                                 <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
                                                 {% endfor %}
                                             </optgroup>
-                                            <optgroup label="🍞 Grains & Starches">
+                                            <optgroup label="Grains & Starches">
                                                 {% for recipe in recipes|selectattr('food_category', 'equalto', 'Grains & Starches') %}
                                                 <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
                                                 {% endfor %}
                                             </optgroup>
-                                            <optgroup label="🌱 Nuts & Seeds">
+                                            <optgroup label="Nuts & Seeds">
                                                 {% for recipe in recipes|selectattr('food_category', 'equalto', 'Nuts & Seeds') %}
                                                 <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
                                                 {% endfor %}
                                             </optgroup>
-                                            <optgroup label="🧀 Dairy & Alternatives">
+                                            <optgroup label="Dairy & Alternatives">
                                                 {% for recipe in recipes|selectattr('food_category', 'equalto', 'Dairy & Alternatives') %}
                                                 <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
                                                 {% endfor %}
                                             </optgroup>
-                                            <optgroup label="🍇 Dried Fruits">
+                                            <optgroup label="Dried Fruits">
                                                 {% for recipe in recipes|selectattr('food_category', 'equalto', 'Dried Fruits') %}
                                                 <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
                                                 {% endfor %}
                                             </optgroup>
-                                            <optgroup label="🍦 Enrichment Treats">
+                                            <optgroup label="Enrichment Treats">
                                                 {% for recipe in recipes|selectattr('food_category', 'equalto', 'Enrichment Treats') %}
                                                 <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
                                                 {% endfor %}
                                             </optgroup>
-                                            <optgroup label="🍽️ Mixed Meals">
+                                            <optgroup label="Mixed Meals">
                                                 {% for recipe in recipes|selectattr('food_category', 'equalto', 'Mixed Meals & Combinations') %}
                                                 <option value="{{ recipe.id }}">{{ recipe.meal_name }} ({{ recipe.calories }} cal)</option>
                                                 {% endfor %}
