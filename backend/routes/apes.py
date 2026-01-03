@@ -4,7 +4,7 @@ Ape management routes for the Ape Wellness Tracker application.
 
 from flask import render_template, request, redirect, url_for, flash
 from backend.extensions import db
-from backend.models.entry import Apes
+from backend.models.entry import Apes, Meals
 from backend.helpers import add_to_db
 from backend.utils.file_utils import allowed_file, MAX_FILE_SIZE
 from flask_security import login_required, roles_required

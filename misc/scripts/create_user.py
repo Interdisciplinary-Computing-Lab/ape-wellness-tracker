@@ -3,14 +3,23 @@
 Script to create a test user for the Ape Wellness Tracker
 """
 
+import os
+import sys
 import uuid
-from run import app
+from pathlib import Path
+
+# Add project root to sys.path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from backend import create_app
 from backend.extensions import db
 from backend.models.entry import User, Role
 from flask_security.utils import hash_password
 
 def create_test_user():
     """Create a test user if none exists"""
+    app = create_app()
     with app.app_context():
         # Check if any users exist
         existing_users = User.query.all()

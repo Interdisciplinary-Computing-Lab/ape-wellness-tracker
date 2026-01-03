@@ -14,5 +14,9 @@ def init_security(app):
     app.config['SECURITY_SEND_PASSWORD_CHANGE_EMAIL'] = False
     app.config['SECURITY_SEND_PASSWORD_RESET_EMAIL'] = False
     
+    # Redirect after login
+    app.config['SECURITY_POST_LOGIN_VIEW'] = '/dashboard'
+    app.config['SECURITY_POST_LOGOUT_VIEW'] = '/'
+    
     # Custom templates for better user experience
     app.config['SECURITY_UNAUTHORIZED_VIEW'] = 'security.forbidden'

@@ -181,6 +181,13 @@
                             </span>
                         </div>
                         {{ login_user_form.email(class="form-control", placeholder="Email", required=true) }}
+                        {% if login_user_form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in login_user_form.email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                     
                     <div class="input-group mb-4">
@@ -190,7 +197,26 @@
                             </span>
                         </div>
                         {{ login_user_form.password(class="form-control", placeholder="Password", required=true) }}
+                        {% if login_user_form.password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in login_user_form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
+                    
+                    {% if login_user_form.errors %}
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                {% for field, errors in login_user_form.errors.items() %}
+                                    {% for error in errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
                     
                     <div class="row mb-3">
                         <div class="col-12">
@@ -239,17 +265,42 @@
     <script>
         // Auto-focus on email field
         $(document).ready(function() {
-            $('#email').focus();
+            // Focus on email field if it exists
+            var $emailField = $('#email, input[name="email"]');
+            if ($emailField.length) {
+                $emailField.focus();
+            }
             
-            // Add loading state to form submission
-            $('form').on('submit', function() {
-                $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...');
+            // Add loading state to form submission (non-blocking)
+            $('form[name="login_user_form"]').on('submit', function(e) {
+                var $button = $('button[type="submit"]');
+                // Only disable if form is valid
+                if ($(this)[0].checkValidity()) {
+                    $button.prop('disabled', true);
+                    var originalHtml = $button.html();
+                    $button.html('<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...');
+                    
+                    // Re-enable after 5 seconds in case of error
+                    setTimeout(function() {
+                        $button.prop('disabled', false).html(originalHtml);
+                    }, 5000);
+                }
             });
             
             // Auto-dismiss alerts after 5 seconds
             setTimeout(function() {
                 $('.alert').fadeOut();
             }, 5000);
+            
+            // Display form validation errors
+            $('form[name="login_user_form"]').on('submit', function(e) {
+                if (!this.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $(this).addClass('was-validated');
+                    return false;
+                }
+            });
         });
     </script>
 </body>
