@@ -378,7 +378,7 @@
     {% endif %}
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
 function toggleCustomDate() {
     const rangeSelect = document.getElementById('range');
@@ -419,8 +419,11 @@ function toggleCustomDate() {
             }
         }, 150);
     } else {
-        // For predefined ranges, auto-submit the form
-        document.querySelector('form').submit();
+        // For predefined ranges, auto-submit the date filter form (not the download form)
+        const dateFilterForm = document.querySelector('form[action*="reports"]:not([action*="download"])');
+        if (dateFilterForm) {
+            dateFilterForm.submit();
+        }
     }
 }
 
@@ -428,7 +431,10 @@ function toggleCustomDate() {
 function handleDateChange() {
     // Small delay to ensure the date value is properly set
     setTimeout(() => {
-        document.querySelector('form').submit();
+        const dateFilterForm = document.querySelector('form[action*="reports"]:not([action*="download"])');
+        if (dateFilterForm) {
+            dateFilterForm.submit();
+        }
     }, 100);
 }
 
@@ -440,76 +446,144 @@ function handleRangeChange() {
     // Only auto-submit if both dates are selected
     if (startDate && endDate) {
         setTimeout(() => {
-            document.querySelector('form').submit();
+            const dateFilterForm = document.querySelector('form[action*="reports"]:not([action*="download"])');
+            if (dateFilterForm) {
+                dateFilterForm.submit();
+            }
         }, 100);
     }
 }
 
-// Force download - use pywebview API if available, otherwise use fetch/blob method
+// Force download - use pywebview API if available, otherwise use direct link or fetch/blob method
 function forceDownload(url) {
-    console.log('Attempting to download:', url);
+    console.log('=== forceDownload called ===');
+    console.log('URL:', url);
     
-    // Try to use pywebview API to open in system browser (works on macOS)
-    let apiAvailable = false;
-    
-    // Check multiple ways the API might be accessible
-    if (typeof window !== 'undefined' && window.pywebview && window.pywebview.api) {
-        if (window.pywebview.api.open_url) {
-            try {
-                window.pywebview.api.open_url(url);
-                console.log('Opened download via pywebview API (window.pywebview.api)');
-                return;
-            } catch (e) {
-                console.error('Error calling window.pywebview.api.open_url:', e);
-            }
-        }
+    if (!url) {
+        console.error('forceDownload called without URL!');
+        alert('Error: No download URL provided.');
+        return;
     }
     
-    if (typeof pywebview !== 'undefined' && pywebview.api && pywebview.api.open_url) {
+    // Helper function to get pywebview API
+    const getPywebviewAPI = () => {
+        // Try multiple ways to access the API
+        if (typeof window !== 'undefined' && window.pywebview && window.pywebview.api) {
+            return window.pywebview.api;
+        }
+        if (typeof pywebview !== 'undefined' && pywebview.api) {
+            return pywebview.api;
+        }
+        return null;
+    };
+    
+    // Check if we're in a desktop app (pywebview)
+    const api = getPywebviewAPI();
+    const isDesktopApp = api !== null;
+    
+    // Try to use pywebview API to open in system browser (for desktop app)
+    if (isDesktopApp && api && typeof api.open_url === 'function') {
         try {
-            pywebview.api.open_url(url);
-            console.log('Opened download via pywebview API (pywebview.api)');
-            return;
+            console.log('Using pywebview API to open URL');
+            const result = api.open_url(url);
+            // The API returns True/False synchronously
+            if (result) {
+                console.log('Download opened in system browser via pywebview API');
+                return; // Success - URL opened in browser
+            } else {
+                console.warn('pywebview API returned false, falling back to fetch method');
+            }
         } catch (e) {
-            console.error('Error calling pywebview.api.open_url:', e);
+            console.error('Error calling pywebview API:', e);
+            // Fall through to fetch method
         }
     }
     
-    // Fallback: Use fetch to download file as blob, then trigger download
-    console.log('Using fetch/blob download method');
-    fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            // Get filename from Content-Disposition header or use default
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let filename = 'download';
-            if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                if (filenameMatch && filenameMatch[1]) {
-                    filename = filenameMatch[1].replace(/['"]/g, '');
-                }
-            }
-            
-            return response.blob().then(blob => ({ blob, filename }));
+    // For desktop app, use fetch/blob method (preserves session cookies)
+    // For web browser, use direct link method
+    if (isDesktopApp) {
+        console.log('Using fetch/blob download method (desktop app)');
+        fetch(url, {
+            credentials: 'include', // Include cookies for authenticated requests
+            method: 'GET'
         })
-        .then(({ blob, filename }) => {
-            const downloadUrl = window.URL.createObjectURL(blob);
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
+                }
+                // Get filename from Content-Disposition header or use default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'download';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                // Create blob URL and download
+                try {
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = filename;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(downloadUrl);
+                    console.log('Download triggered via blob URL');
+                } catch (e) {
+                    console.error('Error with blob URL download:', e);
+                    // Try opening in browser as last resort
+                    if (api && typeof api.open_url === 'function') {
+                        api.open_url(url);
+                    } else {
+                        window.open(url, '_blank');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Download error:', error);
+                // Try opening in browser as fallback
+                if (api && typeof api.open_url === 'function') {
+                    api.open_url(url);
+                } else {
+                    window.open(url, '_blank');
+                }
+            });
+    } else {
+        // Web browser: use direct link method
+        console.log('Using direct link method (web browser)');
+        try {
             const a = document.createElement('a');
-            a.href = downloadUrl;
-            a.download = filename;
+            a.href = url;
+            a.download = '';
             a.style.display = 'none';
             document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(downloadUrl);
-            console.log('Download triggered via blob URL');
-        })
-        .catch(error => {
-            console.error('Download error:', error);
-            alert('Download failed. Please try again or use the web version in your browser.');
-        });
+            
+            setTimeout(() => {
+                try {
+                    a.click();
+                    console.log('Download triggered via direct link click');
+                } catch (clickError) {
+                    console.error('Error clicking link:', clickError);
+                    window.open(url, '_blank');
+                }
+                setTimeout(() => {
+                    if (a.parentNode) {
+                        document.body.removeChild(a);
+                    }
+                }, 100);
+            }, 10);
+        } catch (e) {
+            console.error('Error with direct link:', e);
+            window.open(url, '_blank');
+        }
+    }
 }
 
 function downloadViaIframe(url) {
@@ -531,73 +605,187 @@ function downloadViaIframe(url) {
     }, 5000);
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Set progress bar widths from data attributes
-    document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
-        const width = bar.getAttribute('data-width');
-        bar.style.width = width + '%';
-    });
-    
-    // Initialize the display state based on current selection
-    toggleCustomDate();
-    
-    // Add event listeners for auto-submit
-    const dateInput = document.getElementById('date');
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
-    
-    if (dateInput) {
-        dateInput.addEventListener('change', handleDateChange);
-    }
-    if (startDateInput) {
-        startDateInput.addEventListener('change', handleRangeChange);
-    }
-    if (endDateInput) {
-        endDateInput.addEventListener('change', handleRangeChange);
-    }
-    
-    // Add download handlers for CSV download buttons
-    document.querySelectorAll('.download-csv-btn').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const url = this.getAttribute('data-url');
-            if (url) {
-                console.log('Download CSV URL:', url);
-                forceDownload(url);
-            }
-            return false;
+// Function to initialize download buttons (can be called multiple times)
+function initializeDownloadButtons() {
+    try {
+        console.log('=== Initializing download buttons ===');
+        console.log('Document ready state:', document.readyState);
+        
+        // Set progress bar widths from data attributes
+        document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+            const width = bar.getAttribute('data-width');
+            bar.style.width = width + '%';
         });
-    });
-    
-    // Add download handler for raw data button
-    document.querySelectorAll('.download-raw-btn').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const action = this.getAttribute('data-action');
-            const range = this.getAttribute('data-range');
-            const date = this.getAttribute('data-date');
-            const startDate = this.getAttribute('data-start-date');
-            const endDate = this.getAttribute('data-end-date');
-            const denormalized = document.getElementById('denormalizedCheck') ? 
-                                 (document.getElementById('denormalizedCheck').checked ? 'true' : 'false') : 'false';
+        
+        // Initialize the display state based on current selection
+        if (typeof toggleCustomDate === 'function') {
+            toggleCustomDate();
+        }
+        
+        // Add event listeners for auto-submit
+        const dateInput = document.getElementById('date');
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        
+        if (dateInput) {
+            dateInput.addEventListener('change', handleDateChange);
+        }
+        if (startDateInput) {
+            startDateInput.addEventListener('change', handleRangeChange);
+        }
+        if (endDateInput) {
+            endDateInput.addEventListener('change', handleRangeChange);
+        }
+        
+        // Add download handlers for CSV download buttons
+        const csvButtons = document.querySelectorAll('.download-csv-btn');
+        console.log('Found', csvButtons.length, 'CSV download buttons');
+        if (csvButtons.length === 0) {
+            console.warn('WARNING: No CSV download buttons found!');
+            console.log('Searching for buttons with class "download-csv-btn"');
+            console.log('All buttons on page:', document.querySelectorAll('button'));
+        }
+        csvButtons.forEach(function(btn, index) {
+            console.log('Attaching listener to CSV button', index, btn, 'URL:', btn.getAttribute('data-url'));
             
-            const params = new URLSearchParams({
-                range: range || 'all',
-                date: date || '',
-                start_date: startDate || '',
-                end_date: endDate || '',
-                denormalized: denormalized
-            });
-            const url = action + '?' + params.toString();
-            console.log('Download Raw Data URL:', url);
-            forceDownload(url);
-            return false;
+            // Remove any existing listeners by cloning
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // Attach click handler with both capture and bubble phases
+            newBtn.addEventListener('click', function(e) {
+                console.log('=== CSV download button clicked! ===', this);
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                const url = this.getAttribute('data-url');
+                console.log('CSV download URL:', url);
+                if (url) {
+                    if (typeof forceDownload === 'function') {
+                        forceDownload(url);
+                    } else {
+                        console.error('forceDownload function not found!');
+                        window.location.href = url;
+                    }
+                } else {
+                    console.error('No data-url attribute found on CSV button');
+                    alert('Error: Download URL not found. Please refresh the page and try again.');
+                }
+                return false;
+            }, true); // Use capture phase to ensure it fires first
+            
+            // Also add bubble phase listener as backup
+            newBtn.addEventListener('click', function(e) {
+                console.log('CSV button bubble phase click');
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
         });
+        
+        // Add download handler for raw data button
+        const rawButtons = document.querySelectorAll('.download-raw-btn');
+        console.log('Found', rawButtons.length, 'raw data download buttons');
+        if (rawButtons.length === 0) {
+            console.warn('WARNING: No raw data download buttons found!');
+            console.log('Searching for buttons with class "download-raw-btn"');
+        }
+        rawButtons.forEach(function(btn, index) {
+            console.log('Attaching listener to raw data button', index, btn, 'Action:', btn.getAttribute('data-action'));
+            
+            // Remove any existing listeners by cloning
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // Prevent form submission if button is in a form
+            const form = newBtn.closest('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Prevent form submission if the download button was clicked
+                    if (e.submitter === newBtn || (e.target && e.target.contains(newBtn))) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }, true); // Use capture phase
+            }
+            
+            // Attach click handler with both capture and bubble phases
+            newBtn.addEventListener('click', function(e) {
+                console.log('=== Raw data download button clicked! ===', this);
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                const action = this.getAttribute('data-action');
+                const range = this.getAttribute('data-range');
+                const date = this.getAttribute('data-date');
+                const startDate = this.getAttribute('data-start-date');
+                const endDate = this.getAttribute('data-end-date');
+                const denormalized = document.getElementById('denormalizedCheck') ? 
+                                     (document.getElementById('denormalizedCheck').checked ? 'true' : 'false') : 'false';
+                
+                if (!action) {
+                    console.error('No data-action attribute found on raw data button');
+                    alert('Error: Download action not found. Please refresh the page and try again.');
+                    return false;
+                }
+                
+                const params = new URLSearchParams({
+                    range: range || 'all',
+                    date: date || '',
+                    start_date: startDate || '',
+                    end_date: endDate || '',
+                    denormalized: denormalized
+                });
+                const url = action + '?' + params.toString();
+                console.log('Raw data download URL:', url);
+                if (typeof forceDownload === 'function') {
+                    forceDownload(url);
+                } else {
+                    console.error('forceDownload function not found!');
+                    window.location.href = url;
+                }
+                return false;
+            }, true); // Use capture phase to ensure it fires first
+            
+            // Also add bubble phase listener as backup
+            newBtn.addEventListener('click', function(e) {
+                console.log('Raw data button bubble phase click');
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+        
+        console.log('=== Download button initialization complete ===');
+    } catch (error) {
+        console.error('Error initializing download buttons:', error);
+        console.error('Stack trace:', error.stack);
+    }
+}
+
+// Initialize on page load - try multiple methods
+console.log('Setting up download button initialization...');
+console.log('Document ready state:', document.readyState);
+
+if (document.readyState === 'loading') {
+    console.log('Document still loading, waiting for DOMContentLoaded');
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded fired, initializing buttons');
+        initializeDownloadButtons();
     });
-});
+} else {
+    console.log('Document already loaded, initializing buttons immediately');
+    initializeDownloadButtons();
+}
+
+// Also try after a short delay as a fallback
+setTimeout(function() {
+    console.log('Fallback initialization after timeout');
+    const csvButtons = document.querySelectorAll('.download-csv-btn');
+    const rawButtons = document.querySelectorAll('.download-raw-btn');
+    if (csvButtons.length > 0 || rawButtons.length > 0) {
+        console.log('Buttons found in fallback, re-initializing');
+        initializeDownloadButtons();
+    }
+}, 500);
 </script>
 
 
