@@ -4,6 +4,7 @@ Dashboard routes for the Ape Wellness Tracker application.
 
 from flask import render_template
 from backend.models.entry import Apes, Recipe, Meals
+from backend.utils.meal_nutrition import meal_calories
 from flask_security import login_required
 from datetime import datetime
 from backend.routes import site
@@ -28,7 +29,7 @@ def dashboard():
     today_start = datetime.combine(today, datetime.min.time())
     today_meals = Meals.query.filter(Meals.date >= today_start).all()
     total_meals_today = len(today_meals)
-    total_calories_today = sum(meal.recipe.calories for meal in today_meals)
+    total_calories_today = sum(meal_calories(meal) for meal in today_meals)
     
     return render_template('dashboard.html',
                          apes=apes,

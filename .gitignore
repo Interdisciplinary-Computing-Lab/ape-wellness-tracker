@@ -197,3 +197,8 @@ cython_debug/
 *.exe
 *.zip
 ApeWellnessTracker-App/
+
+# USDA FoodData Central bulk downloads (keep data/fdc/README.md)
+data/fdc/raw/*
+!data/fdc/raw/.gitkeep
+data/fdc/*.zip

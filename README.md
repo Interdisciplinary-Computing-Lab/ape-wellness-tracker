@@ -10,6 +10,10 @@ A Flask-based web application for tracking dietary meals for bonobo apes at Ape 
 
 The database is created automatically in `instance/` on first run. Create an admin user with `python misc/scripts/create_admin.py` after starting the app.
 
+## USDA nutrition data (optional)
+
+For accurate food sources, download **USDA FoodData Central – Foundation Foods** CSV (not FDA bulk data) and extract into `data/fdc/raw/`. See [data/fdc/README.md](data/fdc/README.md) for download links and layout. Raw CSV/zips are gitignored; only the README and folder structure are committed.
+
 ## Desktop App
 
 Run in desktop mode: `python desktop_app.py`

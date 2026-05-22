@@ -222,6 +222,7 @@ def ape_profile_page(ape_id):
     from datetime import timedelta
     from sqlalchemy import func
     from backend.models.entry import Recipe
+    from backend.utils.meal_nutrition import meal_calories
     
     ape = Apes.query.get_or_404(ape_id)
     
@@ -238,15 +239,16 @@ def ape_profile_page(ape_id):
         Meals.date >= seven_days_ago
     ).all()
     
-    total_calories_week = sum(meal.recipe.calories for meal in recent_meals_week)
+    total_calories_week = sum(meal_calories(meal) for meal in recent_meals_week)
     avg_calories_per_meal = total_calories_week / len(recent_meals_week) if recent_meals_week else 0
     
     # Prepare chart data for pie charts
     # Food category distribution (all time)
+    effective_calories = func.coalesce(Meals.calories_logged, Recipe.calories)
     category_data = db.session.query(
         Recipe.food_category,
         func.count(Meals.id).label('count'),
-        func.sum(Recipe.calories).label('total_calories')
+        func.sum(effective_calories).label('total_calories')
     ).join(Meals).filter(Meals.ape_id == ape_id)\
      .group_by(Recipe.food_category)\
      .all()
@@ -261,7 +263,7 @@ def ape_profile_page(ape_id):
     # Monthly calorie trends for Superset (SQLite compatible)
     monthly_trends = db.session.query(
         func.strftime('%Y-%m', Meals.date).label('month'),
-        func.sum(Recipe.calories).label('total_calories'),
+        func.sum(effective_calories).label('total_calories'),
         func.count(Meals.id).label('meal_count')
     ).join(Recipe).filter(Meals.ape_id == ape_id)\
      .group_by(func.strftime('%Y-%m', Meals.date))\

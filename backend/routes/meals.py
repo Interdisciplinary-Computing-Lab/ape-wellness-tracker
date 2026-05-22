@@ -26,11 +26,13 @@ def add_meal():
         return redirect(url_for('dashboard.dashboard'))
 
     date = datetime.strptime(date_str, "%Y-%m-%d")
+    recipe = Recipe.query.get(int(recipe_id))
 
     new_meal = Meals(
         ape_id=int(ape_id),
         recipe_id=int(recipe_id),
         date=date,
+        calories_logged=recipe.calories if recipe else None,
         user_id=current_user.id
     )
 
@@ -148,13 +150,16 @@ def save_feeding():
         # For each food item, create a recipe if it doesn't exist, then create meals for each ape
         for item in feeding_items:
             food_name = item.get('name', '').strip()
-            calories = item.get('calories', 0)
-            quantity = float(item.get('quantity', 1))  # Can be float now (e.g., 0.5)
+            calories = int(item.get('calories', 0) or 0)
+            quantity = float(item.get('quantity', 1))  # Portion multiplier (actual / recipe base)
             unit = item.get('unit', '')
-            
+            source = (item.get('source') or '').strip() or None
+
             if not food_name or calories <= 0:
                 continue
-            
+
+            logged_calories = max(0, round(calories * quantity))
+
             # Check if recipe exists, create if not
             recipe = Recipe.query.filter_by(meal_name=food_name).first()
             if not recipe:
@@ -176,13 +181,16 @@ def save_feeding():
                     calories=calories,
                     quantity=1.0,  # Base quantity for custom foods
                     unit_of_measurement=unit if unit else None,
-                    source=None,  # Source removed from meal logging
+                    source=source,
                     food_category=food_category,
                     protein_g=nutrition_defaults['protein_g'],
                     fiber_g=nutrition_defaults['fiber_g']
                 )
                 add_to_db(recipe, "recipe")
-            
+            elif source and not recipe.source:
+                recipe.source = source
+                db.session.commit()
+
             # Create meals for each selected ape
             for ape_id in ape_ids:
                 meal = Meals(
@@ -190,15 +198,16 @@ def save_feeding():
                     recipe_id=recipe.id,
                     date=feeding_datetime,
                     feeding_period=feeding_period,
+                    calories_logged=logged_calories,
                     user_id=current_user.id
                 )
                 add_to_db(meal, "meal")
                 saved_meals.append({
                     'ape_id': ape_id,
                     'recipe_name': food_name,
-                    'calories': calories * quantity
+                    'calories': logged_calories
                 })
-                total_calories += calories * quantity
+                total_calories += logged_calories
         
         return jsonify({
             'success': True,

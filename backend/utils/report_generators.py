@@ -7,7 +7,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory, User
-from sqlalchemy import create_engine
+from sqlalchemy import func
 from backend.extensions import db
 from collections import defaultdict
 
@@ -46,13 +46,14 @@ def generate_individual_summary(output_file, start_date=None, end_date=None):
     """
     from datetime import datetime
     
-    # Build query for meals (include protein and fiber from Recipe)
+    effective_calories = func.coalesce(Meals.calories_logged, Recipe.calories)
     query = db.session.query(
         Meals.ape_id,
         Meals.recipe_id,
         Meals.date,
         Recipe.meal_name,
-        Recipe.calories,
+        effective_calories.label('calories'),
+        Recipe.calories.label('recipe_calories'),
         Recipe.protein_g,
         Recipe.fiber_g,
         Apes.ape_name
@@ -94,9 +95,11 @@ def generate_individual_summary(output_file, start_date=None, end_date=None):
         for _, row in meals_df.iterrows():
             ape_name = row['ape_name'] if pd.notna(row['ape_name']) else 'Unknown'
             calories = row['calories'] if pd.notna(row['calories']) else 0
-            protein = row['protein_g'] if pd.notna(row['protein_g']) else 0
-            fiber = row['fiber_g'] if pd.notna(row['fiber_g']) else 0
-            
+            recipe_calories = row['recipe_calories'] if pd.notna(row['recipe_calories']) else 0
+            scale = (calories / recipe_calories) if recipe_calories else 1.0
+            protein = (row['protein_g'] if pd.notna(row['protein_g']) else 2.0) * scale
+            fiber = (row['fiber_g'] if pd.notna(row['fiber_g']) else 1.0) * scale
+
             ape_stats[ape_name]['calories'] += calories
             ape_stats[ape_name]['meals'] += 1
             ape_stats[ape_name]['protein_g'] += protein
@@ -145,11 +148,11 @@ def generate_group_and_category_breakdown(output_file, start_date=None, end_date
     """
     from datetime import datetime
     
-    # Build query for meals with recipes
+    effective_calories = func.coalesce(Meals.calories_logged, Recipe.calories)
     query = db.session.query(
         Meals.date,
         Meals.id,
-        Recipe.calories,
+        effective_calories.label('calories'),
         Recipe.food_category
     ).join(Recipe)
     

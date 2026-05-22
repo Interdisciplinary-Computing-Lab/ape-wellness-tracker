@@ -111,11 +111,22 @@ def create_app():
     # Add helper functions to template context
     @app.context_processor
     def utility_processor():
-        return dict(get_time_period_display=get_time_period_display)
+        from backend.utils.meal_nutrition import meal_calories, meal_protein_g, meal_fiber_g
+        return dict(
+            get_time_period_display=get_time_period_display,
+            meal_calories=meal_calories,
+            meal_protein_g=meal_protein_g,
+            meal_fiber_g=meal_fiber_g,
+        )
 
     with app.app_context():
         db.create_all()
-        
+        from backend.utils.schema_migrations import ensure_schema_updates
+        ensure_schema_updates(
+            app.config['SQLALCHEMY_DATABASE_URI'],
+            app.instance_path,
+        )
+
         # Ensure standard apes exist when app starts
         ensure_standard_apes()
         

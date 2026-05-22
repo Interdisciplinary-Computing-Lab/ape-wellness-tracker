@@ -188,7 +188,7 @@
                                                 <td>
                                                     <span class="badge category-badge" data-category="{{ meal.recipe.food_category }}">{{ meal.recipe.food_category or 'Other' }}</span>
                                                 </td>
-                                                <td>{{ meal.recipe.calories }} cal</td>
+                                                <td>{{ meal_calories(meal) }} cal</td>
                                                 <td>
                                                     <small class="text-muted">
                                                         {% if meal.user %}
@@ -224,7 +224,9 @@
                         <div class="card-body">
                             {% set recent_meals = ape.meals|list %}
                             {% if recent_meals %}
-                                {% set total_calories = recent_meals|sum(attribute='recipe.calories') %}
+                                {% set total_calories = namespace(value=0) %}
+                                {% for m in recent_meals %}{% set total_calories.value = total_calories.value + meal_calories(m) %}{% endfor %}
+                                {% set total_calories = total_calories.value %}
                                 {% set avg_calories = (total_calories / recent_meals|length)|round(1) %}
                                 <div class="row">
                                     <div class="col-md-4">

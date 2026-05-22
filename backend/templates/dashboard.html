@@ -211,7 +211,7 @@
                                             <td>
                                                 <span class="badge category-badge" data-category="{{ meal.recipe.food_category or 'Other' }}">{{ meal.recipe.meal_name }}</span>
                                             </td>
-                                            <td>{{ meal.recipe.calories }} cal</td>
+                                            <td>{{ meal_calories(meal) }} cal</td>
                                             <td>
                                                 <small class="text-muted">
                                                     {% if meal.user %}

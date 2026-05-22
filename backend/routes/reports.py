@@ -10,6 +10,7 @@ from backend.utils.report_generators import generate_individual_summary, generat
 from flask_security import login_required
 from datetime import datetime, timedelta, date
 from collections import defaultdict
+from backend.utils.meal_nutrition import meal_calories, meal_protein_g, meal_fiber_g
 from backend.routes import site
 import pandas as pd
 import sqlite3
@@ -86,7 +87,7 @@ def reports():
     meals_in_range = get_meals_in_range(start_date, end_date)
     
     # Calculate aggregate statistics
-    total_calories = sum(meal.recipe.calories for meal in meals_in_range)
+    total_calories = sum(meal_calories(meal) for meal in meals_in_range)
     total_meals = len(meals_in_range)
     avg_calories_per_meal = total_calories / total_meals if total_meals > 0 else 0
     
@@ -94,19 +95,12 @@ def reports():
     ape_stats = {}
     for ape in apes:
         ape_meals = [meal for meal in meals_in_range if meal.ape_id == ape.id]
-        ape_calories = sum(meal.recipe.calories for meal in ape_meals)
+        ape_calories = sum(meal_calories(meal) for meal in ape_meals)
         ape_meal_count = len(ape_meals)
         ape_avg_calories = ape_calories / ape_meal_count if ape_meal_count > 0 else 0
         
-        # Calculate protein and fiber totals from database values
-        ape_protein = 0.0
-        ape_fiber = 0.0
-        for meal in ape_meals:
-            # Use database values, with defaults if None
-            protein = meal.recipe.protein_g if meal.recipe.protein_g is not None else 2.0
-            fiber = meal.recipe.fiber_g if meal.recipe.fiber_g is not None else 1.0
-            ape_protein += protein
-            ape_fiber += fiber
+        ape_protein = sum(meal_protein_g(meal) for meal in ape_meals)
+        ape_fiber = sum(meal_fiber_g(meal) for meal in ape_meals)
         
         ape_stats[ape.id] = {
             'name': ape.ape_name,
@@ -122,7 +116,7 @@ def reports():
     for meal in meals_in_range:
         category = meal.recipe.food_category or 'Other'
         category_stats[category]['count'] += 1
-        category_stats[category]['calories'] += meal.recipe.calories
+        category_stats[category]['calories'] += meal_calories(meal)
     
     # Convert to list for template
     category_data = [
@@ -142,7 +136,7 @@ def reports():
     daily_stats = defaultdict(lambda: {'calories': 0, 'meals': 0})
     for meal in meals_in_range:
         meal_date = meal.date.date()
-        daily_stats[meal_date]['calories'] += meal.recipe.calories
+        daily_stats[meal_date]['calories'] += meal_calories(meal)
         daily_stats[meal_date]['meals'] += 1
     
     # Convert to sorted list
@@ -183,7 +177,7 @@ def download_reports(format):
     apes = Apes.query.all()
     
     # Calculate statistics (reuse same logic as reports view)
-    total_calories = sum(meal.recipe.calories for meal in meals_in_range)
+    total_calories = sum(meal_calories(meal) for meal in meals_in_range)
     total_meals = len(meals_in_range)
     avg_calories_per_meal = total_calories / total_meals if total_meals > 0 else 0
     
@@ -191,19 +185,12 @@ def download_reports(format):
     ape_stats = {}
     for ape in apes:
         ape_meals = [meal for meal in meals_in_range if meal.ape_id == ape.id]
-        ape_calories = sum(meal.recipe.calories for meal in ape_meals)
+        ape_calories = sum(meal_calories(meal) for meal in ape_meals)
         ape_meal_count = len(ape_meals)
         ape_avg_calories = ape_calories / ape_meal_count if ape_meal_count > 0 else 0
         
-        # Calculate protein and fiber totals from database values
-        ape_protein = 0.0
-        ape_fiber = 0.0
-        for meal in ape_meals:
-            # Use database values, with defaults if None
-            protein = meal.recipe.protein_g if meal.recipe.protein_g is not None else 2.0
-            fiber = meal.recipe.fiber_g if meal.recipe.fiber_g is not None else 1.0
-            ape_protein += protein
-            ape_fiber += fiber
+        ape_protein = sum(meal_protein_g(meal) for meal in ape_meals)
+        ape_fiber = sum(meal_fiber_g(meal) for meal in ape_meals)
         
         ape_stats[ape.id] = {
             'name': ape.ape_name,
@@ -219,7 +206,7 @@ def download_reports(format):
     for meal in meals_in_range:
         category = meal.recipe.food_category or 'Other'
         category_stats[category]['count'] += 1
-        category_stats[category]['calories'] += meal.recipe.calories
+        category_stats[category]['calories'] += meal_calories(meal)
     
     category_data = [
         {
@@ -236,7 +223,7 @@ def download_reports(format):
     daily_stats = defaultdict(lambda: {'calories': 0, 'meals': 0})
     for meal in meals_in_range:
         meal_date = meal.date.date()
-        daily_stats[meal_date]['calories'] += meal.recipe.calories
+        daily_stats[meal_date]['calories'] += meal_calories(meal)
         daily_stats[meal_date]['meals'] += 1
     
     daily_data = [
