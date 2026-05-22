@@ -36,6 +36,15 @@ Check [fdc.nal.usda.gov/download-datasets](https://fdc.nal.usda.gov/download-dat
 
 Nutrition data from [USDA FoodData Central](https://fdc.nal.usda.gov/) (public domain). Credit USDA when displaying sources in the app.
 
-## Import (planned)
+## Import into the app
 
-A future script `misc/scripts/import_fdc_foundation.py` will read `data/fdc/raw/` and upsert `Recipe` rows with `source` like `USDA Foundation Foods (FDC {id})`.
+After CSVs are in `data/fdc/raw/`, run from the project root:
+
+```powershell
+python misc/scripts/import_fdc_foundation.py --dry-run
+python misc/scripts/import_fdc_foundation.py
+```
+
+This updates **existing** food catalog (`Recipe`) rows when a Foundation Foods match exists. Values are scaled from FDC per-100g data using the first listed portion weight (e.g. one medium banana). Unmatched catalog items are left unchanged.
+
+`source` is set to `USDA Foundation Foods (FDC {id})`.

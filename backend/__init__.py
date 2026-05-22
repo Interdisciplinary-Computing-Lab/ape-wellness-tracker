@@ -15,6 +15,27 @@ from backend.helpers import get_time_period_display
 # This allows local development to use .env while production uses system env vars
 load_dotenv()
 
+
+def _load_or_create_instance_secret(instance_path, filename, env_var, nbytes=32):
+    """
+    Prefer env var; otherwise reuse a secret stored under instance/ so local dev
+    survives restarts (rotating secrets invalidate logins and CSRF tokens).
+    """
+    value = os.getenv(env_var)
+    if value:
+        return value
+    path = os.path.join(instance_path, filename)
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as f:
+            stored = f.read().strip()
+            if stored:
+                return stored
+    value = secrets.token_urlsafe(nbytes)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(value)
+    return value
+
+
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller."""
     if getattr(sys, 'frozen', False):
@@ -67,29 +88,28 @@ def create_app():
     # or a secrets management service (AWS Secrets Manager, Azure Key Vault, etc.)
     # Reference: OWASP Flask Security Cheat Sheet, 12-Factor App methodology
     # 
-    # For local development: Create a .env file with these values
-    # For production: Set these as environment variables on your server
-    secret_key = os.getenv('SECRET_KEY')
-    password_salt = os.getenv('SECURITY_PASSWORD_SALT')
-    
-    if not secret_key:
-        # Generate a secure random key as fallback, but warn the user
-        secret_key = secrets.token_urlsafe(32)
+    # For local development: optional .env; otherwise secrets persist in instance/
+    # For production: set SECRET_KEY and SECURITY_PASSWORD_SALT as environment variables
+    secret_key = _load_or_create_instance_secret(
+        app.instance_path, ".secret_key", "SECRET_KEY", nbytes=32
+    )
+    password_salt = _load_or_create_instance_secret(
+        app.instance_path, ".password_salt", "SECURITY_PASSWORD_SALT", nbytes=16
+    )
+    if not os.getenv("SECRET_KEY"):
         warnings.warn(
-            "SECRET_KEY not set in environment. Generated a temporary key. "
-            "This key will change on each restart. Set SECRET_KEY in your .env file or "
-            "environment variables for production use.",
-            UserWarning
+            "SECRET_KEY not set in environment; using instance/.secret_key. "
+            "For production, set SECRET_KEY in .env or environment variables.",
+            UserWarning,
+            stacklevel=1,
         )
-    
-    if not password_salt:
-        # Generate a secure random salt as fallback, but warn the user
-        password_salt = secrets.token_urlsafe(16)
+    if not os.getenv("SECURITY_PASSWORD_SALT"):
         warnings.warn(
-            "SECURITY_PASSWORD_SALT not set in environment. Generated a temporary salt. "
-            "This salt will change on each restart. Set SECURITY_PASSWORD_SALT in your .env "
-            "file or environment variables for production use.",
-            UserWarning
+            "SECURITY_PASSWORD_SALT not set in environment; using instance/.password_salt. "
+            "If login suddenly fails after an upgrade, run: "
+            "python misc/scripts/reset_password.py <email> <new-password>",
+            UserWarning,
+            stacklevel=1,
         )
     
     app.config["SECRET_KEY"] = secret_key
@@ -126,6 +146,7 @@ def create_app():
             app.config['SQLALCHEMY_DATABASE_URI'],
             app.instance_path,
         )
+        _ensure_users_confirmed()
 
         # Ensure standard apes exist when app starts
         ensure_standard_apes()
@@ -134,6 +155,21 @@ def create_app():
         ensure_standard_food_data()
 
     return app
+
+
+def _ensure_users_confirmed():
+    """Backfill confirmed_at for accounts created before auto-confirm was enforced."""
+    from datetime import datetime
+    from backend.models.entry import User
+
+    changed = False
+    for user in User.query.filter(User.confirmed_at.is_(None)).all():
+        user.confirmed_at = datetime.utcnow()
+        user.active = True
+        changed = True
+    if changed:
+        db.session.commit()
+
 
 def ensure_standard_apes():
     """Ensure all standard apes exist in the database - loaded from data file"""
