@@ -21,6 +21,26 @@
     </div>
 </div>
 
+<!-- Food Search -->
+<div class="row mb-3">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="input-group">
+            <input type="text" id="foodSearch" class="form-control"
+                   placeholder="Search by name, category, source, or description..."
+                   aria-label="Search foods">
+            <div class="input-group-append">
+                <button type="button" class="btn btn-primary" id="foodSearchBtn" onclick="searchFoods()">
+                    <i class="fas fa-search mr-1"></i>Search
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="clearFoodSearch()"
+                        title="Clear search" aria-label="Clear search">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Category Filter Buttons -->
 <div class="row mb-4">
     <div class="col-12">
@@ -78,7 +98,11 @@
 <div class="row">
     
     {% for recipe in recipes %}
-    <div class="col-lg-4 col-md-6 mb-3 food-item" data-category="{{ recipe.food_category }}">
+    <div class="col-lg-4 col-md-6 mb-3 food-item"
+         data-category="{{ recipe.food_category or 'Other' }}"
+         data-name="{{ recipe.meal_name|lower }}"
+         data-description="{{ (recipe.description or '')|lower }}"
+         data-source="{{ (recipe.source or '')|lower }}">
         <div class="card h-100 border-left-4" style="border-left-color: 
             {% if recipe.food_category == 'Fruits' %}#28a745
             {% elif recipe.food_category == 'Vegetables' %}#20c997
@@ -673,29 +697,86 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add click event listeners for filter buttons
     document.querySelectorAll('.filter-btn').forEach(button => {
         button.addEventListener('click', function() {
-            const category = this.getAttribute('data-category');
-            filterByCategory(category);
+            filterByCategory(this.getAttribute('data-category'), this);
         });
     });
+
+    const foodSearchInput = document.getElementById('foodSearch');
+    if (foodSearchInput) {
+        foodSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchFoods();
+            }
+        });
+    }
 });
 
-// Category filter function
-function filterByCategory(category) {
+let currentFoodCategory = 'all';
+
+function itemMatchesCategory(item, category) {
+    const itemCategory = item.dataset.category || 'Other';
+    if (category === 'all') {
+        return true;
+    }
+    if (category === 'Enrichment Treats') {
+        return itemCategory === 'Enrichment Treats' || itemCategory === 'Dried Fruits';
+    }
+    return itemCategory === category;
+}
+
+function applyFoodFilters() {
+    const searchInput = document.getElementById('foodSearch');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const foodItems = document.querySelectorAll('.food-item');
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    
-    // Update active button
-    filterButtons.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    // Filter items
+
     foodItems.forEach(item => {
-        if (category === 'all' || item.dataset.category === category) {
+        const name = item.dataset.name || '';
+        const description = item.dataset.description || '';
+        const source = item.dataset.source || '';
+        const categoryText = (item.dataset.category || '').toLowerCase();
+        const matchesCategory = itemMatchesCategory(item, currentFoodCategory);
+        const matchesSearch = !searchTerm ||
+            name.includes(searchTerm) ||
+            description.includes(searchTerm) ||
+            source.includes(searchTerm) ||
+            categoryText.includes(searchTerm);
+
+        if (matchesCategory && matchesSearch) {
             item.classList.remove('hidden');
         } else {
             item.classList.add('hidden');
         }
     });
+}
+
+function filterByCategory(category, clickedButton) {
+    currentFoodCategory = category;
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    let activeBtn = clickedButton;
+    if (!activeBtn) {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.getAttribute('data-category') === category) {
+                activeBtn = btn;
+            }
+        });
+    }
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+    applyFoodFilters();
+}
+
+function searchFoods() {
+    applyFoodFilters();
+}
+
+function clearFoodSearch() {
+    const searchInput = document.getElementById('foodSearch');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    applyFoodFilters();
 }
 
 // Add event listeners for edit and delete buttons

@@ -108,11 +108,11 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('site.reports') }}">
+                    <form method="GET" action="{{ url_for('site.reports') }}" id="dateFilterForm">
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label for="range" class="form-label">Time Period:</label>
-                                <select name="range" id="range" class="form-control" onchange="toggleCustomDate()">
+                                <select name="range" id="range" class="form-control" onchange="onRangeSelectChange()">
                                     <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
                                     <option value="week" {% if date_range == 'week' %}selected{% endif %}>Last 7 Days</option>
                                     <option value="month" {% if date_range == 'month' %}selected{% endif %}>Last 30 Days</option>
@@ -380,50 +380,54 @@
 
 {% block extra_js %}
 <script>
-function toggleCustomDate() {
+function getDateFilterForm() {
+    return document.getElementById('dateFilterForm');
+}
+
+function updateCustomDateVisibility(openPicker) {
     const rangeSelect = document.getElementById('range');
     const customDateGroup = document.getElementById('customDateGroup');
     const customRangeGroup = document.getElementById('customRangeGroup');
     const dateInput = document.getElementById('date');
     const startDateInput = document.getElementById('start_date');
-    
-    // Hide both custom groups first
+
+    if (!rangeSelect || !customDateGroup || !customRangeGroup) {
+        return rangeSelect ? rangeSelect.value : '';
+    }
+
     customDateGroup.style.display = 'none';
     customRangeGroup.style.display = 'none';
-    
-    // Show the appropriate group based on selection
+
     if (rangeSelect.value === 'custom') {
         customDateGroup.style.display = 'block';
-        // Auto-focus and open the calendar for better UX
-        setTimeout(() => {
-            dateInput.focus();
-            // Try to open the calendar picker
-            try {
-                dateInput.showPicker();
-            } catch (e) {
-                // Fallback for browsers that don't support showPicker
-                dateInput.click();
-            }
-        }, 150);
+        if (openPicker && dateInput) {
+            setTimeout(function() {
+                dateInput.focus();
+            }, 150);
+        }
     } else if (rangeSelect.value === 'custom_range') {
         customRangeGroup.style.display = 'block';
-        // Auto-focus the start date input and open its calendar
-        setTimeout(() => {
-            startDateInput.focus();
-            // Try to open the calendar picker for start date
-            try {
-                startDateInput.showPicker();
-            } catch (e) {
-                // Fallback for browsers that don't support showPicker
-                startDateInput.click();
-            }
-        }, 150);
-    } else {
-        // For predefined ranges, auto-submit the date filter form (not the download form)
-        const dateFilterForm = document.querySelector('form[action*="reports"]:not([action*="download"])');
-        if (dateFilterForm) {
-            dateFilterForm.submit();
+        if (openPicker && startDateInput) {
+            setTimeout(function() {
+                startDateInput.focus();
+            }, 150);
         }
+    }
+
+    return rangeSelect.value;
+}
+
+function submitDateFilterForm() {
+    const dateFilterForm = getDateFilterForm();
+    if (dateFilterForm) {
+        dateFilterForm.submit();
+    }
+}
+
+function onRangeSelectChange() {
+    const range = updateCustomDateVisibility(true);
+    if (range !== 'custom' && range !== 'custom_range') {
+        submitDateFilterForm();
     }
 }
 
@@ -431,10 +435,7 @@ function toggleCustomDate() {
 function handleDateChange() {
     // Small delay to ensure the date value is properly set
     setTimeout(() => {
-        const dateFilterForm = document.querySelector('form[action*="reports"]:not([action*="download"])');
-        if (dateFilterForm) {
-            dateFilterForm.submit();
-        }
+        submitDateFilterForm();
     }, 100);
 }
 
@@ -445,12 +446,15 @@ function handleRangeChange() {
     
     // Only auto-submit if both dates are selected
     if (startDate && endDate) {
-        setTimeout(() => {
-            const dateFilterForm = document.querySelector('form[action*="reports"]:not([action*="download"])');
-            if (dateFilterForm) {
-                dateFilterForm.submit();
-            }
-        }, 100);
+        setTimeout(submitDateFilterForm, 100);
+    }
+}
+
+function closeMobileSidebar() {
+    document.body.classList.remove('sidebar-open', 'sidebar-is-opening');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (overlay) {
+        overlay.remove();
     }
 }
 
@@ -617,10 +621,9 @@ function initializeDownloadButtons() {
             bar.style.width = width + '%';
         });
         
-        // Initialize the display state based on current selection
-        if (typeof toggleCustomDate === 'function') {
-            toggleCustomDate();
-        }
+        // Show/hide custom date fields only — do not auto-submit on load (caused reload loop)
+        updateCustomDateVisibility(false);
+        closeMobileSidebar();
         
         // Add event listeners for auto-submit
         const dateInput = document.getElementById('date');
@@ -657,7 +660,6 @@ function initializeDownloadButtons() {
                 console.log('=== CSV download button clicked! ===', this);
                 e.preventDefault();
                 e.stopPropagation();
-                e.stopImmediatePropagation();
                 const url = this.getAttribute('data-url');
                 console.log('CSV download URL:', url);
                 if (url) {
@@ -672,14 +674,7 @@ function initializeDownloadButtons() {
                     alert('Error: Download URL not found. Please refresh the page and try again.');
                 }
                 return false;
-            }, true); // Use capture phase to ensure it fires first
-            
-            // Also add bubble phase listener as backup
-            newBtn.addEventListener('click', function(e) {
-                console.log('CSV button bubble phase click');
-                e.preventDefault();
-                e.stopPropagation();
-            }, false);
+            });
         });
         
         // Add download handler for raw data button
@@ -713,7 +708,6 @@ function initializeDownloadButtons() {
                 console.log('=== Raw data download button clicked! ===', this);
                 e.preventDefault();
                 e.stopPropagation();
-                e.stopImmediatePropagation();
                 const action = this.getAttribute('data-action');
                 const range = this.getAttribute('data-range');
                 const date = this.getAttribute('data-date');
@@ -744,14 +738,7 @@ function initializeDownloadButtons() {
                     window.location.href = url;
                 }
                 return false;
-            }, true); // Use capture phase to ensure it fires first
-            
-            // Also add bubble phase listener as backup
-            newBtn.addEventListener('click', function(e) {
-                console.log('Raw data button bubble phase click');
-                e.preventDefault();
-                e.stopPropagation();
-            }, false);
+            });
         });
         
         console.log('=== Download button initialization complete ===');
@@ -776,16 +763,16 @@ if (document.readyState === 'loading') {
     initializeDownloadButtons();
 }
 
-// Also try after a short delay as a fallback
-setTimeout(function() {
-    console.log('Fallback initialization after timeout');
-    const csvButtons = document.querySelectorAll('.download-csv-btn');
-    const rawButtons = document.querySelectorAll('.download-raw-btn');
-    if (csvButtons.length > 0 || rawButtons.length > 0) {
-        console.log('Buttons found in fallback, re-initializing');
-        initializeDownloadButtons();
+// Close mobile sidebar when tapping main content (overlay can stick after nav)
+document.addEventListener('click', function(e) {
+    if (!document.body.classList.contains('sidebar-open')) {
+        return;
     }
-}, 500);
+    if (e.target.closest('.main-sidebar') || e.target.closest('[data-widget="pushmenu"]')) {
+        return;
+    }
+    closeMobileSidebar();
+});
 </script>
 
 

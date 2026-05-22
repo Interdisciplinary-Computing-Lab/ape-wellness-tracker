@@ -122,9 +122,9 @@
                 </div>
             </div>
             <div class="card-body">
-                <!-- Category Filter Tabs -->
-                <div class="mb-4">
-                    <ul class="nav nav-pills nav-fill" id="categoryTabs" role="tablist">
+                <!-- Category Filter Tabs (click active tab again to collapse) -->
+                <div class="mb-4 d-flex flex-wrap align-items-start">
+                    <ul class="nav nav-pills nav-fill flex-grow-1 mb-0" id="categoryTabs" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link" id="all-tab" data-toggle="pill" href="#all" 
                                role="tab" aria-controls="all" aria-selected="false" onclick="filterByCategory('all', this)">
@@ -151,6 +151,10 @@
                         </li>
                         {% endfor %}
                     </ul>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ml-2 mt-1" id="hideFoodsBtn"
+                            onclick="hideFoodGrid()" title="Hide the food list">
+                        <i class="fas fa-eye-slash"></i> Hide foods
+                    </button>
                 </div>
 
                 <!-- Foods Grid -->
@@ -731,9 +735,11 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSaveButton();
     
     // Hide all food items initially - user must click "All" or a category to see foods
-    const foodItems = document.querySelectorAll('.food-item');
-    foodItems.forEach(function(item) {
-        item.classList.add('hidden');
+    hideFoodGrid();
+
+    document.querySelectorAll('#categoryTabs .nav-link').forEach(function(link) {
+        const existing = link.getAttribute('title');
+        link.setAttribute('title', existing ? existing + ' — click again to hide' : 'Click again to hide foods');
     });
     
     // Initialize date field with today's date (using local timezone, not UTC)
@@ -979,26 +985,45 @@ function clearSearch() {
     searchFoods();
 }
 
-// Category filtering
+// Collapse food grid and clear category selection
+function hideFoodGrid() {
+    currentCategory = '';
+    document.querySelectorAll('#categoryTabs .nav-link').forEach(function(navLink) {
+        navLink.classList.remove('active');
+        navLink.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.food-item').forEach(function(item) {
+        item.classList.add('hidden');
+    });
+    const noResults = document.getElementById('noResults');
+    if (noResults) {
+        noResults.style.display = 'none';
+    }
+}
+
+// Category filtering (click the active tab again to collapse)
 function filterByCategory(category, clickedElement) {
+    const clickedTab = clickedElement ? clickedElement.closest('.nav-link') : null;
+    if (clickedTab && clickedTab.classList.contains('active') && currentCategory === category) {
+        hideFoodGrid();
+        return;
+    }
+
     currentCategory = category;
     const foodItems = document.querySelectorAll('.food-item');
     const searchTerm = document.getElementById('foodSearch').value.toLowerCase();
     let visibleCount = 0;
     
     // Update active tab state
-    document.querySelectorAll('.nav-link').forEach(function(navLink) {
+    document.querySelectorAll('#categoryTabs .nav-link').forEach(function(navLink) {
         navLink.classList.remove('active');
         navLink.setAttribute('aria-selected', 'false');
     });
     
     // Find and activate the clicked tab
-    if (clickedElement) {
-        const clickedTab = clickedElement.closest('.nav-link');
-        if (clickedTab) {
-            clickedTab.classList.add('active');
-            clickedTab.setAttribute('aria-selected', 'true');
-        }
+    if (clickedTab) {
+        clickedTab.classList.add('active');
+        clickedTab.setAttribute('aria-selected', 'true');
     } else if (category === 'all') {
         const allTab = document.getElementById('all-tab');
         if (allTab) {
@@ -1430,18 +1455,7 @@ function clearAll() {
     clearSelection();
     clearFeedingList();
     clearSearch();
-    // Reset to no category selected (hide all foods)
-    currentCategory = '';
-    // Remove active state from all tabs
-    document.querySelectorAll('.nav-link').forEach(function(navLink) {
-        navLink.classList.remove('active');
-        navLink.setAttribute('aria-selected', 'false');
-    });
-    // Hide all food items
-    const foodItems = document.querySelectorAll('.food-item');
-    foodItems.forEach(function(item) {
-        item.classList.add('hidden');
-    });
+    hideFoodGrid();
     
     // Reset flag after a short delay to allow the clear operations to complete
     setTimeout(() => {

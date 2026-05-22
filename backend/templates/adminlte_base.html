@@ -404,6 +404,19 @@ function showKeyboardShortcuts() {
         }
     });
 })();
+
+// AdminLTE mobile sidebar can stay open after in-app navigation, blocking the page
+$(function() {
+    function closeStuckSidebar() {
+        $('body').removeClass('sidebar-open sidebar-is-opening');
+    }
+    closeStuckSidebar();
+    $(document).on('click', '.main-sidebar .nav-link', function() {
+        if (window.innerWidth < 992) {
+            closeStuckSidebar();
+        }
+    });
+});
 </script>
 
 {% block extra_js %}{% endblock %}
