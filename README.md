@@ -19,10 +19,6 @@ python misc/scripts/reset_password.py your@email.com YourNewPassword
 
 Create an admin user with `python misc/scripts/create_admin.py` after starting the app (default: `admin@apeinitiative.org` / `admin123` if no users exist).
 
-## USDA nutrition data (optional)
-
-For accurate food sources, download **USDA FoodData Central – Foundation Foods** CSV (not FDA bulk data) and extract into `data/fdc/raw/`. See [data/fdc/README.md](data/fdc/README.md) for download links and layout. Raw CSV/zips are gitignored; only the README and folder structure are committed.
-
 ## Desktop App
 
 Run in desktop mode: `python desktop_app.py`
