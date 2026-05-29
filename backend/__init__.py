@@ -151,8 +151,9 @@ def create_app():
         # Ensure standard apes exist when app starts
         ensure_standard_apes()
         
-        # Ensure standard food categories and recipes exist
+        # Ensure food categories (and staff custom names with FDC data when CSVs present)
         ensure_standard_food_data()
+        ensure_custom_display_foods()
 
     return app
 
@@ -251,3 +252,84 @@ def ensure_standard_food_data():
     if created_recipes > 0:
         db.session.commit()
         print(f"[SUCCESS] Created {created_recipes} comprehensive recipes")
+
+
+def ensure_custom_display_foods():
+    """Ensure staff custom food names exist and stay linked to USDA FDC when CSVs are present."""
+    from backend.models.entry import FoodCategory, Recipe
+
+    custom_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "data", "fdc", "custom_foods.json"
+    )
+    raw_ff = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "data", "fdc", "raw", "foundation_food.csv"
+    )
+    if not os.path.isfile(custom_path) or not os.path.isfile(raw_ff):
+        return
+
+    try:
+        with open(custom_path, encoding="utf-8") as f:
+            custom = json.load(f).get("custom_display_names", {})
+    except (OSError, json.JSONDecodeError):
+        return
+
+    try:
+        from backend.utils.fdc_loader import FdcFoundationLoader, _normalize_desc, load_category_map
+
+        loader = FdcFoundationLoader()
+        category_map = load_category_map()
+        targets = {_normalize_desc(m["fdc_description"]): (name, m) for name, m in custom.items()}
+        records = {}
+        for record in loader.iter_records(category_map, include_excluded_categories=True):
+            key = _normalize_desc(record.description)
+            if key in targets:
+                records[targets[key][0]] = record
+
+        categories = {c.name: c for c in FoodCategory.query.filter_by(is_active=True).all()}
+        changed = False
+        for meal_name, meta in custom.items():
+            record = records.get(meal_name)
+            if not record:
+                continue
+            for other in Recipe.query.filter(
+                Recipe.fdc_id == record.fdc_id,
+                Recipe.meal_name != meal_name,
+            ).all():
+                other.fdc_id = None
+                changed = True
+            recipe = Recipe.query.filter_by(meal_name=meal_name).first()
+            cat = categories.get(meta["food_category"])
+            if not recipe:
+                recipe = Recipe(
+                    meal_name=meal_name,
+                    description=meta["description"],
+                    calories=record.calories,
+                    quantity=record.quantity,
+                    unit_of_measurement=record.unit_of_measurement,
+                    food_category=meta["food_category"],
+                    protein_g=record.protein_g,
+                    fiber_g=record.fiber_g,
+                    source=record.source,
+                    fdc_id=record.fdc_id,
+                    category_id=cat.id if cat else None,
+                )
+                db.session.add(recipe)
+                changed = True
+            elif recipe.fdc_id != record.fdc_id or recipe.calories != record.calories:
+                recipe.calories = record.calories
+                recipe.protein_g = record.protein_g
+                recipe.fiber_g = record.fiber_g
+                recipe.quantity = record.quantity
+                recipe.unit_of_measurement = record.unit_of_measurement
+                recipe.source = record.source
+                recipe.fdc_id = record.fdc_id
+                recipe.description = meta["description"]
+                recipe.food_category = meta["food_category"]
+                if cat:
+                    recipe.category_id = cat.id
+                changed = True
+
+        if changed:
+            db.session.commit()
+    except FileNotFoundError:
+        pass

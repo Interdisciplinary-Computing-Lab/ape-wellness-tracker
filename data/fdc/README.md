@@ -41,10 +41,29 @@ Nutrition data from [USDA FoodData Central](https://fdc.nal.usda.gov/) (public d
 After CSVs are in `data/fdc/raw/`, run from the project root:
 
 ```powershell
-python misc/scripts/import_fdc_foundation.py --dry-run
+# Preview
+python misc/scripts/import_fdc_foundation.py --dry-run --import-all
+
+# Import full Foundation Foods catalog (~300+ items, categories mapped)
+python misc/scripts/import_fdc_foundation.py --import-all
+
+# Or only refresh foods already in your catalog
 python misc/scripts/import_fdc_foundation.py
 ```
 
-This updates **existing** food catalog (`Recipe`) rows when a Foundation Foods match exists. Values are scaled from FDC per-100g data using the first listed portion weight (e.g. one medium banana). Unmatched catalog items are left unchanged.
+**Data used:** `foundation_food.csv`, `food.csv`, `food_nutrient.csv`, `food_portion.csv`, `measure_unit.csv`, and `data/fdc/category_map.json` (maps USDA categories → app food categories).
 
-`source` is set to `USDA Foundation Foods (FDC {id})`.
+**Calories:** Nutrients are per 100 g in FDC; the importer scales to the first portion in `food_portion.csv` (e.g. 1 banana, 1 cup). Logging uses `(recipe calories / recipe quantity) × amount`.
+
+**Skipped by default:** Restaurant, fast food, and branded FDC categories (see `exclude_fdc_category_ids` in `category_map.json`). Use `--include-excluded` to import those too.
+
+Each imported `Recipe` gets `fdc_id`, `source` = `USDA Foundation Foods (FDC {id})`, and `food_category` / `category_id` from the map.
+
+## Staff custom names
+
+`data/fdc/custom_foods.json` maps display names to FDC items (e.g. **Cheese Toothpaste** → cream cheese, **Trash Lettuce** → Brussels sprouts). To drop legacy seed foods and keep only USDA + those two:
+
+```powershell
+python misc/scripts/prune_non_fdc_foods.py --dry-run
+python misc/scripts/prune_non_fdc_foods.py
+```

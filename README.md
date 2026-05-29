@@ -21,7 +21,7 @@ Create an admin user with `python misc/scripts/create_admin.py` after starting t
 
 ## USDA nutrition data (optional)
 
-For accurate food sources, download **USDA FoodData Central – Foundation Foods** CSV (not FDA bulk data) and extract into `data/fdc/raw/`. See [data/fdc/README.md](data/fdc/README.md) for download links and layout. Raw CSV/zips are gitignored; only the README and folder structure are committed.
+For accurate food sources, download **USDA FoodData Central – Foundation Foods** CSV and extract into `data/fdc/raw/`. See [data/fdc/README.md](data/fdc/README.md) for download links, category mapping, and import commands (`python misc/scripts/import_fdc_foundation.py --import-all`). Raw CSV/zips are gitignored.
 
 ## Desktop App
 

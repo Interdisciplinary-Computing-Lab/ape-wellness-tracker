@@ -76,7 +76,52 @@ def ensure_meals_calories_logged(db_uri, app_instance_path):
         conn.close()
 
 
+def ensure_recipe_gram_weight(db_uri, app_instance_path):
+    """Add recipe.gram_weight for FDC portion-based unit conversions."""
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('PRAGMA table_info(recipe)')
+        columns = {row[1] for row in cursor.fetchall()}
+        if not columns:
+            return
+        if 'gram_weight' not in columns:
+            cursor.execute('ALTER TABLE recipe ADD COLUMN gram_weight REAL')
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_recipe_fdc_id(db_uri, app_instance_path):
+    """Add recipe.fdc_id for USDA Foundation Foods linkage."""
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('PRAGMA table_info(recipe)')
+        columns = {row[1] for row in cursor.fetchall()}
+        if not columns:
+            return
+        if 'fdc_id' not in columns:
+            cursor.execute('ALTER TABLE recipe ADD COLUMN fdc_id VARCHAR(20)')
+            cursor.execute(
+                'CREATE UNIQUE INDEX IF NOT EXISTS ix_recipe_fdc_id ON recipe (fdc_id)'
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_schema_updates(db_uri, app_instance_path):
     """Run all lightweight migrations before ORM queries."""
     ensure_recipe_columns(db_uri, app_instance_path)
+    ensure_recipe_fdc_id(db_uri, app_instance_path)
+    ensure_recipe_gram_weight(db_uri, app_instance_path)
     ensure_meals_calories_logged(db_uri, app_instance_path)

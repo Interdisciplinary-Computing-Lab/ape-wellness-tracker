@@ -172,6 +172,9 @@
                                     data-quantity="{{ recipe.quantity or 1.0 }}"
                                     data-unit="{{ recipe.unit_of_measurement or '' }}"
                                     data-source="{{ recipe.source or '' }}"
+                                    data-protein="{{ recipe.protein_g or 0 }}"
+                                    data-fiber="{{ recipe.fiber_g or 0 }}"
+                                    data-grams="{{ recipe.gram_weight or 0 }}"
                                     data-name="{{ recipe.meal_name }}" 
                                     data-category="{{ recipe.food_category or 'Other' }}"
                                     title="{{ recipe.description or 'No description' }}"
@@ -283,9 +286,6 @@
                     <i class="fas fa-list mr-2"></i>Current Meals
                 </h3>
                 <div class="card-tools">
-                    <button type="button" class="btn btn-tool btn-sm" id="refreshMealsBtn" title="Recalculate all calories">
-                        <i class="fas fa-sync-alt" id="refreshMealsIcon"></i>
-                    </button>
                     <button type="button" class="btn btn-tool btn-sm" onclick="clearFeedingList()" title="Clear all items">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -300,6 +300,7 @@
                                 <th>Qty</th>
                                 <th>Unit</th>
                                 <th>Cal</th>
+                                <th>P / F (g)</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -308,8 +309,10 @@
                         </tbody>
                         <tfoot class="table-primary">
                             <tr>
-                                <td colspan="2" class="font-weight-bold">Total Calories</td>
-                                <td colspan="3" class="font-weight-bold" id="totalCalories">0</td>
+                                <td colspan="3" class="font-weight-bold">Total</td>
+                                <td class="font-weight-bold" id="totalCalories">0</td>
+                                <td class="font-weight-bold small" id="totalMacros">—</td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -498,201 +501,72 @@
     color: #856404;
     font-weight: 700;
 }
+.feeding-qty-control {
+    gap: 0.25rem;
+}
+.feeding-qty-control input[data-feeding-qty] {
+    width: 56px;
+    flex: 0 0 auto;
+}
+.feeding-qty-stepper .btn {
+    padding: 0 0.35rem;
+    line-height: 1;
+}
+.feeding-qty-stepper .btn i {
+    font-size: 0.65rem;
+}
+.feeding-qty-steppers {
+    gap: 0.15rem;
+}
+.feeding-qty-stepper--fine .btn {
+    font-size: 0.6rem;
+    padding: 0 0.25rem;
+}
 </style>
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/feeding_nutrition.js') }}"></script>
 <script>
 let selectedApes = new Set();
 let feedingItems = [];
 let currentCategory = ''; // Start with no category selected (hide all foods until clicked)
+const FN = window.FeedingNutrition;
 
 // Helper function to format quantity to avoid floating point precision issues
 function formatQuantity(qty) {
-    if (qty === null || qty === undefined || isNaN(qty)) {
-        return '1';
-    }
-    // Round to 2 decimal places to avoid precision issues
-    const rounded = Math.round(qty * 100) / 100;
-    // If it's a whole number, display without decimals
-    if (rounded === Math.floor(rounded)) {
-        return String(Math.floor(rounded));
-    }
-    // Otherwise, display with up to 2 decimal places, removing trailing zeros
-    return rounded.toFixed(2).replace(/\.?0+$/, '');
+    return FN.formatQuantity(qty);
 }
 
-// Helper function to normalize units (remove "1 ", "100", etc.)
-function normalizeUnit(unit) {
-    if (!unit || !unit.trim()) return 'piece'; // Default to 'piece' if no unit
-    
-    // Remove leading "1 " or "100" patterns
-    let normalized = unit.trim();
-    
-    // Remove "1 " prefix (e.g., "1 cup" -> "cup")
-    if (normalized.startsWith('1 ')) {
-        normalized = normalized.substring(2).trim();
-    }
-    // Remove "100" prefix (e.g., "100g" -> "g")
-    if (normalized.startsWith('100')) {
-        normalized = normalized.substring(3).trim();
-    }
-    
-    return normalized || 'piece'; // Default to 'piece' if empty after normalization
+function normalizeUnit(unit) { return FN.normalizeUnit(unit); }
+function convertUnit(quantity, fromUnit, toUnit) { return FN.convertUnit(quantity, fromUnit, toUnit); }
+function getUnitCategory(unit) { return FN.getUnitCategory(unit); }
+function canConvertUnits(fromUnit, toUnit) { return FN.canConvertUnits(fromUnit, toUnit); }
+const ALL_FEEDING_UNITS = FN.ALL_FEEDING_UNITS;
+
+function recalculateItemCalories(item) {
+    return FN.recalculateItem(item);
 }
-
-// Unit conversion factors (all conversions to a base unit, then to target unit)
-// Base units: cup (volume), g (weight), piece (count)
-function convertUnit(quantity, fromUnit, toUnit) {
-    if (fromUnit === toUnit) return quantity;
-    if (!fromUnit || !toUnit) return quantity; // Can't convert if units are missing
-    
-    // Convert to base units first, then to target
-    let baseQuantity = quantity;
-    
-    // Convert fromUnit to base unit
-    const volumeToCup = {
-        'cup': 1,
-        'tbsp': 0.0625,      // 1 tbsp = 0.0625 cups (16 tbsp = 1 cup)
-        'tsp': 0.0208333     // 1 tsp = 0.0208333 cups (48 tsp = 1 cup)
-    };
-    
-    const weightToG = {
-        'g': 1,
-        'oz': 28.3495,       // 1 oz = 28.3495 g
-        'lb': 453.592        // 1 lb = 453.592 g
-    };
-    
-    const countUnits = ['piece', 'slice', 'serving'];
-    
-    // Determine unit categories
-    const fromIsVolume = volumeToCup.hasOwnProperty(fromUnit);
-    const fromIsWeight = weightToG.hasOwnProperty(fromUnit);
-    const fromIsCount = countUnits.includes(fromUnit);
-    
-    const toIsVolume = volumeToCup.hasOwnProperty(toUnit);
-    const toIsWeight = weightToG.hasOwnProperty(toUnit);
-    const toIsCount = countUnits.includes(toUnit);
-    
-    // Can't convert between different categories (volume <-> weight <-> count)
-    if ((fromIsVolume && !toIsVolume) || (fromIsWeight && !toIsWeight) || (fromIsCount && !toIsCount)) {
-        return NaN;
-    }
-    
-    // Convert volume units
-    if (fromIsVolume && toIsVolume) {
-        // Convert to cups (base)
-        const cups = baseQuantity * (volumeToCup[fromUnit] || 1);
-        // Convert from cups to target unit
-        const toCupFactor = volumeToCup[toUnit] || 1;
-        return cups / toCupFactor;
-    }
-    
-    // Convert weight units
-    if (fromIsWeight && toIsWeight) {
-        // Convert to grams (base)
-        const grams = baseQuantity * (weightToG[fromUnit] || 1);
-        // Convert from grams to target unit
-        const toGramsFactor = weightToG[toUnit] || 1;
-        return grams / toGramsFactor;
-    }
-    
-    // Count units - assume 1:1 ratio
-    if (fromIsCount && toIsCount) {
-        return quantity;
-    }
-    
-    return NaN;
-}
-
-/**
- * How much of the food's catalog serving is represented by the logged qty/unit.
- * Same-type units convert exactly; cross-type uses estimates for piece-based catalog foods.
- */
-function getQuantityInRecipeUnits(item) {
-    item.approximateCalories = false;
-
-    const qty = item.quantity > 0 ? item.quantity : 1.0;
-    const displayUnit = normalizeUnit(item.unit || 'piece');
-    const baseUnit = normalizeUnit(item.originalRecipeUnit || displayUnit);
-    const recipeQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
-    const baseCat = getUnitCategory(baseUnit);
-    const displayCat = getUnitCategory(displayUnit);
-
-    if (displayUnit === baseUnit) {
-        return qty;
-    }
-
-    if (canConvertUnits(displayUnit, baseUnit)) {
-        const converted = convertUnit(qty, displayUnit, baseUnit);
-        if (!isNaN(converted) && converted > 0) {
-            return converted;
-        }
-    }
-
-    // Most catalog foods are "per piece" — estimate volume/weight so units are usable
-    item.approximateCalories = true;
-
-    if (baseCat === 'count' && displayCat === 'volume') {
-        // Treat catalog calories as if they apply to ~1 cup; convert logged volume to cups
-        const cups = convertUnit(qty, displayUnit, 'cup');
-        if (!isNaN(cups) && cups > 0) {
-            return cups;
-        }
-    }
-
-    if (baseCat === 'count' && displayCat === 'weight') {
-        // Treat catalog calories as if they apply to ~100 g
-        const grams = convertUnit(qty, displayUnit, 'g');
-        if (!isNaN(grams) && grams > 0) {
-            return grams / 100.0;
-        }
-    }
-
-    if (baseCat === 'volume' && displayCat === 'count') {
-        return qty;
-    }
-
-    if (baseCat === 'weight' && displayCat === 'count') {
-        return (qty * recipeQty) / 100.0;
-    }
-
-    return NaN;
-}
-
-function getUnitCategory(unit) {
-    const u = normalizeUnit(unit);
-    if (['cup', 'tbsp', 'tsp'].includes(u)) return 'volume';
-    if (['g', 'oz', 'lb'].includes(u)) return 'weight';
-    if (['piece', 'slice', 'serving'].includes(u)) return 'count';
-    return 'other';
-}
-
-function canConvertUnits(fromUnit, toUnit) {
-    const fromCat = getUnitCategory(fromUnit);
-    const toCat = getUnitCategory(toUnit);
-    return fromCat !== 'other' && fromCat === toCat;
-}
-
-const ALL_FEEDING_UNITS = ['piece', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'serving', 'lb'];
 
 // Global function for inline onclick handlers (most reliable) - defined first
 function addFoodFromButton(btn) {
     try {
-        console.log('addFoodFromButton called with:', btn);
-        
         // Try multiple ways to get the data
         const food = btn.getAttribute('data-food') || btn.dataset.food;
         const caloriesStr = btn.getAttribute('data-calories') || btn.dataset.calories;
         const quantityStr = btn.getAttribute('data-quantity') || btn.dataset.quantity || '1.0';
         const unit = btn.getAttribute('data-unit') || btn.dataset.unit || '';
         const source = btn.getAttribute('data-source') || btn.dataset.source || '';
+        const proteinStr = btn.getAttribute('data-protein') || btn.dataset.protein || '0';
+        const fiberStr = btn.getAttribute('data-fiber') || btn.dataset.fiber || '0';
+        const gramsStr = btn.getAttribute('data-grams') || btn.dataset.grams || '0';
         const name = btn.getAttribute('data-name') || btn.dataset.name || food;
         
         const calories = parseInt(caloriesStr, 10);
         const quantity = parseFloat(quantityStr) || 1.0;
-        
-        console.log('Food data:', {name, calories, quantity, unit, source, food, caloriesStr});
+        const proteinG = parseFloat(proteinStr) || 0;
+        const fiberG = parseFloat(fiberStr) || 0;
+        const gramsPerServing = parseFloat(gramsStr) || 0;
         
         if (!name) {
             console.error('Missing food name');
@@ -712,8 +586,7 @@ function addFoodFromButton(btn) {
             return false;
         }
         
-        const normalizedUnit = normalizeUnit(unit);
-        addFoodItem(name, calories, quantity, normalizedUnit, source);
+        addFoodItem(name, calories, quantity, unit, source, proteinG, fiberG, gramsPerServing);
         
         // Visual feedback
         btn.classList.add('btn-success');
@@ -789,22 +662,11 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = false;
         btn.setAttribute('tabindex', '0');
         
-        // Always add backup event handler to ensure buttons work
-        // This fires as a backup if inline onclick doesn't work
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            addFoodFromButton(this);
-            return false;
-        }, false);
-        
-        // Also ensure onclick attribute is set as backup
+        // onclick on the button is the only handler (a duplicate listener caused qty=2)
         if (!btn.getAttribute('onclick')) {
             btn.setAttribute('onclick', 'addFoodFromButton(this); return false;');
         }
     });
-    console.log('Initialized', foodButtons.length, 'food buttons with event handlers');
-    
     // Ensure save button is clickable
     const saveBtn = document.getElementById('saveFeedingBtn');
     if (saveBtn) {
@@ -822,15 +684,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     initFeedingSummaryListeners();
-
-    const refreshBtn = document.getElementById('refreshMealsBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            refreshCurrentMeals();
-        });
-    }
 });
 
 function initFeedingSummaryListeners() {
@@ -841,6 +694,18 @@ function initFeedingSummaryListeners() {
     feedingSummaryBody.dataset.listenersBound = '1';
 
     feedingSummaryBody.addEventListener('input', function(e) {
+        const calInput = e.target.closest('input[data-calories-input]');
+        if (calInput) {
+            const index = parseInt(calInput.dataset.index, 10);
+            const item = feedingItems[index];
+            if (!item || !item.manualCalories) return;
+            const v = parseInt(calInput.value, 10);
+            if (isNaN(v) || v < 0) return;
+            item.caloriesOverride = v;
+            recalculateItemCalories(item);
+            syncRowFromItem(index, false);
+            return;
+        }
         const qtyInput = e.target.closest('input[data-feeding-qty]');
         if (!qtyInput) return;
         const index = parseInt(qtyInput.dataset.index, 10);
@@ -848,6 +713,18 @@ function initFeedingSummaryListeners() {
         const newQty = parseFloat(qtyInput.value);
         if (!isNaN(newQty) && newQty > 0) {
             applyQuantityChange(index, newQty, false);
+        }
+    });
+
+    feedingSummaryBody.addEventListener('click', function(e) {
+        const stepBtn = e.target.closest('button[data-qty-step]');
+        if (!stepBtn) return;
+        e.preventDefault();
+        const index = parseInt(stepBtn.dataset.index, 10);
+        const delta = parseInt(stepBtn.getAttribute('data-qty-step'), 10);
+        const stepSize = parseFloat(stepBtn.getAttribute('data-qty-step-size') || '1');
+        if (!isNaN(index) && !isNaN(delta) && !isNaN(stepSize)) {
+            applyQuantityStep(index, delta, stepSize);
         }
     });
 
@@ -1087,28 +964,26 @@ function addCustomFood() {
     // For custom foods, the user enters total calories for the quantity they want to log
     // We'll treat this as: base quantity = 1.0, base calories = calories/quantity
     // This way, 1.0 unit = (calories/quantity) calories
-    const baseCalories = calories / quantity; // Calories per unit
-    const caloriesPerUnit = baseCalories;
-    
-    // Check if item already exists (by name and unit)
-    const existingIndex = feedingItems.findIndex(item => item.name === name && item.unit === normalizedUnit);
+    const catalogCalories = calories;
+    const existingIndex = feedingItems.findIndex(function(item) { return item.name === name; });
     if (existingIndex !== -1) {
-        feedingItems[existingIndex].quantity = 1.0;
+        feedingItems[existingIndex].quantity = quantity;
+        feedingItems[existingIndex].unit = normalizedUnit;
         recalculateItemCalories(feedingItems[existingIndex]);
     } else {
-        // Add new item with quantity = 1.0
-        feedingItems.push({
+        const item = FN.buildFeedingItem({
             name: name,
-            calories: baseCalories, // Base calories for 1.0 unit
-            recipeQuantity: 1.0, // Base quantity is 1.0 for custom foods
-            caloriesPerUnit: caloriesPerUnit,
-            quantity: 1.0, // Always start with quantity = 1.0
-            unit: normalizedUnit, // Normalized unit of measurement
-            originalRecipeUnit: normalizedUnit, // Store the original unit for conversions
+            calories: catalogCalories,
+            recipeQuantity: quantity,
+            unitRaw: unit,
             source: '',
-            isFromRecipe: false, // Flag to indicate this is custom food (unit can be changed)
-            totalCalories: caloriesPerUnit * 1.0 // Start with 1.0 * caloriesPerUnit
+            proteinG: 0,
+            fiberG: 0,
         });
+        item.quantity = quantity;
+        item.unit = normalizedUnit;
+        recalculateItemCalories(item);
+        feedingItems.push(item);
     }
     
     // Clear form
@@ -1122,145 +997,99 @@ function addCustomFood() {
     updateStats();
 }
 
-function addFoodItem(name, calories, recipeQuantity, unit, source) {
-    // Parameters:
-    // - name: food name
-    // - calories: total calories for recipeQuantity amount (from recipe)
-    // - recipeQuantity: the base quantity from recipe (e.g., 1.0 for "1 cup")
-    // - unit: unit of measurement (normalized, e.g., "cup")
-    // - source: data source
-    
-    // Normalize unit and set defaults
-    const normalizedUnit = normalizeUnit(unit);
+function addFoodItem(name, calories, recipeQuantity, unitRaw, source, proteinG, fiberG, gramsPerServing) {
     recipeQuantity = recipeQuantity || 1.0;
-    source = source || '';
-    
-    // Calculate calories per unit of the recipe's base quantity
-    // If recipe says: calories=100, quantity=1.0, unit="cup"
-    // Then caloriesPerUnit = 100/1.0 = 100 calories per cup
-    const caloriesPerUnit = calories / recipeQuantity;
-    
-    // Check if item already exists (by name and unit)
-    const existingIndex = feedingItems.findIndex(item => 
-        item.name === name && item.unit === normalizedUnit
-    );
-    
+    const existingIndex = feedingItems.findIndex(function(item) { return item.name === name; });
     if (existingIndex !== -1) {
-        feedingItems[existingIndex].quantity = 1.0;
+        feedingItems[existingIndex].quantity += 1.0;
         recalculateItemCalories(feedingItems[existingIndex]);
     } else {
-        // Add new item with quantity = 1.0
-        feedingItems.push({
+        const item = FN.buildFeedingItem({
             name: name,
-            calories: calories, // Base calories from recipe (for recipeQuantity amount)
-            recipeQuantity: recipeQuantity, // Recipe's base quantity
-            caloriesPerUnit: caloriesPerUnit, // Calories per unit of recipeQuantity
-            quantity: 1.0, // Always start with quantity = 1.0
-            unit: normalizedUnit,
-            originalRecipeUnit: normalizedUnit, // Store the original recipe unit for conversions
-            source: source,
-            isFromRecipe: true, // Flag to indicate this came from a recipe (unit should be read-only)
-            totalCalories: caloriesPerUnit * 1.0 // Start with 1.0 * caloriesPerUnit
+            calories: calories,
+            recipeQuantity: recipeQuantity,
+            unitRaw: unitRaw || '',
+            source: source || '',
+            proteinG: proteinG,
+            fiberG: fiberG,
+            gramsPerServing: gramsPerServing || 0,
         });
+        recalculateItemCalories(item);
+        feedingItems.push(item);
     }
-    
     updateFeedingSummary();
     updateSaveButton();
     updateStats();
 }
 
-/**
- * totalCalories = (catalog calories / catalog quantity) × amount in catalog units.
- * Example: 114 cal per 1 cup, 11 tbsp → 0.6875 cups → ~78 cal (not 1254).
- */
-function recalculateItemCalories(item) {
-    if (!item) return 0;
-
-    const recipeQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
-    if (!item.originalRecipeUnit) {
-        item.originalRecipeUnit = normalizeUnit(item.unit || 'piece');
-    }
-
-    const baseUnit = normalizeUnit(item.originalRecipeUnit);
-    const displayUnit = normalizeUnit(item.unit || baseUnit);
-    const perCatalogUnit = (item.calories > 0 && recipeQty > 0) ? item.calories / recipeQty : 0;
-    const qty = item.quantity > 0 ? item.quantity : 1.0;
-    item.quantity = qty;
-
-    const qtyInCatalogUnits = getQuantityInRecipeUnits(item);
-
-    if (isNaN(qtyInCatalogUnits)) {
-        item.caloriesInvalid = true;
-        item.crossUnitNote = true;
-        item.totalCalories = null;
-        item.caloriesPerUnit = 0;
-        return 0;
-    }
-
-    item.caloriesInvalid = false;
-    item.crossUnitNote = displayUnit !== baseUnit || item.approximateCalories;
-    item.totalCalories = perCatalogUnit * qtyInCatalogUnits;
-    item.caloriesPerUnit = qty > 0 ? item.totalCalories / qty : perCatalogUnit;
-
-    if (isNaN(item.totalCalories) || item.totalCalories < 0) {
-        item.totalCalories = 0;
-    }
-    return item.totalCalories;
-}
-
 function updateFeedingTotalsInDom() {
     let totalCal = 0;
+    let totalP = 0;
+    let totalF = 0;
     feedingItems.forEach(function(itm) {
         if (!itm.caloriesInvalid && itm.totalCalories != null) {
             totalCal += itm.totalCalories;
+            totalP += itm.totalProtein || 0;
+            totalF += itm.totalFiber || 0;
         }
     });
     const totalCalEl = document.getElementById('totalCalories');
     if (totalCalEl) {
         totalCalEl.textContent = Math.round(totalCal);
     }
+    const totalMacrosEl = document.getElementById('totalMacros');
+    if (totalMacrosEl) {
+        totalMacrosEl.textContent = Math.round(totalP * 10) / 10 + ' / ' + Math.round(totalF * 10) / 10;
+    }
 }
 
-function setCaloriesCellValue(calCell, item, flash) {
+function catalogServingHint(item) {
+    if (item.foodSpecificServing) {
+        return formatQuantity(item.recipeQuantity) + ' ' + (item.servingLabel || 'serving');
+    }
+    return formatQuantity(item.recipeQuantity) + ' ' + (item.catalogUnit || 'serving');
+}
+
+function toggleManualCalories(index) {
+    const item = feedingItems[index];
+    if (!item) return;
+    item.manualCalories = !item.manualCalories;
+    if (item.manualCalories) {
+        item.caloriesOverride = item.totalCalories != null ? item.totalCalories : item.calories;
+    } else {
+        item.caloriesOverride = null;
+    }
+    updateFeedingSummary();
+}
+
+function syncCaloriesCellFromItem(calCell, item, flash) {
     if (!calCell || !item) return;
+    const calInput = calCell.querySelector('input[data-calories-input]');
+    const lockBtn = calCell.querySelector('button[data-calories-lock]');
+    if (!calInput) return;
 
     if (item.caloriesInvalid) {
-        const baseUnit = normalizeUnit(item.originalRecipeUnit || 'piece');
-        calCell.textContent = '—';
-        calCell.setAttribute('data-calories', '');
-        calCell.title = 'Cannot convert ' + (item.unit || '') + ' to this food\'s catalog unit (per ' + baseUnit + '). '
-            + 'Use ' + baseUnit + ', tbsp/tsp/cup, g/oz/lb, or piece/slice/serving that matches — or set quantity & unit on the food in Manage Foods.';
+        calInput.value = '';
+        calInput.disabled = true;
         calCell.classList.add('calories-invalid');
-        calCell.classList.remove('calories-updated');
+        calCell.title = 'Cannot convert ' + (item.unit || '') + ' to catalog serving (' + catalogServingHint(item) + ').';
         return;
     }
 
     calCell.classList.remove('calories-invalid');
-    const display = String(Math.round(item.totalCalories || 0));
-    calCell.textContent = display;
-    calCell.setAttribute('data-calories', display);
-    if (item.approximateCalories) {
-        const baseUnit = normalizeUnit(item.originalRecipeUnit || 'piece');
-        const baseCat = getUnitCategory(baseUnit);
-        let hint = 'Estimated: catalog is per ' + baseUnit;
-        if (baseCat === 'count' && getUnitCategory(item.unit) === 'volume') {
-            hint += '; volume uses a per-cup equivalent';
-        } else if (baseCat === 'count' && getUnitCategory(item.unit) === 'weight') {
-            hint += '; weight uses a per-100g equivalent';
-        }
-        calCell.title = hint + '. Set quantity & unit in Manage Foods for exact values.';
-    } else if (item.crossUnitNote) {
-        calCell.title = 'Converted from ' + (item.unit || '') + ' to catalog unit (per ' + normalizeUnit(item.originalRecipeUnit) + ')';
-    } else {
-        calCell.removeAttribute('title');
+    calInput.disabled = !item.manualCalories;
+    calInput.value = Math.round(item.totalCalories || 0);
+    if (lockBtn) {
+        lockBtn.className = 'btn btn-sm ' + (item.manualCalories ? 'btn-warning' : 'btn-outline-secondary');
+        lockBtn.title = item.manualCalories ? 'Manual override (click for auto)' : 'Override calories';
     }
+    let hint = 'Auto from USDA catalog: ' + catalogServingHint(item);
+    if (item.approximateCalories) hint += ' (estimated conversion)';
+    calCell.title = hint;
+
     if (flash) {
-        calCell.classList.remove('calories-updated');
-        void calCell.offsetWidth;
         calCell.classList.add('calories-updated');
-        setTimeout(function() {
-            calCell.classList.remove('calories-updated');
-        }, 400);
+        setTimeout(function() { calCell.classList.remove('calories-updated'); }, 400);
     }
 }
 
@@ -1275,7 +1104,15 @@ function syncRowFromItem(index, flash) {
     const row = tbody.querySelectorAll('tr')[index];
     if (!row) return;
 
-    setCaloriesCellValue(row.querySelector('td.calories-cell'), item, flash);
+    syncCaloriesCellFromItem(row.querySelector('td.calories-cell'), item, flash);
+    const macrosCell = row.querySelector('td.macros-cell');
+    if (macrosCell) {
+        if (item.caloriesInvalid) {
+            macrosCell.textContent = '—';
+        } else {
+            macrosCell.textContent = (item.totalProtein || 0) + ' / ' + (item.totalFiber || 0);
+        }
+    }
 
     const qtyInput = row.querySelector('input[data-feeding-qty]');
     if (qtyInput) {
@@ -1299,43 +1136,82 @@ function applyQuantityChange(index, newQuantity, flash) {
     syncRowFromItem(index, flash);
 }
 
+function applyQuantityStep(index, delta, stepSize) {
+    if (index < 0 || index >= feedingItems.length) return;
+    stepSize = stepSize > 0 ? stepSize : 1;
+    const item = feedingItems[index];
+    const current = item.quantity > 0 ? item.quantity : 1;
+    const minQty = stepSize < 1 ? 0.01 : 1;
+    let next = current + delta * stepSize;
+    next = Math.round(next * 1000) / 1000;
+    next = Math.max(minQty, next);
+    applyQuantityChange(index, next, true);
+}
+
+function createQtyStepper(index, stepSize) {
+    const stepper = document.createElement('div');
+    stepper.className =
+        'btn-group-vertical feeding-qty-stepper btn-group-sm' +
+        (stepSize < 1 ? ' feeding-qty-stepper--fine' : '');
+
+    const upBtn = document.createElement('button');
+    upBtn.type = 'button';
+    upBtn.className = 'btn btn-outline-secondary';
+    upBtn.setAttribute('data-qty-step', '1');
+    upBtn.setAttribute('data-qty-step-size', String(stepSize));
+    upBtn.dataset.index = index;
+    upBtn.title = stepSize < 1 ? 'Add 0.1' : 'Add 1';
+    upBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+
+    const downBtn = document.createElement('button');
+    downBtn.type = 'button';
+    downBtn.className = 'btn btn-outline-secondary';
+    downBtn.setAttribute('data-qty-step', '-1');
+    downBtn.setAttribute('data-qty-step-size', String(stepSize));
+    downBtn.dataset.index = index;
+    downBtn.title = stepSize < 1 ? 'Subtract 0.1' : 'Subtract 1';
+    downBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+
+    stepper.appendChild(upBtn);
+    stepper.appendChild(downBtn);
+    return stepper;
+}
+
+function createQtyControl(index, item) {
+    if (!item.quantity || item.quantity <= 0) {
+        item.quantity = 1.0;
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'feeding-qty-control d-flex align-items-center';
+
+    const qtyInput = document.createElement('input');
+    qtyInput.type = 'number';
+    qtyInput.className = 'form-control form-control-sm';
+    qtyInput.value = formatQuantity(item.quantity);
+    qtyInput.step = 'any';
+    qtyInput.min = '0.01';
+    qtyInput.dataset.index = index;
+    qtyInput.setAttribute('data-feeding-qty', '1');
+
+    const steppers = document.createElement('div');
+    steppers.className = 'd-flex feeding-qty-steppers';
+    steppers.appendChild(createQtyStepper(index, 1));
+    steppers.appendChild(createQtyStepper(index, 0.1));
+
+    wrap.appendChild(qtyInput);
+    wrap.appendChild(steppers);
+    return wrap;
+}
+
 function applyUnitChange(index, newUnit) {
     if (index < 0 || index >= feedingItems.length) return;
 
     const item = feedingItems[index];
-    if (!item.originalRecipeUnit) {
-        item.originalRecipeUnit = normalizeUnit(item.unit || 'piece');
-    }
-
     item.unit = normalizeUnit(newUnit);
+    if (!item.manualCalories) {
+        item.caloriesOverride = null;
+    }
     syncRowFromItem(index, true);
-}
-
-function refreshCurrentMeals() {
-    const icon = document.getElementById('refreshMealsIcon');
-    if (icon) {
-        icon.classList.add('fa-spin');
-    }
-
-    if (feedingItems.length === 0) {
-        updateFeedingSummary();
-        if (icon) icon.classList.remove('fa-spin');
-        return;
-    }
-
-    feedingItems.forEach(function(item, index) {
-        recalculateItemCalories(item);
-        syncRowFromItem(index, false);
-    });
-    updateFeedingSummary();
-    updateSaveButton();
-    updateStats();
-
-    if (icon) {
-        setTimeout(function() {
-            icon.classList.remove('fa-spin');
-        }, 400);
-    }
 }
 
 function updateFeedingSummary() {
@@ -1346,24 +1222,6 @@ function updateFeedingSummary() {
 
     feedingItems.forEach(function(item, index) {
         const row = document.createElement('tr');
-        const formattedQty = formatQuantity(item.quantity);
-        const unitDisplay = item.unit || '';
-        
-        // Create quantity input
-        const qtyInput = document.createElement('input');
-        qtyInput.type = 'number';
-        qtyInput.className = 'form-control form-control-sm';
-        // Ensure quantity defaults to 1.0 if not set
-        qtyInput.value = item.quantity || 1.0;
-        if (!item.quantity || item.quantity <= 0) {
-            item.quantity = 1.0;
-        }
-        qtyInput.step = '0.01';
-        qtyInput.min = '0.01';
-        qtyInput.style.width = '80px';
-        qtyInput.dataset.index = index;
-        qtyInput.setAttribute('data-feeding-qty', '1');
-        
         // Create unit select
         const unitSelect = document.createElement('select');
         unitSelect.className = 'form-control form-control-sm';
@@ -1373,8 +1231,8 @@ function updateFeedingSummary() {
         unitSelect.dataset.index = index;
         unitSelect.setAttribute('data-feeding-unit', '1');
         unitSelect.disabled = false;
-        const baseUnit = normalizeUnit(item.originalRecipeUnit || item.unit || 'piece');
-        unitSelect.title = 'This food is defined per ' + baseUnit + '. Use volume (cup/tbsp/tsp), weight (g/oz/lb), or count (piece/slice/serving) in the same family.';
+        const baseUnit = item.catalogUnit || 'serving';
+        unitSelect.title = 'Catalog serving: ' + catalogServingHint(item) + '. Change unit within the same type (g/oz, cup/tbsp, serving/piece).';
 
         const selectedUnit = normalizeUnit(item.unit || baseUnit);
         ALL_FEEDING_UNITS.forEach(function(opt) {
@@ -1397,24 +1255,55 @@ function updateFeedingSummary() {
 
         recalculateItemCalories(item);
 
-        const calDisplay = item.caloriesInvalid ? '—' : String(Math.round(item.totalCalories || 0));
-        row.innerHTML = `
-            <td title="${item.name}">${item.name.length > 15 ? item.name.substr(0, 15) + '...' : item.name}</td>
-            <td></td>
-            <td></td>
-            <td class="calories-cell${item.caloriesInvalid ? ' calories-invalid' : ''}">${calDisplay}</td>
-            <td>
-                <button class="btn btn-sm btn-outline-danger" onclick="removeFoodItem(${index})" title="Remove">
-                    <i class="fas fa-times"></i>
-                </button>
-            </td>
-        `;
-        
-        // Insert editable inputs
-        const cells = row.querySelectorAll('td');
-        cells[1].appendChild(qtyInput);
-        cells[2].appendChild(unitSelect);
-        
+        const nameCell = document.createElement('td');
+        nameCell.title = item.name + (item.source ? ' (' + item.source + ')' : '');
+        nameCell.textContent = item.name.length > 18 ? item.name.substr(0, 18) + '…' : item.name;
+
+        const qtyCell = document.createElement('td');
+        qtyCell.appendChild(createQtyControl(index, item));
+
+        const unitCell = document.createElement('td');
+        unitCell.appendChild(unitSelect);
+
+        const calCell = document.createElement('td');
+        calCell.className = 'calories-cell' + (item.caloriesInvalid ? ' calories-invalid' : '');
+        const calWrap = document.createElement('div');
+        calWrap.className = 'd-flex align-items-center';
+        const calInput = document.createElement('input');
+        calInput.type = 'number';
+        calInput.className = 'form-control form-control-sm';
+        calInput.style.width = '62px';
+        calInput.min = '0';
+        calInput.dataset.index = index;
+        calInput.setAttribute('data-calories-input', '1');
+        calInput.disabled = !item.manualCalories;
+        calInput.value = item.caloriesInvalid ? '' : Math.round(item.totalCalories || 0);
+        const lockBtn = document.createElement('button');
+        lockBtn.type = 'button';
+        lockBtn.className = 'btn btn-sm ml-1 ' + (item.manualCalories ? 'btn-warning' : 'btn-outline-secondary');
+        lockBtn.setAttribute('data-calories-lock', '1');
+        lockBtn.title = item.manualCalories ? 'Manual override' : 'Auto-calculate';
+        lockBtn.innerHTML = '<i class="fas fa-' + (item.manualCalories ? 'pen' : 'magic') + '"></i>';
+        lockBtn.addEventListener('click', function() { toggleManualCalories(index); });
+        calWrap.appendChild(calInput);
+        calWrap.appendChild(lockBtn);
+        calCell.appendChild(calWrap);
+        syncCaloriesCellFromItem(calCell, item, false);
+
+        const macrosCell = document.createElement('td');
+        macrosCell.className = 'macros-cell small text-muted';
+        macrosCell.textContent = item.caloriesInvalid ? '—' : (item.totalProtein || 0) + ' / ' + (item.totalFiber || 0);
+
+        const actionCell = document.createElement('td');
+        actionCell.innerHTML = '<button type="button" class="btn btn-sm btn-outline-danger" title="Remove"><i class="fas fa-times"></i></button>';
+        actionCell.querySelector('button').addEventListener('click', function() { removeFoodItem(index); });
+
+        row.appendChild(nameCell);
+        row.appendChild(qtyCell);
+        row.appendChild(unitCell);
+        row.appendChild(calCell);
+        row.appendChild(macrosCell);
+        row.appendChild(actionCell);
         tbody.appendChild(row);
         if (!item.caloriesInvalid && item.totalCalories != null) {
             totalCalories += item.totalCalories;
@@ -1671,7 +1560,6 @@ function setDateToTomorrow() {
     if (feedingDateSummaryEl) feedingDateSummaryEl.value = dateStr;
 }
 
-window.refreshCurrentMeals = refreshCurrentMeals;
 window.clearFeedingList = clearFeedingList;
 window.saveFeeding = saveFeeding;
 </script>

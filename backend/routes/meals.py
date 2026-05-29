@@ -158,6 +158,9 @@ def save_feeding():
             if not food_name or calories <= 0:
                 continue
 
+            # Frontend sends portion totals with quantity=1.0; older clients may send multiplier.
+            if quantity <= 0:
+                quantity = 1.0
             logged_calories = max(0, round(calories * quantity))
 
             # Check if recipe exists, create if not

@@ -130,23 +130,27 @@ class Recipe(db.Model):
         quantity (float): Base quantity for which calories are calculated (default: 1.0).
         unit_of_measurement (str): Unit indicating what quantity=1 means (e.g., "1 cup", "1 piece", "100g").
         source (str): Data source for the nutritional information (e.g., "USDA Foundation Foods").
+        fdc_id (str): USDA FoodData Central ID when sourced from Foundation Foods CSV.
         food_category (str): Category of food (fruits, vegetables, protein, etc.).
         category_id (int): Foreign key to FoodCategory.
         protein_g (float): Protein content in grams (default: 2.0).
         fiber_g (float): Fiber content in grams (default: 1.0).
+        gram_weight (float): Gram weight of one catalog serving (FDC portion); enables g/oz conversions.
     """
     __tablename__ = 'recipe'
     id = db.Column(db.Integer, primary_key=True)
-    meal_name = db.Column(db.String(30), unique=True, nullable=False)
+    meal_name = db.Column(db.String(120), unique=True, nullable=False)
     description = db.Column(db.String)
     calories = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Float, nullable=False, default=1.0)
     unit_of_measurement = db.Column(db.String(50), nullable=True)
     source = db.Column(db.String(200), nullable=True)
+    fdc_id = db.Column(db.String(20), unique=True, nullable=True, index=True)
     food_category = db.Column(db.String(50), nullable=True, default='Other')  # Legacy field for backward compatibility
     category_id = db.Column(db.Integer, sa.ForeignKey('food_categories.id'), nullable=True)
     protein_g = db.Column(db.Float, nullable=True, default=2.0)  # Protein in grams
     fiber_g = db.Column(db.Float, nullable=True, default=1.0)  # Fiber in grams
+    gram_weight = db.Column(db.Float, nullable=True)  # FDC portion weight in grams
 
     # Example constraint: calories must be >=0
     __table_args__ = (

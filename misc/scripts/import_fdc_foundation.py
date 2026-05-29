@@ -2,43 +2,34 @@
 """
 Import USDA Foundation Foods CSV data into Recipe rows.
 
-Reads data/fdc/raw/ (foundation_food.csv, food.csv, food_nutrient.csv, food_portion.csv).
-By default updates existing recipes only when a confident FDC match exists.
+Reads data/fdc/raw/ and data/fdc/category_map.json.
 
 Usage (from project root):
   python misc/scripts/import_fdc_foundation.py --dry-run
   python misc/scripts/import_fdc_foundation.py
+  python misc/scripts/import_fdc_foundation.py --import-all
+  python misc/scripts/import_fdc_foundation.py --import-all --include-excluded
 """
 
 from __future__ import annotations
 
 import argparse
-import csv
 import os
 import re
 import sys
-from datetime import datetime
 
-# Project root on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from backend import create_app
 from backend.extensions import db
-from backend.models.entry import Recipe
-
-RAW_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "data",
-    "fdc",
-    "raw",
+from backend.models.entry import FoodCategory, Recipe
+from backend.utils.fdc_loader import (
+    FdcFoundationLoader,
+    _normalize_desc,
+    load_category_map,
 )
 
-# Energy: prefer classic kcal (1008), then Atwater-specific/general factors
-NUTRIENT_ENERGY_IDS = ("1008", "2048", "2047")
-NUTRIENT_PROTEIN = "1003"
-NUTRIENT_FIBER = "1079"
-
-# Catalog meal_name -> exact FDC description (foundation foods only)
+# Legacy catalog meal_name -> exact FDC description (update-existing mode only)
 MEAL_TO_FDC_DESCRIPTION = {
     "Banana": "Bananas, ripe and slightly ripe, raw",
     "Apple": "Apples, gala, with skin, raw",
@@ -94,139 +85,27 @@ MEAL_TO_FDC_DESCRIPTION = {
 }
 
 
-def _normalize_desc(text: str) -> str:
-    return re.sub(r"\s+", " ", text.replace("\xa0", " ").strip().lower())
+def _category_lookup() -> dict[str, FoodCategory]:
+    return {c.name: c for c in FoodCategory.query.filter_by(is_active=True).all()}
 
 
-def _load_measure_units() -> dict[str, str]:
-    path = os.path.join(RAW_DIR, "measure_unit.csv")
-    units = {}
-    with open(path, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            units[row["id"]] = row["name"]
-    return units
+def _apply_fdc_to_recipe(recipe: Recipe, record, categories: dict[str, FoodCategory]) -> None:
+    recipe.calories = record.calories
+    recipe.protein_g = record.protein_g
+    recipe.fiber_g = record.fiber_g
+    recipe.quantity = record.quantity
+    recipe.unit_of_measurement = record.unit_of_measurement
+    recipe.gram_weight = record.gram_weight
+    recipe.source = record.source
+    recipe.fdc_id = record.fdc_id
+    recipe.description = record.description
+    recipe.food_category = record.app_category
+    cat = categories.get(record.app_category)
+    if cat:
+        recipe.category_id = cat.id
 
 
-def _load_foundation_foods(nutrients: dict[str, dict]) -> tuple[dict[str, dict], set[str]]:
-    """Map normalized description -> best fdc row; return all foundation fdc ids."""
-    ff_path = os.path.join(RAW_DIR, "foundation_food.csv")
-    food_path = os.path.join(RAW_DIR, "food.csv")
-    if not os.path.isfile(ff_path) or not os.path.isfile(food_path):
-        raise FileNotFoundError(
-            f"Missing Foundation Foods CSVs in {RAW_DIR}. "
-            "Extract the December 2025 Foundation Foods zip there."
-        )
-
-    foundation_ids = set()
-    with open(ff_path, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            foundation_ids.add(row["fdc_id"])
-
-    candidates: dict[str, list[dict]] = {}
-    with open(food_path, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            if row["fdc_id"] not in foundation_ids:
-                continue
-            if row["data_type"] != "foundation_food":
-                continue
-            desc = row["description"]
-            key = _normalize_desc(desc)
-            candidates.setdefault(key, []).append(
-                {
-                    "fdc_id": row["fdc_id"],
-                    "description": desc,
-                    "publication_date": row.get("publication_date") or "",
-                }
-            )
-
-    by_desc: dict[str, dict] = {}
-    for key, rows in candidates.items():
-        with_energy = [r for r in rows if "energy" in nutrients.get(r["fdc_id"], {})]
-        pool = with_energy or rows
-        by_desc[key] = max(pool, key=lambda r: r["publication_date"])
-
-    return by_desc, foundation_ids
-
-
-def _load_nutrients(foundation_ids: set[str]) -> dict[str, dict[str, float]]:
-    path = os.path.join(RAW_DIR, "food_nutrient.csv")
-    wanted = set(NUTRIENT_ENERGY_IDS) | {NUTRIENT_PROTEIN, NUTRIENT_FIBER}
-    out: dict[str, dict[str, float]] = {}
-    with open(path, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            fdc_id = row["fdc_id"]
-            if fdc_id not in foundation_ids:
-                continue
-            nid = row["nutrient_id"]
-            if nid not in wanted:
-                continue
-            try:
-                amount = float(row["amount"])
-            except (TypeError, ValueError):
-                continue
-            bucket = out.setdefault(fdc_id, {})
-            if nid in NUTRIENT_ENERGY_IDS and "energy" not in bucket:
-                # First seen wins per file order; re-sort below by priority
-                bucket.setdefault("_energy_candidates", {})[nid] = amount
-            elif nid == NUTRIENT_PROTEIN:
-                bucket["protein"] = amount
-            elif nid == NUTRIENT_FIBER:
-                bucket["fiber"] = amount
-
-    for bucket in out.values():
-        candidates = bucket.pop("_energy_candidates", {})
-        for nid in NUTRIENT_ENERGY_IDS:
-            if nid in candidates:
-                bucket["energy"] = candidates[nid]
-                break
-    return out
-
-
-def _load_portions(foundation_ids: set[str], measure_units: dict[str, str]) -> dict[str, dict]:
-    path = os.path.join(RAW_DIR, "food_portion.csv")
-    best: dict[str, dict] = {}
-    with open(path, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            fdc_id = row["fdc_id"]
-            if fdc_id not in foundation_ids:
-                continue
-            try:
-                gram_weight = float(row["gram_weight"] or 0)
-            except (TypeError, ValueError):
-                gram_weight = 0.0
-            if gram_weight <= 0:
-                continue
-            try:
-                seq = int(row["seq_num"] or 9999)
-            except (TypeError, ValueError):
-                seq = 9999
-            try:
-                amount = float(row["amount"] or 1) or 1.0
-            except (TypeError, ValueError):
-                amount = 1.0
-
-            prev = best.get(fdc_id)
-            if prev and seq >= prev["seq_num"]:
-                continue
-
-            modifier = (row.get("modifier") or "").strip()
-            portion_desc = (row.get("portion_description") or "").strip()
-            unit_id = row.get("measure_unit_id", "")
-            unit_name = measure_units.get(unit_id, portion_desc or "serving")
-
-            label_parts = [p for p in [str(amount) if amount != 1 else "", unit_name, modifier] if p]
-            unit_label = " ".join(label_parts).strip() or unit_name
-
-            best[fdc_id] = {
-                "seq_num": seq,
-                "quantity": amount,
-                "gram_weight": gram_weight,
-                "unit_of_measurement": unit_label[:50],
-            }
-    return best
-
-
-def _match_fdc(meal_name: str, by_desc: dict[str, dict]) -> dict | None:
+def _match_fdc_for_recipe(meal_name: str, by_desc: dict[str, dict]) -> dict | None:
     override = MEAL_TO_FDC_DESCRIPTION.get(meal_name)
     if override:
         hit = by_desc.get(_normalize_desc(override))
@@ -255,103 +134,220 @@ def _match_fdc(meal_name: str, by_desc: dict[str, dict]) -> dict | None:
     return None
 
 
-def _scaled_nutrition(nutrients: dict, gram_weight: float) -> dict:
-    factor = gram_weight / 100.0
-    energy = nutrients.get("energy")
-    if energy is None:
-        raise ValueError("missing energy (nutrient 1008)")
-    return {
-        "calories": max(0, round(energy * factor)),
-        "protein_g": round(nutrients.get("protein", 0) * factor, 2),
-        "fiber_g": round(nutrients.get("fiber", 0) * factor, 2),
-    }
+def _update_existing(
+    loader: FdcFoundationLoader,
+    category_map: dict,
+    dry_run: bool,
+) -> tuple[int, int, int]:
+    """Update recipes already in the DB by name match to FDC."""
+    foundation_ids = loader.foundation_ids()
+    nutrients = loader.load_nutrients(foundation_ids)
+    foods = loader.load_foods_by_fdc_id(nutrients)
+    portions = loader.load_portions(foundation_ids)
+    by_desc = {_normalize_desc(v["description"]): v for v in foods.values()}
+
+    from backend.utils.fdc_loader import scaled_nutrition
+
+    updated = skipped = missing_nutrient = 0
+    categories = _category_lookup()
+
+    for recipe in Recipe.query.order_by(Recipe.meal_name).all():
+        if recipe.fdc_id and recipe.fdc_id in foods:
+            food = foods[recipe.fdc_id]
+        else:
+            food = _match_fdc_for_recipe(recipe.meal_name, by_desc)
+        if not food:
+            print(f"  skip (no FDC match): {recipe.meal_name}")
+            skipped += 1
+            continue
+
+        fdc_id = food["fdc_id"]
+        holder = Recipe.query.filter_by(fdc_id=fdc_id).first()
+        if holder and holder.id != recipe.id:
+            print(
+                f"  skip (FDC {fdc_id} already on '{holder.meal_name}'): {recipe.meal_name}"
+            )
+            skipped += 1
+            continue
+
+        nut = nutrients.get(fdc_id)
+        if not nut or "energy" not in nut:
+            print(f"  skip (no nutrients): {recipe.meal_name} -> {food['description']}")
+            missing_nutrient += 1
+            continue
+
+        portion = portions.get(fdc_id)
+        if portion:
+            gram_weight = portion["gram_weight"]
+            scaled = scaled_nutrition(nut, gram_weight)
+            quantity = portion["quantity"]
+            unit = portion["unit_of_measurement"]
+        else:
+            gram_weight = 100.0
+            scaled = scaled_nutrition(nut, gram_weight)
+            quantity = 100.0
+            unit = "100 g"
+
+        app_cat = recipe.food_category
+        from backend.utils.fdc_loader import resolve_app_category
+
+        mapped = resolve_app_category(food["food_category_id"], food["description"], category_map)
+        if mapped:
+            app_cat = mapped
+
+        print(
+            f"  {'[dry-run] ' if dry_run else ''}update {recipe.meal_name}: "
+            f"cal {recipe.calories} -> {scaled['calories']}, "
+            f"category -> {app_cat}, FDC {fdc_id}"
+        )
+
+        if not dry_run:
+            recipe.calories = scaled["calories"]
+            recipe.protein_g = scaled["protein_g"]
+            recipe.fiber_g = scaled["fiber_g"]
+            recipe.quantity = quantity
+            recipe.unit_of_measurement = unit
+            recipe.gram_weight = gram_weight
+            recipe.source = f"USDA Foundation Foods (FDC {fdc_id})"
+            recipe.fdc_id = fdc_id
+            recipe.description = food["description"]
+            recipe.food_category = app_cat
+            cat = categories.get(app_cat)
+            if cat:
+                recipe.category_id = cat.id
+            updated += 1
+        else:
+            updated += 1
+
+    return updated, skipped, missing_nutrient
 
 
-def run_import(dry_run: bool) -> int:
-    measure_units = _load_measure_units()
-    ff_path = os.path.join(RAW_DIR, "foundation_food.csv")
-    foundation_ids = set()
-    with open(ff_path, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            foundation_ids.add(row["fdc_id"])
-    print(f"Loaded {len(foundation_ids)} foundation foods from {RAW_DIR}")
+def _import_all(
+    loader: FdcFoundationLoader,
+    category_map: dict,
+    dry_run: bool,
+    include_excluded: bool,
+) -> tuple[int, int, int]:
+    """Upsert all foundation foods into Recipe by fdc_id."""
+    created = updated = skipped = 0
+    categories = _category_lookup()
+    used_meal_names: set[str] = {r.meal_name for r in Recipe.query.all()}
 
-    nutrients = _load_nutrients(foundation_ids)
-    by_desc, _ = _load_foundation_foods(nutrients)
-    portions = _load_portions(foundation_ids, measure_units)
+    for record in loader.iter_records(
+        category_map,
+        include_excluded_categories=include_excluded,
+    ):
+        recipe = Recipe.query.filter_by(fdc_id=record.fdc_id).first()
+        if not recipe:
+            recipe = Recipe.query.filter(
+                db.func.lower(Recipe.meal_name) == record.meal_name.lower()
+            ).first()
+
+        meal_name = record.meal_name
+        if not recipe:
+            base_name = meal_name
+            n = 2
+            while meal_name in used_meal_names:
+                suffix = f" ({record.fdc_id})"
+                trim = 120 - len(suffix)
+                meal_name = base_name[:trim].rstrip(" ,") + suffix if len(base_name) > trim else base_name + f" #{n}"
+                n += 1
+
+        action = "create" if not recipe else "update"
+        print(
+            f"  {'[dry-run] ' if dry_run else ''}{action} [{record.app_category}] "
+            f"{meal_name}: {record.calories} cal / {record.quantity} {record.unit_of_measurement}"
+        )
+
+        if dry_run:
+            if recipe:
+                updated += 1
+            else:
+                created += 1
+            used_meal_names.add(meal_name)
+            continue
+
+        if not recipe:
+            recipe = Recipe(
+                meal_name=meal_name,
+                description=record.description,
+                calories=record.calories,
+                quantity=record.quantity,
+                unit_of_measurement=record.unit_of_measurement,
+                food_category=record.app_category,
+                protein_g=record.protein_g,
+                fiber_g=record.fiber_g,
+                gram_weight=record.gram_weight,
+                source=record.source,
+                fdc_id=record.fdc_id,
+            )
+            cat = categories.get(record.app_category)
+            if cat:
+                recipe.category_id = cat.id
+            db.session.add(recipe)
+            created += 1
+        else:
+            if recipe.meal_name != meal_name and meal_name not in used_meal_names:
+                recipe.meal_name = meal_name
+            _apply_fdc_to_recipe(recipe, record, categories)
+            updated += 1
+
+        used_meal_names.add(recipe.meal_name)
+
+    return created, updated, skipped
+
+
+def run_import(
+    dry_run: bool,
+    import_all: bool,
+    include_excluded: bool,
+) -> int:
+    loader = FdcFoundationLoader()
+    category_map = load_category_map()
+    print(f"Loaded {len(loader.foundation_ids())} foundation foods from {loader.raw_dir}")
 
     app = create_app()
-    updated = skipped = missing_nutrient = 0
-
     with app.app_context():
-        recipes = Recipe.query.order_by(Recipe.meal_name).all()
-        for recipe in recipes:
-            fdc = _match_fdc(recipe.meal_name, by_desc)
-            if not fdc:
-                print(f"  skip (no FDC match): {recipe.meal_name}")
-                skipped += 1
-                continue
-
-            fdc_id = fdc["fdc_id"]
-            nut = nutrients.get(fdc_id)
-            if not nut or "energy" not in nut:
-                print(f"  skip (no nutrients): {recipe.meal_name} -> {fdc['description']}")
-                missing_nutrient += 1
-                continue
-
-            portion = portions.get(fdc_id)
-            if portion:
-                gram_weight = portion["gram_weight"]
-                quantity = portion["quantity"]
-                unit = portion["unit_of_measurement"]
-            else:
-                gram_weight = 100.0
-                quantity = 100.0
-                unit = "100 g"
-
-            scaled = _scaled_nutrition(nut, gram_weight)
-            source = f"USDA Foundation Foods (FDC {fdc_id})"
-
-            print(
-                f"  {'[dry-run] ' if dry_run else ''}update {recipe.meal_name}: "
-                f"cal {recipe.calories} -> {scaled['calories']}, "
-                f"qty {recipe.quantity} -> {quantity} {unit}, "
-                f"from '{fdc['description']}'"
+        if import_all:
+            print("Mode: import all foundation foods into catalog")
+            created, updated, skipped = _import_all(
+                loader, category_map, dry_run, include_excluded
             )
-
             if not dry_run:
-                recipe.calories = scaled["calories"]
-                recipe.protein_g = scaled["protein_g"]
-                recipe.fiber_g = scaled["fiber_g"]
-                recipe.quantity = quantity
-                recipe.unit_of_measurement = unit
-                recipe.source = source
-                if not recipe.description or (recipe.description or "").startswith("Fresh "):
-                    recipe.description = fdc["description"]
-                updated += 1
-            else:
-                updated += 1
-
-        if not dry_run and updated:
-            db.session.commit()
-
-    print(
-        f"\nDone. matched/updated={updated}, skipped={skipped}, "
-        f"missing_nutrients={missing_nutrient}"
-        + (" (dry run — no DB changes)" if dry_run else "")
-    )
+                db.session.commit()
+            print(f"\nDone. created={created}, updated={updated}, skipped={skipped}")
+        else:
+            print("Mode: update existing catalog items only")
+            updated, skipped, missing = _update_existing(loader, category_map, dry_run)
+            if not dry_run and updated:
+                db.session.commit()
+            print(
+                f"\nDone. updated={updated}, skipped={skipped}, "
+                f"missing_nutrients={missing}"
+                + (" (dry run)" if dry_run else "")
+            )
     return 0
 
 
 def main():
     parser = argparse.ArgumentParser(description="Import USDA Foundation Foods into Recipe rows")
+    parser.add_argument("--dry-run", action="store_true", help="Preview without DB writes")
     parser.add_argument(
-        "--dry-run",
+        "--import-all",
         action="store_true",
-        help="Show planned updates without writing to the database",
+        help="Import all foundation foods (not only existing catalog names)",
+    )
+    parser.add_argument(
+        "--include-excluded",
+        action="store_true",
+        help="Include restaurant/branded/etc. FDC categories normally skipped",
     )
     args = parser.parse_args()
-    return run_import(dry_run=args.dry_run)
+    return run_import(
+        dry_run=args.dry_run,
+        import_all=args.import_all,
+        include_excluded=args.include_excluded,
+    )
 
 
 if __name__ == "__main__":
