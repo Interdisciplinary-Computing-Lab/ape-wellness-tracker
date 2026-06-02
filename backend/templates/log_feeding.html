@@ -382,5 +382,10 @@ window.LOG_FEEDING_CONFIG = {
     preFilledApe: {{ pre_filled_ape|tojson }}
 };
 </script>
-<script src="{{ url_for('static', filename='js/log_feeding.js') }}"></script>
+<script src="{{ url_for('static', filename='js/log_feeding/00_state.js') }}"></script>
+<script src="{{ url_for('static', filename='js/log_feeding/01_apes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/log_feeding/02_session.js') }}"></script>
+<script src="{{ url_for('static', filename='js/log_feeding/03_catalog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/log_feeding/04_save.js') }}"></script>
+<script src="{{ url_for('static', filename='js/log_feeding/05_init.js') }}"></script>
 {% endblock %}
