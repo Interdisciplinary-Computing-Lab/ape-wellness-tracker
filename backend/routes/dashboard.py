@@ -19,8 +19,7 @@ def dashboard():
     # Get all active apes (not archived)
     apes = Apes.query.filter_by(is_archived=False).all()
     
-    # Get all recipes
-    recipes = Recipe.query.all()
+    recipes = Recipe.query.order_by(Recipe.food_category, Recipe.meal_name).all()
     
     # Recent activity (newest first)
     recent_meals = (
@@ -36,8 +35,11 @@ def dashboard():
     total_meals_today = len(today_meals)
     total_calories_today = sum(meal_calories(meal) for meal in today_meals)
     
+    edit_apes = apes
+
     return render_template('dashboard.html',
                          apes=apes,
+                         edit_apes=edit_apes,
                          recipes=recipes,
                          recent_meals=recent_meals,
                          total_meals_today=total_meals_today,

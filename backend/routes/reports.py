@@ -299,7 +299,7 @@ def download_raw_data():
             with open(apes_csv_path, 'w', newline='', encoding='utf-8-sig') as f:  # utf-8-sig adds BOM for Excel
                 apes_writer = csv.writer(f)
                 # Write header
-                apes_writer.writerow(['id', 'ape_name', 'birthday', 'weight', 'mother', 'image_filename', 'image_mime_type', 'is_archived', 'archived_at'])
+                apes_writer.writerow(['id', 'ape_name', 'birthday', 'weight', 'image_filename', 'image_mime_type', 'is_archived', 'archived_at'])
                 # Write data rows
                 for ape in apes_data:
                     apes_writer.writerow([
@@ -307,7 +307,6 @@ def download_raw_data():
                         ape.ape_name,
                         ape.birthday.strftime('%Y-%m-%d') if ape.birthday else '',
                         ape.weight,
-                        ape.mother,
                         ape.image_filename,
                         ape.image_mime_type,
                         ape.is_archived,
@@ -393,7 +392,7 @@ def download_raw_data():
                     # Write header with all relevant fields
                     denormalized_writer.writerow([
                         'meal_id', 'meal_date', 'feeding_period',
-                        'ape_id', 'ape_name', 'ape_birthday', 'ape_age_at_meal', 'ape_weight', 'ape_mother',
+                        'ape_id', 'ape_name', 'ape_birthday', 'ape_age_at_meal', 'ape_weight',
                         'recipe_id', 'meal_name', 'meal_description', 'calories', 'quantity', 'unit_of_measurement', 'source', 'food_category', 'category_name',
                         'user_id', 'logged_by_email'
                     ])
@@ -428,7 +427,6 @@ def download_raw_data():
                             ape.birthday.strftime('%Y-%m-%d') if ape and ape.birthday else '',
                             age_at_meal if age_at_meal is not None else '',
                             ape.weight if ape else '',
-                            ape.mother if ape else '',
                             meal.recipe_id,
                             recipe.meal_name if recipe else '',
                             recipe.description if recipe else '',

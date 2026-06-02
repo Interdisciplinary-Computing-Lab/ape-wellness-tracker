@@ -86,7 +86,7 @@
                     <div class="ape-avatar text-center" data-ape-id="{{ ape.id }}" onclick="toggleApeSelection(this, '{{ ape.id }}')">
                         <div class="position-relative">
                             <img src="{{ ape.get_image_url() }}" 
-                                 class="avatar-circle" alt="{{ ape.ape_name }}">
+                                 class="avatar-circle {{ ape.profile_photo_class() }}" alt="{{ ape.ape_name }}">
                             <div class="selection-indicator">
                                 <i class="fas fa-check-circle text-success"></i>
                             </div>
@@ -339,36 +339,19 @@
                 </div>
             </div>
         </div>
+
+        <div class="alert alert-success feeding-save-toast mt-2 mb-0 d-none"
+             id="feedingSaveSuccess"
+             role="status"
+             aria-live="polite"
+             aria-atomic="true">
+            <i class="fas fa-check-circle mr-2" aria-hidden="true"></i>
+            <span id="feedingSaveSuccessText"></span>
+        </div>
         
     </div>
 </div>
 
-<!-- Success Modal -->
-<div class="modal fade" id="successModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-check-circle mr-2"></i>Meals Logged Successfully
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Meal data has been saved for <span id="savedApeCount">0</span> ape(s).</p>
-                <p class="mb-0">Total calories logged: <strong id="savedTotalCalories">0</strong></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Stay Here</button>
-                <button type="button" class="btn btn-outline-primary" onclick="window.location.reload()">Log Another</button>
-                <a href="{{ url_for('site.dashboard') }}" class="btn btn-primary" id="successModalDashboardBtn">
-                    <i class="fas fa-tachometer-alt mr-1"></i>View Dashboard
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -637,6 +620,25 @@
         width: calc(50% - 0.4rem);
     }
 }
+.feeding-save-toast {
+    font-size: 0.95rem;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 0;
+    border-radius: 0.35rem;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.feeding-save-toast.is-visible {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
+}
+.feeding-save-toast.is-hiding {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+.feeding-save-toast #feedingSaveSuccessCal {
+    font-weight: 700;
+}
 </style>
 {% endblock %}
 
@@ -646,6 +648,7 @@
 let selectedApes = new Set();
 let feedingItems = [];
 let saveFeedingInProgress = false;
+let feedingSaveSuccessTimer = null;
 let currentCategory = ''; // Start with no category selected (hide all foods until clicked)
 const FN = window.FeedingNutrition;
 
@@ -1489,6 +1492,55 @@ function clearAll() {
     }, 100);
 }
 
+function formatSavedCalories(value) {
+    const n = Number(value);
+    if (!isFinite(n)) {
+        return '0';
+    }
+    return n.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1
+    });
+}
+
+function hideFeedingSaveSuccess() {
+    const el = document.getElementById('feedingSaveSuccess');
+    if (!el) {
+        return;
+    }
+    el.classList.remove('is-visible');
+    el.classList.add('is-hiding', 'd-none');
+}
+
+function showFeedingSaveSuccess(apeCount, totalCalories, mealCount) {
+    const el = document.getElementById('feedingSaveSuccess');
+    const textEl = document.getElementById('feedingSaveSuccessText');
+    if (!el || !textEl) {
+        return;
+    }
+    if (feedingSaveSuccessTimer) {
+        clearTimeout(feedingSaveSuccessTimer);
+        feedingSaveSuccessTimer = null;
+    }
+    const apes = Number(apeCount) || 0;
+    const cals = formatSavedCalories(totalCalories);
+    const meals = Number(mealCount) || 0;
+    const apeLabel = apes === 1 ? '1 ape' : apes + ' apes';
+    const mealLabel = meals === 1 ? '1 meal' : meals + ' meals';
+    textEl.innerHTML =
+        'Meals logged for <strong>' + apeLabel + '</strong> (' + mealLabel + ') — ' +
+        '<span id="feedingSaveSuccessCal">' + cals + ' cal</span>';
+    el.classList.remove('d-none', 'is-hiding');
+    el.classList.add('is-visible');
+    feedingSaveSuccessTimer = setTimeout(function() {
+        el.classList.add('is-hiding');
+        feedingSaveSuccessTimer = setTimeout(function() {
+            hideFeedingSaveSuccess();
+            feedingSaveSuccessTimer = null;
+        }, 400);
+    }, 4500);
+}
+
 // Save meals function - must be global for inline onclick
 function saveFeeding() {
     if (saveFeedingInProgress) {
@@ -1583,18 +1635,11 @@ function saveFeeding() {
     })
     .then(function(result) {
         if (result.ok && result.data.success) {
-            document.getElementById('savedApeCount').textContent = result.data.ape_count;
-            document.getElementById('savedTotalCalories').textContent = result.data.total_calories;
-            const dashBtn = document.getElementById('successModalDashboardBtn');
-            if (dashBtn && result.data.ape_count === 1 && feedingData.ape_ids.length === 1) {
-                const apeId = feedingData.ape_ids[0];
-                dashBtn.href = '/ape/' + encodeURIComponent(apeId);
-                dashBtn.innerHTML = '<i class="fas fa-user mr-1"></i>View Ape Profile';
-            } else if (dashBtn) {
-                dashBtn.href = '{{ url_for("site.dashboard") }}';
-                dashBtn.innerHTML = '<i class="fas fa-tachometer-alt mr-1"></i>View Dashboard';
-            }
-            $('#successModal').modal('show');
+            showFeedingSaveSuccess(
+                result.data.ape_count,
+                result.data.total_calories,
+                result.data.meal_count
+            );
             clearAll();
         } else {
             alert('Error saving meals: ' + (result.data.error || 'Unknown error'));

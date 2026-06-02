@@ -10,10 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- AdminLTE -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ape-theme.css') }}">
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        body.ape-auth-page {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -32,7 +31,6 @@
             margin-bottom: 1rem;
         }
         .login-logo h1 {
-            color: #fff;
             font-size: 2rem;
             font-weight: 300;
             margin: 0;
@@ -46,17 +44,6 @@
             background-color: #f8f9fa;
             border-color: #ced4da;
         }
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            padding: 12px 20px;
-            font-size: 16px;
-            font-weight: 500;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-        }
         .alert {
             border-radius: 8px;
             border: none;
@@ -65,10 +52,6 @@
             border-radius: 8px;
             padding: 12px 15px;
             font-size: 16px;
-        }
-        .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
         }
         .input-group .form-control {
             border-top-left-radius: 0;
@@ -81,11 +64,6 @@
         .login-footer {
             text-align: center;
             margin-top: 2rem;
-            color: rgba(255,255,255,0.8);
-        }
-        .login-footer a {
-            color: #fff;
-            text-decoration: none;
         }
         .login-footer a:hover {
             text-decoration: underline;
@@ -141,7 +119,7 @@
         }
     </style>
 </head>
-<body>
+<body class="ape-auth-page">
     <div class="login-box">
         <!-- Login Logo -->
         <div class="login-logo">
@@ -241,7 +219,7 @@
                 <!-- Additional Links -->
                 {% if security.registerable %}
                 <p class="mb-0 mt-3 text-center">
-                    <a href="{{ url_for_security('register') }}">
+                    <a href="{{ url_for_security('register') }}" class="auth-card-link">
                         <i class="fas fa-user-plus mr-1"></i>Register a new account
                     </a>
                 </p>

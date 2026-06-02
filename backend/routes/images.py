@@ -4,7 +4,7 @@ Image upload and serving routes for the Ape Wellness Tracker application.
 
 from flask import send_file, redirect, url_for, flash
 from backend.extensions import db
-from backend.models.entry import Apes
+from backend.models.entry import Apes, DEFAULT_APE_IMAGE
 from backend.utils.file_utils import allowed_file, MAX_FILE_SIZE
 from flask_security import login_required
 from werkzeug.utils import secure_filename
@@ -28,9 +28,9 @@ def ape_image(ape_id):
             )
         else:
             # Fallback to static file if no BLOB data
-            return redirect(url_for('static', filename='images/bonobo-placeholder.jpg'))
-    except Exception as e:
-        return redirect(url_for('static', filename='images/bonobo-placeholder.jpg'))
+            return redirect(url_for('static', filename=DEFAULT_APE_IMAGE))
+    except Exception:
+        return redirect(url_for('static', filename=DEFAULT_APE_IMAGE))
 
 
 @site.route('/ape/<int:ape_id>/upload_image', methods=['POST'])
@@ -106,10 +106,10 @@ def remove_ape_image(ape_id):
         db.session.commit()
         
         flash(f'Image removed successfully for {ape.ape_name}', 'success')
-        return redirect(url_for('site.ape_profile_page', ape_id=ape_id))
+        return redirect(url_for('site.edit_ape', ape_id=ape_id))
         
     except Exception as e:
         db.session.rollback()
         flash(f'Error removing image: {str(e)}', 'error')
-        return redirect(url_for('site.ape_profile_page', ape_id=ape_id))
+        return redirect(url_for('site.edit_ape', ape_id=ape_id))
 

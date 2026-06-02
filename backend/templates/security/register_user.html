@@ -10,10 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- AdminLTE -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ape-theme.css') }}">
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        body.ape-auth-page {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -33,7 +32,6 @@
             margin-bottom: 1rem;
         }
         .register-logo h1 {
-            color: #fff;
             font-size: 2rem;
             font-weight: 300;
             margin: 0;
@@ -46,17 +44,6 @@
             background-color: #f8f9fa;
             border-color: #ced4da;
         }
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            padding: 12px 20px;
-            font-size: 16px;
-            font-weight: 500;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-        }
         .alert {
             border-radius: 8px;
             border: none;
@@ -65,10 +52,6 @@
             border-radius: 8px;
             padding: 12px 15px;
             font-size: 16px;
-        }
-        .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
         }
         .input-group .form-control {
             border-top-left-radius: 0;
@@ -81,25 +64,36 @@
         .register-footer {
             text-align: center;
             margin-top: 2rem;
-            color: rgba(255,255,255,0.8);
-        }
-        .register-footer a {
-            color: #fff;
-            text-decoration: none;
         }
         .register-footer a:hover {
             text-decoration: underline;
         }
-        .password-strength {
-            margin-top: 5px;
-            font-size: 12px;
+        .password-policy {
+            font-size: 13px;
+            line-height: 1.45;
+            padding: 10px 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
         }
-        .strength-weak { color: #dc3545; }
-        .strength-medium { color: #ffc107; }
-        .strength-strong { color: #28a745; }
+        .password-policy-list {
+            margin: 0;
+            padding-left: 1.1rem;
+        }
+        .password-policy-list li {
+            margin-bottom: 0.2rem;
+        }
+        .password-policy-list li.met {
+            color: #28a745;
+        }
+        .password-policy-list .policy-icon {
+            display: inline-block;
+            width: 1rem;
+            margin-right: 0.35rem;
+        }
     </style>
 </head>
-<body>
+<body class="ape-auth-page">
     <div class="register-box">
         <!-- Register Logo -->
         <div class="register-logo">
@@ -138,13 +132,23 @@
                         {{ register_user_form.email(class="form-control", placeholder="Email", required=true) }}
                     </div>
                     
-                    <div class="input-group mb-3">
+                    <div class="input-group mb-2">
                         <div class="input-group-prepend">
                             <span class="input-group-text">
                                 <i class="fas fa-lock"></i>
                             </span>
                         </div>
-                        {{ register_user_form.password(class="form-control", placeholder="Password", required=true, id="password") }}
+                        {{ register_user_form.password(class="form-control", placeholder="Password", required=true, id="password", minlength=8, autocomplete="new-password") }}
+                    </div>
+                    <div class="password-policy mb-3" id="passwordPolicy">
+                        <span class="text-muted d-block mb-1"><strong>Password must include:</strong></span>
+                        <ul class="password-policy-list text-muted">
+                            {% for req in password_policy_requirements %}
+                            <li data-policy-index="{{ loop.index0 }}">
+                                <span class="policy-icon"><i class="fas fa-circle" style="font-size: 6px; vertical-align: middle;"></i></span>{{ req }}
+                            </li>
+                            {% endfor %}
+                        </ul>
                     </div>
                     
                     <div class="input-group mb-3">
@@ -167,7 +171,7 @@
                 
                 <!-- Additional Links -->
                 <p class="mb-1 mt-3 text-center">
-                    <a href="{{ url_for_security('login') }}">
+                    <a href="{{ url_for_security('login') }}" class="auth-card-link">
                         <i class="fas fa-sign-in-alt mr-1"></i>I already have an account
                     </a>
                 </p>
@@ -192,36 +196,27 @@
             // Auto-focus on email field
             $('#email').focus();
             
-            // Password strength indicator
+            // Live password policy checklist
+            var policyChecks = [
+                function(p) { return p.length >= 8; },
+                function(p) { return /[a-z]/.test(p); },
+                function(p) { return /[A-Z]/.test(p); },
+                function(p) { return /\d/.test(p); },
+                function(p) { return /[^a-zA-Z0-9]/.test(p); }
+            ];
             $('#password').on('input', function() {
                 var password = $(this).val();
-                var strength = 0;
-                
-                if (password.length >= 8) strength++;
-                if (password.match(/[a-z]/)) strength++;
-                if (password.match(/[A-Z]/)) strength++;
-                if (password.match(/[0-9]/)) strength++;
-                if (password.match(/[^a-zA-Z0-9]/)) strength++;
-                
-                var strengthText = '';
-                var strengthClass = '';
-                
-                if (strength < 3) {
-                    strengthText = 'Weak';
-                    strengthClass = 'strength-weak';
-                } else if (strength < 5) {
-                    strengthText = 'Medium';
-                    strengthClass = 'strength-medium';
-                } else {
-                    strengthText = 'Strong';
-                    strengthClass = 'strength-strong';
-                }
-                
-                // Remove existing strength indicator
-                $('.password-strength').remove();
-                
-                // Add new strength indicator
-                $(this).after('<div class="password-strength ' + strengthClass + '">Password strength: ' + strengthText + '</div>');
+                $('#passwordPolicy .password-policy-list li').each(function(i) {
+                    var met = policyChecks[i] && policyChecks[i](password);
+                    var icon = $(this).find('.policy-icon i');
+                    $(this).toggleClass('met', met);
+                    icon.removeClass('fa-circle fa-check text-muted text-success');
+                    if (met) {
+                        icon.addClass('fa-check text-success');
+                    } else {
+                        icon.addClass('fa-circle text-muted');
+                    }
+                });
             });
             
             // Password confirmation check

@@ -79,8 +79,13 @@ def change_password():
             flash('New passwords do not match.', 'error')
             return redirect(url_for('site.user_profile'))
         
-        if len(new_password) < 8:
-            flash('New password must be at least 8 characters long.', 'error')
+        from backend.utils.password_policy import validate_password
+        policy_errors = validate_password(new_password)
+        if policy_errors:
+            flash(
+                'New password does not meet requirements: ' + '; '.join(policy_errors),
+                'error',
+            )
             return redirect(url_for('site.user_profile'))
         
         # Verify current password

@@ -19,7 +19,6 @@ if exist "%USERPROFILE%\Desktop" (
     echo Creating desktop shortcut...
     echo [InternetShortcut] > "%USERPROFILE%\Desktop\Ape Wellness Tracker.url"
     echo URL=file:///%CD%\launch_desktop.py >> "%USERPROFILE%\Desktop\Ape Wellness Tracker.url"
-    echo IconFile=%CD%\backend\static\images\bonobo-placeholder.jpg >> "%USERPROFILE%\Desktop\Ape Wellness Tracker.url"
 )
 
 echo.

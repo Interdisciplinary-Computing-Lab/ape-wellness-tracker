@@ -182,7 +182,10 @@ def get_recipe(recipe_id):
                 'unit_of_measurement': recipe.unit_of_measurement,
                 'source': recipe.source,
                 'food_category': recipe.food_category,
-                'description': recipe.description
+                'description': recipe.description,
+                'gram_weight': recipe.gram_weight,
+                'protein_g': recipe.protein_g,
+                'fiber_g': recipe.fiber_g,
             }
         })
     except Exception as e:

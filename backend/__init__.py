@@ -132,11 +132,13 @@ def create_app():
     @app.context_processor
     def utility_processor():
         from backend.utils.meal_nutrition import meal_calories, meal_protein_g, meal_fiber_g
+        from backend.utils.password_policy import PASSWORD_POLICY_REQUIREMENTS
         return dict(
             get_time_period_display=get_time_period_display,
             meal_calories=meal_calories,
             meal_protein_g=meal_protein_g,
             meal_fiber_g=meal_fiber_g,
+            password_policy_requirements=PASSWORD_POLICY_REQUIREMENTS,
         )
 
     with app.app_context():

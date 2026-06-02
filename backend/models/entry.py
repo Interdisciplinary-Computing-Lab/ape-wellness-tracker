@@ -24,6 +24,10 @@ def get_feeding_periods():
 
 FEEDING_PERIODS = get_feeding_periods()
 
+# Static asset used when an ape has no uploaded profile photo
+DEFAULT_APE_IMAGE = 'images/ape-default.png'
+
+
 class Apes(db.Model):
     """
     Represents an ape in the wellness tracker.
@@ -32,7 +36,6 @@ class Apes(db.Model):
         ape_name (str): Unique name of the ape.
         birthday (date): Birthday of the ape.
         weight (float): Current weight in kg.
-        mother (str): Mother's name if known.
         image_filename (str): Filename of the image (for backward compatibility).
         image_data (bytes): BLOB data of the actual image.
         image_mime_type (str): MIME type of the image (e.g., 'image/jpeg').
@@ -82,13 +85,18 @@ class Apes(db.Model):
         return self.image_data is not None
     
     def get_image_url(self):
-        """Get the URL for the ape's image"""
+        """Get the URL for the ape's profile image (uploaded or default avatar)."""
         if self.has_image():
             return url_for('site.ape_image', ape_id=self.id)
-        elif self.image_filename:
+        if self.image_filename:
             return url_for('static', filename='images/' + self.image_filename)
-        else:
-            return url_for('static', filename='images/bonobo-placeholder.jpg')
+        return url_for('static', filename=DEFAULT_APE_IMAGE)
+
+    def profile_photo_class(self):
+        """CSS classes for profile images (default avatar gets centered icon styling)."""
+        if self.has_image() or self.image_filename:
+            return 'ape-profile-photo'
+        return 'ape-profile-photo ape-profile-photo--default'
 
 class FoodCategory(db.Model):
     """

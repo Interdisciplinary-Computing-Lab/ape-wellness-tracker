@@ -231,3 +231,57 @@ def save_feeding():
         traceback.print_exc()
         return jsonify({'success': False, 'error': 'Failed to save meal data'}), 500
 
+
+@site.route('/api/meals/<int:meal_id>', methods=['GET'])
+@login_required
+def api_get_meal(meal_id):
+    """Load one saved meal for the edit modal."""
+    meal = Meals.query.get_or_404(meal_id)
+    from backend.utils.meal_edit import meal_to_edit_dict
+    return jsonify({'success': True, 'meal': meal_to_edit_dict(meal)})
+
+
+@site.route('/api/meals/<int:meal_id>', methods=['PATCH'])
+@login_required
+def api_update_meal(meal_id):
+    """Update a saved meal from the edit modal."""
+    meal = Meals.query.get_or_404(meal_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'No data received'}), 400
+
+    calories = int(data.get('calories', 0) or 0)
+    if calories <= 0:
+        return jsonify({'success': False, 'error': 'Calories must be greater than zero'}), 400
+
+    try:
+        from backend.utils.meal_edit import apply_meal_edit, meal_to_edit_dict
+        apply_meal_edit(meal, data)
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': 'Meal updated',
+            'meal': meal_to_edit_dict(meal),
+        })
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception:
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': 'Failed to update meal'}), 500
+
+
+@site.route('/api/meals/<int:meal_id>', methods=['DELETE'])
+@login_required
+def api_delete_meal(meal_id):
+    """Delete a saved meal from the edit modal."""
+    meal = Meals.query.get_or_404(meal_id)
+    try:
+        db.session.delete(meal)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Meal removed'})
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Failed to delete meal'}), 500

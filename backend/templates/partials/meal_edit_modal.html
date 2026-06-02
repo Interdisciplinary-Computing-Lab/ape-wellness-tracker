@@ -1,0 +1,114 @@
+{# Requires: edit_apes, recipes #}
+<div class="modal fade" id="mealEditModal" tabindex="-1" role="dialog" aria-labelledby="mealEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mealEditModalLabel">
+                    <i class="fas fa-edit mr-2"></i>Edit logged meal
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="mealEditError" role="alert"></div>
+                <form id="mealEditForm" autocomplete="off" onsubmit="return false;">
+                    <input type="hidden" id="mealEditId" value="">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="mealEditApe">Ape</label>
+                                <select class="form-control" id="mealEditApe" required>
+                                    {% for a in edit_apes %}
+                                    <option value="{{ a.id }}">{{ a.ape_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="mealEditDate">Date</label>
+                                <input type="date" class="form-control" id="mealEditDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="mealEditPeriod">Period</label>
+                                <select class="form-control" id="mealEditPeriod">
+                                    <option value="morning">Morning</option>
+                                    <option value="afternoon">Afternoon</option>
+                                    <option value="evening">Evening</option>
+                                    <option value="night">Night</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="mealEditFoodSearch">Food</label>
+                        <input type="text" class="form-control" id="mealEditFoodSearch"
+                               list="mealEditFoodList" placeholder="Search foods…" required>
+                        <datalist id="mealEditFoodList">
+                            {% for recipe in recipes %}
+                            <option value="{{ recipe.meal_name }}"></option>
+                            {% endfor %}
+                        </datalist>
+                        <input type="hidden" id="mealEditRecipeId" value="">
+                    </div>
+                    <div class="row align-items-end">
+                        <div class="col-md-4">
+                            <div class="form-group mb-md-0">
+                                <label for="mealEditQuantity">Quantity</label>
+                                <input type="number" class="form-control" id="mealEditQuantity"
+                                       min="0.1" step="0.1" value="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-md-0">
+                                <label for="mealEditUnit">Unit</label>
+                                <select class="form-control" id="mealEditUnit"></select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-md-0">
+                                <label>Calories (this entry)</label>
+                                <div class="form-control-plaintext font-weight-bold text-primary" id="mealEditCaloriesDisplay">—</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0 mt-2" id="mealEditCaloriesHint"></p>
+                </form>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-danger" id="mealEditDeleteBtn">
+                    <i class="fas fa-trash mr-1"></i>Remove entry
+                </button>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="mealEditSaveBtn">
+                        <i class="fas fa-save mr-1"></i>Save changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-success meal-edit-flash d-none" id="mealEditFlash" role="status" aria-live="polite"></div>
+
+<script>
+window.MEAL_EDIT_RECIPES = [
+{% for recipe in recipes %}
+    {
+        "id": {{ recipe.id }},
+        "meal_name": {{ recipe.meal_name|tojson }},
+        "calories": {{ recipe.calories or 0 }},
+        "quantity": {{ recipe.quantity or 1 }},
+        "unit_of_measurement": {{ (recipe.unit_of_measurement or '')|tojson }},
+        "source": {{ (recipe.source or '')|tojson }},
+        "gram_weight": {{ recipe.gram_weight or 0 }},
+        "protein_g": {{ recipe.protein_g or 0 }},
+        "fiber_g": {{ recipe.fiber_g or 0 }}
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+];
+</script>

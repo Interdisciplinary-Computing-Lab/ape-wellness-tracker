@@ -29,12 +29,6 @@
                         <small class="form-text text-muted">Enter weight in kilograms (optional)</small>
                     </div>
                     <div class="form-group">
-                        <label for="mother">Mother's Name</label>
-                        <input type="text" class="form-control" name="mother" id="mother" 
-                               value="{{ ape.mother or '' }}" maxlength="50">
-                        <small class="form-text text-muted">Enter mother's name if known (optional)</small>
-                    </div>
-                    <div class="form-group">
                         <label for="image">Profile Photo</label>
                         <div class="custom-file">
                             <input type="file" class="custom-file-input" name="image" id="image" 
@@ -46,6 +40,14 @@
                             <img id="previewImg" src="" alt="Preview" 
                                  style="max-width: 200px; max-height: 200px; border-radius: 8px;">
                         </div>
+                        {% if ape.has_image() %}
+                        <form action="{{ url_for('site.remove_ape_image', ape_id=ape.id) }}" method="post" class="mt-2"
+                              onsubmit="return confirm('Remove this profile photo? This cannot be undone.');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash mr-1"></i>Remove Photo
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
@@ -72,7 +74,7 @@
                     <div class="col-md-4 text-center">
                         <img src="{{ ape.get_image_url() }}" 
                              alt="{{ ape.ape_name }}" 
-                             class="img-fluid rounded-circle border" style="width: 100px; height: 100px; object-fit: cover;">
+                             class="img-fluid rounded-circle border {{ ape.profile_photo_class() }}" style="width: 100px; height: 100px;">
                     </div>
                     <div class="col-md-8">
                         <h4>{{ ape.ape_name }}</h4>
@@ -80,9 +82,6 @@
                         <p class="text-muted mb-1"><strong>Age:</strong> {{ ape.age }} years (born {{ ape.birthday.strftime('%B %d, %Y') }})</p>
                         {% if ape.weight %}
                         <p class="text-muted mb-1"><strong>Weight:</strong> {{ ape.weight }} kg</p>
-                        {% endif %}
-                        {% if ape.mother %}
-                        <p class="text-muted mb-1"><strong>Mother:</strong> {{ ape.mother }}</p>
                         {% endif %}
                         <p class="text-muted mb-1"><strong>Status:</strong> Active</p>
                         <div class="mt-3">

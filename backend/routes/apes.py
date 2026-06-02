@@ -4,7 +4,7 @@ Ape management routes for the Ape Wellness Tracker application.
 
 from flask import render_template, request, redirect, url_for, flash
 from backend.extensions import db
-from backend.models.entry import Apes, Meals
+from backend.models.entry import Apes, Meals, Recipe
 from backend.helpers import add_to_db
 from backend.utils.file_utils import allowed_file, MAX_FILE_SIZE
 from flask_security import login_required, roles_required
@@ -44,7 +44,6 @@ def create_ape():
         ape_name = request.form.get("ape_name")
         birthday_str = request.form.get("birthday")
         weight = request.form.get("weight")
-        mother = request.form.get("mother")
         
         if ape_name and birthday_str:
             try:
@@ -53,7 +52,6 @@ def create_ape():
                     ape_name=ape_name, 
                     birthday=birthday,
                     weight=float(weight) if weight else None,
-                    mother=mother if mother else None
                 )
                 
                 # Handle image upload if provided
@@ -100,12 +98,10 @@ def edit_ape(ape_id):
         ape.ape_name = request.form['ape_name']
         birthday_str = request.form['birthday']
         weight = request.form.get('weight')
-        mother = request.form.get('mother')
         
         try:
             ape.birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
             ape.weight = float(weight) if weight else None
-            ape.mother = mother if mother else None
             
             # Handle image upload if provided
             if 'image' in request.files:
@@ -150,11 +146,23 @@ def archive_ape(ape_id):
     """
     ape = Apes.query.get_or_404(ape_id)
     ape_name = ape.ape_name
-    ape.is_archived = True
-    ape.archived_at = datetime.now()
-    db.session.commit()
-    flash(f'{ape_name} has been archived. You can view archived apes from the main menu.', 'success')
-    return redirect(url_for('site.all_apes'))
+    if ape.is_archived:
+        flash(f'{ape_name} is already archived.', 'info')
+        return redirect(url_for('site.archived_apes'))
+
+    try:
+        ape.is_archived = True
+        ape.archived_at = datetime.now()
+        db.session.commit()
+        flash(
+            f'{ape_name} has been archived. View archived apes from the sidebar under Apes.',
+            'success',
+        )
+        return redirect(url_for('site.archived_apes'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Could not archive {ape_name}: {e}', 'error')
+        return redirect(url_for('site.ape_profile_page', ape_id=ape_id))
 
 
 @site.route('/apes/<int:ape_id>/unarchive', methods=['POST'])
@@ -272,8 +280,13 @@ def ape_profile_page(ape_id):
      .order_by(func.strftime('%Y-%m', Meals.date))\
      .all()
     
+    edit_apes = Apes.query.filter_by(is_archived=False).order_by(Apes.ape_name).all()
+    recipes = Recipe.query.order_by(Recipe.food_category, Recipe.meal_name).all()
+
     return render_template('ape_profile.html', 
                          ape=ape,
+                         edit_apes=edit_apes,
+                         recipes=recipes,
                          recent_meals=recent_meals,
                          recent_meals_week=recent_meals_week,
                          total_calories_week=total_calories_week,

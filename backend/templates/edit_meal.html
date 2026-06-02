@@ -65,7 +65,7 @@
                         <div class="col-md-3 text-center">
                             <img src="{{ meal.ape.get_image_url() }}" 
                                  alt="{{ meal.ape.ape_name }}" 
-                                 class="img-fluid rounded-circle border" style="width: 60px; height: 60px; object-fit: cover;">
+                                 class="img-fluid rounded-circle border {{ meal.ape.profile_photo_class() }}" style="width: 60px; height: 60px;">
                         </div>
                         <div class="col-md-9">
                             <h5 class="mb-1">{{ meal.ape.ape_name }}</h5>

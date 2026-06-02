@@ -119,9 +119,34 @@ def ensure_recipe_fdc_id(db_uri, app_instance_path):
         conn.close()
 
 
+def ensure_apes_archive_columns(db_uri, app_instance_path):
+    """Add apes.is_archived and apes.archived_at if missing (older databases)."""
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('PRAGMA table_info(apes)')
+        columns = {row[1] for row in cursor.fetchall()}
+        if not columns:
+            return
+        if 'is_archived' not in columns:
+            cursor.execute(
+                'ALTER TABLE apes ADD COLUMN is_archived BOOLEAN NOT NULL DEFAULT 0'
+            )
+        if 'archived_at' not in columns:
+            cursor.execute('ALTER TABLE apes ADD COLUMN archived_at DATETIME')
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_schema_updates(db_uri, app_instance_path):
     """Run all lightweight migrations before ORM queries."""
     ensure_recipe_columns(db_uri, app_instance_path)
     ensure_recipe_fdc_id(db_uri, app_instance_path)
     ensure_recipe_gram_weight(db_uri, app_instance_path)
     ensure_meals_calories_logged(db_uri, app_instance_path)
+    ensure_apes_archive_columns(db_uri, app_instance_path)

@@ -28,16 +28,13 @@
                             <div class="card card-outline card-secondary">
                                 <div class="card-body text-center">
                                     <div class="mb-3">
-                                        <img class="img-circle img-bordered-sm" 
+                                        <img class="img-circle img-bordered-sm {{ ape.profile_photo_class() }}" 
                                              src="{{ ape.get_image_url() }}" 
                                              alt="{{ ape.ape_name }}"
-                                             style="width: 80px; height: 80px; object-fit: cover;">
+                                             style="width: 80px; height: 80px;">
                                     </div>
                                     
                                     <h4 class="mb-1">{{ ape.ape_name }}</h4>
-                                    {% if ape.mother %}
-                                    <p class="text-muted mb-2">Born to {{ ape.mother }}</p>
-                                    {% endif %}
                                     
                                     <div class="row text-center mb-3">
                                         <div class="col-6">
@@ -69,14 +66,14 @@
                                         
                                         <button type="button" class="btn btn-success btn-sm mb-2 unarchive-btn" 
                                                 data-ape-name="{{ ape.ape_name }}"
-                                                data-ape-id="{{ ape.id }}">
+                                                data-action-url="{{ url_for('site.unarchive_ape', ape_id=ape.id) }}">
                                             <i class="fas fa-undo mr-1"></i>Restore from Archive
                                         </button>
                                         
                                         {% if current_user.has_role('Admin') %}
                                         <button type="button" class="btn btn-danger btn-sm delete-btn" 
                                                 data-ape-name="{{ ape.ape_name }}"
-                                                data-ape-id="{{ ape.id }}">
+                                                data-action-url="{{ url_for('site.delete_ape', ape_id=ape.id) }}">
                                             <i class="fas fa-trash mr-1"></i>Delete Permanently
                                         </button>
                                         {% endif %}
@@ -104,52 +101,38 @@
 
 {% block extra_js %}
 <script>
-// Unarchive confirmation function
-function confirmUnarchive(apeName, apeId) {
-    if (confirm(`Are you sure you want to restore ${apeName} from the archive? This will make the ape active again.`)) {
-        // Create a form and submit it
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/apes/${apeId}/unarchive`;
-        document.body.appendChild(form);
-        form.submit();
-    }
+function submitPostForm(actionUrl) {
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = actionUrl;
+    document.body.appendChild(form);
+    form.submit();
 }
 
-// Delete confirmation function (Admin only)
-function confirmDelete(apeName, apeId) {
-    if (confirm(`WARNING: Are you sure you want to PERMANENTLY DELETE ${apeName}?\n\nThis action cannot be undone and will remove all associated data including:\n- All feeding records\n- All meal history\n- Profile information\n\nType 'DELETE' to confirm:`)) {
-        const confirmation = prompt(`Type 'DELETE' to confirm permanent deletion of ${apeName}:`);
-        if (confirmation === 'DELETE') {
-            // Create a form and submit it
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/apes/${apeId}/delete`;
-            document.body.appendChild(form);
-            form.submit();
-        } else {
-            alert('Deletion cancelled. You must type "DELETE" exactly to confirm.');
-        }
-    }
-}
-
-// Add event listeners for buttons using data attributes
 document.addEventListener('DOMContentLoaded', function() {
-    // Unarchive buttons
-    document.querySelectorAll('.unarchive-btn').forEach(button => {
+    document.querySelectorAll('.unarchive-btn').forEach(function(button) {
         button.addEventListener('click', function() {
-            const apeName = this.getAttribute('data-ape-name');
-            const apeId = this.getAttribute('data-ape-id');
-            confirmUnarchive(apeName, parseInt(apeId));
+            var apeName = this.getAttribute('data-ape-name');
+            var actionUrl = this.getAttribute('data-action-url');
+            if (confirm('Restore ' + apeName + ' from the archive? This will make the ape active again.')) {
+                submitPostForm(actionUrl);
+            }
         });
     });
-    
-    // Delete buttons
-    document.querySelectorAll('.delete-btn').forEach(button => {
+
+    document.querySelectorAll('.delete-btn').forEach(function(button) {
         button.addEventListener('click', function() {
-            const apeName = this.getAttribute('data-ape-name');
-            const apeId = this.getAttribute('data-ape-id');
-            confirmDelete(apeName, parseInt(apeId));
+            var apeName = this.getAttribute('data-ape-name');
+            var actionUrl = this.getAttribute('data-action-url');
+            if (!confirm('WARNING: Permanently delete ' + apeName + '?\n\nThis cannot be undone and removes all feeding history for this ape.')) {
+                return;
+            }
+            var confirmation = prompt('Type DELETE to confirm permanent deletion of ' + apeName + ':');
+            if (confirmation === 'DELETE') {
+                submitPostForm(actionUrl);
+            } else {
+                alert('Deletion cancelled. You must type DELETE exactly to confirm.');
+            }
         });
     });
 });

@@ -2,6 +2,7 @@ from flask_security import Security, SQLAlchemyUserDatastore
 from flask_security.signals import user_registered
 from backend.extensions import db
 from backend.models.entry import User, Role
+from backend.utils.password_policy import AppPasswordUtil
 from datetime import datetime
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -9,7 +10,7 @@ security = Security()
 
 def init_security(app):
     """Initialize Flask-Security with minimal configuration"""
-    security.init_app(app, user_datastore)
+    security.init_app(app, user_datastore, password_util_cls=AppPasswordUtil)
     
     # Only essential configurations - let Flask-Security handle the rest
     app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
