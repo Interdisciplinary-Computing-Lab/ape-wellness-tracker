@@ -56,7 +56,6 @@ MEAL_TO_FDC_DESCRIPTION = {
     "Zucchini": "Squash, summer, green, zucchini, includes skin, raw",
     "Tomato": "Tomato, roma",
     "Cabbage": "Cabbage, green, raw",
-    "Trash Lettuce": "Brussels sprouts, raw",
     "Corn": "Corn, sweet, yellow and white kernels, \xa0fresh, raw",
     "Brown Rice": "Rice, brown, long grain, unenriched, raw",
     "Cooked Rice": "Rice, white, long grain, unenriched, raw",

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Keep USDA FDC catalog foods plus staff custom names (Cheese Toothpaste, Trash Lettuce).
+Keep USDA FDC catalog foods plus any names listed in data/fdc/custom_foods.json.
 Link those two to Foundation Foods nutrition, then remove all other non-FDC recipes
 and their meal log rows.
 
@@ -89,7 +89,7 @@ def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool) -> list[int]:
                 cat = categories.get(meta["food_category"])
                 recipe = Recipe(
                     meal_name=meal_name,
-                    description=meta["description"],
+                    description=meta.get("description", ""),
                     calories=record.calories,
                     quantity=record.quantity,
                     unit_of_measurement=record.unit_of_measurement,
@@ -109,7 +109,7 @@ def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool) -> list[int]:
             )
             if not dry_run:
                 _apply_record_to_recipe(
-                    recipe, record, meta["food_category"], meta["description"]
+                    recipe, record, meta["food_category"], meta.get("description", "")
                 )
 
         for dup in Recipe.query.filter(
@@ -182,7 +182,7 @@ def run_prune(dry_run: bool) -> int:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Remove non-USDA foods except Cheese Toothpaste and Trash Lettuce"
+        description="Remove non-USDA foods except custom display names in custom_foods.json"
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()

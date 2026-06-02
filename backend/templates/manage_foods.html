@@ -22,21 +22,28 @@
 </div>
 
 <!-- Food Search -->
-<div class="row mb-3">
-    <div class="col-12 col-md-8 col-lg-6">
-        <div class="input-group">
-            <input type="text" id="foodSearch" class="form-control"
-                   placeholder="Search by name, category, source, or description..."
-                   aria-label="Search foods">
-            <div class="input-group-append">
-                <button type="button" class="btn btn-primary" id="foodSearchBtn" onclick="searchFoods()">
-                    <i class="fas fa-search mr-1"></i>Search
-                </button>
-                <button type="button" class="btn btn-outline-secondary" onclick="clearFoodSearch()"
-                        title="Clear search" aria-label="Clear search">
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="food-search-wrap">
+            <label class="sr-only" for="foodSearch">Search foods</label>
+            <div class="food-search-field">
+                <i class="fas fa-search food-search-icon" aria-hidden="true"></i>
+                <input type="search"
+                       id="foodSearch"
+                       class="food-search-input"
+                       placeholder="Search foods by name, category, or description…"
+                       autocomplete="off"
+                       spellcheck="false">
+                <button type="button"
+                        id="foodSearchClear"
+                        class="food-search-clear"
+                        title="Clear search"
+                        aria-label="Clear search"
+                        hidden>
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            <p class="food-search-hint text-muted mb-0" id="foodSearchHint" aria-live="polite"></p>
         </div>
     </div>
 </div>
@@ -122,11 +129,6 @@
                 {% if recipe.description %}
                 <p class="text-muted small mb-2">{{ recipe.description }}</p>
                 {% endif %}
-                {% if recipe.source %}
-                <p class="text-info small mb-2">
-                    <i class="fas fa-database mr-1"></i>Source: {{ recipe.source }}
-                </p>
-                {% endif %}
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="badge category-badge"
                         data-category="{{ recipe.food_category or 'Other' }}">
@@ -155,6 +157,13 @@
         </div>
     </div>
     {% endfor %}
+    <div class="col-12 food-search-empty d-none" id="foodSearchEmpty">
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-search fa-2x mb-3 opacity-50"></i>
+            <p class="mb-0 font-weight-medium">No foods match your search.</p>
+            <p class="small mb-0">Try a different name or clear the search.</p>
+        </div>
+    </div>
 </div>
 
 <!-- Add New Food Modal -->
@@ -450,6 +459,67 @@ document.addEventListener('DOMContentLoaded', function() {
             border-color: #17a2b8;
         }
         
+        /* Food search */
+        .food-search-wrap {
+            max-width: 520px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .food-search-field {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .food-search-icon {
+            position: absolute;
+            left: 1rem;
+            color: #adb5bd;
+            font-size: 0.95rem;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .food-search-input {
+            width: 100%;
+            border: 1px solid #dee2e6;
+            border-radius: 999px;
+            padding: 0.65rem 2.75rem 0.65rem 2.75rem;
+            font-size: 0.95rem;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .food-search-input:focus {
+            outline: none;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        }
+        .food-search-input::-webkit-search-cancel-button {
+            display: none;
+        }
+        .food-search-clear {
+            position: absolute;
+            right: 0.5rem;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            padding: 0;
+            line-height: 1;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .food-search-clear:hover {
+            color: #343a40;
+            background: #f1f3f5;
+        }
+        .food-search-hint {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            min-height: 1.2em;
+        }
+
         /* Centered action buttons styling */
         .action-buttons-center {
             display: flex;
@@ -702,14 +772,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const foodSearchInput = document.getElementById('foodSearch');
+    const foodSearchClear = document.getElementById('foodSearchClear');
     if (foodSearchInput) {
+        foodSearchInput.addEventListener('input', function() {
+            applyFoodFilters();
+            updateFoodSearchUi();
+        });
         foodSearchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                searchFoods();
+            if (e.key === 'Escape') {
+                clearFoodSearch();
             }
         });
     }
+    if (foodSearchClear) {
+        foodSearchClear.addEventListener('click', clearFoodSearch);
+    }
+    updateFoodSearchUi();
 });
 
 let currentFoodCategory = 'all';
@@ -729,6 +807,7 @@ function applyFoodFilters() {
     const searchInput = document.getElementById('foodSearch');
     const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const foodItems = document.querySelectorAll('.food-item');
+    let visibleCount = 0;
 
     foodItems.forEach(item => {
         const name = item.dataset.name || '';
@@ -744,10 +823,43 @@ function applyFoodFilters() {
 
         if (matchesCategory && matchesSearch) {
             item.classList.remove('hidden');
+            visibleCount += 1;
         } else {
             item.classList.add('hidden');
         }
     });
+
+    const emptyEl = document.getElementById('foodSearchEmpty');
+    if (emptyEl) {
+        emptyEl.classList.toggle('d-none', visibleCount > 0);
+    }
+    return visibleCount;
+}
+
+function updateFoodSearchUi() {
+    const searchInput = document.getElementById('foodSearch');
+    const clearBtn = document.getElementById('foodSearchClear');
+    const hint = document.getElementById('foodSearchHint');
+    const term = searchInput ? searchInput.value.trim() : '';
+    const visible = document.querySelectorAll('.food-item:not(.hidden)').length;
+    const total = document.querySelectorAll('.food-item').length;
+
+    if (clearBtn) {
+        clearBtn.hidden = term.length === 0;
+    }
+    if (hint) {
+        if (term.length > 0) {
+            hint.textContent = visible === 1
+                ? 'Showing 1 food'
+                : 'Showing ' + visible + ' of ' + total + ' foods';
+        } else if (currentFoodCategory !== 'all') {
+            hint.textContent = visible === 1
+                ? 'Showing 1 food in this category'
+                : 'Showing ' + visible + ' foods in this category';
+        } else {
+            hint.textContent = total + ' foods';
+        }
+    }
 }
 
 function filterByCategory(category, clickedButton) {
@@ -765,18 +877,17 @@ function filterByCategory(category, clickedButton) {
         activeBtn.classList.add('active');
     }
     applyFoodFilters();
-}
-
-function searchFoods() {
-    applyFoodFilters();
+    updateFoodSearchUi();
 }
 
 function clearFoodSearch() {
     const searchInput = document.getElementById('foodSearch');
     if (searchInput) {
         searchInput.value = '';
+        searchInput.focus();
     }
     applyFoodFilters();
+    updateFoodSearchUi();
 }
 
 // Add event listeners for edit and delete buttons

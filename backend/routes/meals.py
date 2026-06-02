@@ -5,7 +5,6 @@ Meal logging and management routes for the Ape Wellness Tracker application.
 from flask import render_template, request, redirect, url_for, jsonify
 from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory
-from backend.helpers import add_to_db
 from flask_security import login_required, current_user
 from datetime import datetime
 from backend.routes import site
@@ -36,7 +35,8 @@ def add_meal():
         user_id=current_user.id
     )
 
-    add_to_db(new_meal, "meal")
+    db.session.add(new_meal)
+    db.session.commit()
     return redirect(url_for('dashboard.dashboard'))
 
 
@@ -146,81 +146,88 @@ def save_feeding():
         
         saved_meals = []
         total_calories = 0
-        
-        # For each food item, create a recipe if it doesn't exist, then create meals for each ape
-        for item in feeding_items:
-            food_name = item.get('name', '').strip()
-            calories = int(item.get('calories', 0) or 0)
-            quantity = float(item.get('quantity', 1))  # Portion multiplier (actual / recipe base)
-            unit = item.get('unit', '')
-            source = (item.get('source') or '').strip() or None
+        from backend.utils.config_loader import get_nutrition_defaults
+        nutrition_defaults = get_nutrition_defaults()
 
-            if not food_name or calories <= 0:
-                continue
+        try:
+            for item in feeding_items:
+                food_name = item.get('name', '').strip()
+                calories = int(item.get('calories', 0) or 0)
+                quantity = float(item.get('quantity', 1))
+                unit = item.get('unit', '')
+                source = (item.get('source') or '').strip() or None
 
-            # Frontend sends portion totals with quantity=1.0; older clients may send multiplier.
-            if quantity <= 0:
-                quantity = 1.0
-            logged_calories = max(0, round(calories * quantity))
+                if not food_name or calories <= 0:
+                    continue
 
-            # Check if recipe exists, create if not
-            recipe = Recipe.query.filter_by(meal_name=food_name).first()
-            if not recipe:
-                # Use default category from database (first active category, or 'Other')
-                # Users can edit the category later through the food management interface
-                from backend.models.entry import FoodCategory
-                default_category = FoodCategory.query.filter_by(is_active=True).first()
-                food_category = default_category.name if default_category else 'Other'
-                
-                # Load default nutrition values from config
-                from backend.utils.config_loader import get_nutrition_defaults
-                nutrition_defaults = get_nutrition_defaults()
-                
-                # For custom foods, use quantity=1.0 as base (the calories are for this base quantity)
-                # The unit can be empty for custom foods
-                recipe = Recipe(
-                    meal_name=food_name,
-                    description=f"Quick added: {food_name}",
-                    calories=calories,
-                    quantity=1.0,  # Base quantity for custom foods
-                    unit_of_measurement=unit if unit else None,
-                    source=source,
-                    food_category=food_category,
-                    protein_g=nutrition_defaults['protein_g'],
-                    fiber_g=nutrition_defaults['fiber_g']
-                )
-                add_to_db(recipe, "recipe")
-            elif source and not recipe.source:
-                recipe.source = source
-                db.session.commit()
+                if quantity <= 0:
+                    quantity = 1.0
+                logged_calories = max(0, round(calories * quantity))
 
-            # Create meals for each selected ape
-            for ape_id in ape_ids:
-                meal = Meals(
-                    ape_id=int(ape_id),
-                    recipe_id=recipe.id,
-                    date=feeding_datetime,
-                    feeding_period=feeding_period,
-                    calories_logged=logged_calories,
-                    user_id=current_user.id
-                )
-                add_to_db(meal, "meal")
-                saved_meals.append({
-                    'ape_id': ape_id,
-                    'recipe_name': food_name,
-                    'calories': logged_calories
-                })
-                total_calories += logged_calories
-        
+                recipe = Recipe.query.filter_by(meal_name=food_name).first()
+                if not recipe:
+                    default_category = FoodCategory.query.filter_by(is_active=True).first()
+                    food_category = default_category.name if default_category else 'Other'
+                    recipe = Recipe(
+                        meal_name=food_name,
+                        description=f"Quick added: {food_name}",
+                        calories=max(calories, logged_calories),
+                        quantity=1.0,
+                        unit_of_measurement=unit if unit else None,
+                        source=source,
+                        food_category=food_category,
+                        protein_g=nutrition_defaults['protein_g'],
+                        fiber_g=nutrition_defaults['fiber_g'],
+                    )
+                    db.session.add(recipe)
+                    db.session.flush()
+                elif source and not recipe.source:
+                    recipe.source = source
+
+                if not recipe.id:
+                    raise ValueError(f"Could not resolve recipe for {food_name}")
+
+                for ape_id in ape_ids:
+                    meal = Meals(
+                        ape_id=int(ape_id),
+                        recipe_id=recipe.id,
+                        date=feeding_datetime,
+                        feeding_period=feeding_period,
+                        calories_logged=logged_calories,
+                        user_id=current_user.id,
+                    )
+                    db.session.add(meal)
+                    saved_meals.append({
+                        'ape_id': ape_id,
+                        'recipe_name': food_name,
+                        'calories': logged_calories,
+                    })
+                    total_calories += logged_calories
+
+            if not saved_meals:
+                db.session.rollback()
+                return jsonify({
+                    'success': False,
+                    'error': 'No meals were saved. Check that each food has calories greater than zero.',
+                }), 400
+
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+
         return jsonify({
             'success': True,
             'message': f'Meals logged successfully for {len(ape_ids)} ape(s)',
             'saved_meals': saved_meals,
             'total_calories': total_calories,
-            'ape_count': len(ape_ids)
+            'ape_count': len(ape_ids),
+            'meal_count': len(saved_meals),
+            'feeding_date': feeding_datetime.strftime('%Y-%m-%d'),
         })
-        
+
     except Exception as e:
-        print(f"Error saving meals: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': 'Failed to save meal data'}), 500
 

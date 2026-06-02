@@ -226,11 +226,13 @@ def ape_profile_page(ape_id):
     
     ape = Apes.query.get_or_404(ape_id)
     
-    # Get recent meals for this ape (last 20)
-    recent_meals = Meals.query.filter_by(ape_id=ape_id)\
-                              .order_by(Meals.date.desc())\
-                              .limit(20)\
-                              .all()
+    # Recent meals for activity feed and summary (queried fresh, not stale relationship cache)
+    recent_meals = (
+        Meals.query.filter_by(ape_id=ape_id)
+        .order_by(Meals.date.desc(), Meals.id.desc())
+        .limit(30)
+        .all()
+    )
     
     # Calculate nutrition summary for last 7 days
     seven_days_ago = datetime.now() - timedelta(days=7)

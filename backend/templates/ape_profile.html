@@ -165,9 +165,8 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% set recent_meals = ape.meals|sort(attribute='date', reverse=true) %}
                                         {% if recent_meals %}
-                                            {% for meal in recent_meals[:20] %}
+                                            {% for meal in recent_meals %}
                                             <tr>
                                                 {% set inferred_period = get_time_period_display(meal.date) %}
                                                 {% set inferred_parts = inferred_period.split(' - ') %}
@@ -222,19 +221,19 @@
                             </h3>
                         </div>
                         <div class="card-body">
-                            {% set recent_meals = ape.meals|list %}
-                            {% if recent_meals %}
+                            {% set all_meals = ape.meals|list %}
+                            {% if all_meals %}
                                 {% set total_calories = namespace(value=0) %}
-                                {% for m in recent_meals %}{% set total_calories.value = total_calories.value + meal_calories(m) %}{% endfor %}
+                                {% for m in all_meals %}{% set total_calories.value = total_calories.value + meal_calories(m) %}{% endfor %}
                                 {% set total_calories = total_calories.value %}
-                                {% set avg_calories = (total_calories / recent_meals|length)|round(1) %}
+                                {% set avg_calories = (total_calories / all_meals|length)|round(1) %}
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="info-box">
                                             <span class="info-box-icon bg-info"><i class="fas fa-utensils"></i></span>
                                             <div class="info-box-content">
                                                 <span class="info-box-text">Total Meals</span>
-                                                <span class="info-box-number">{{ recent_meals|length }}</span>
+                                                <span class="info-box-number">{{ all_meals|length }}</span>
                                             </div>
                                         </div>
                                     </div>

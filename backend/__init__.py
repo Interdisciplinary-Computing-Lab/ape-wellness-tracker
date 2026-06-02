@@ -254,9 +254,33 @@ def ensure_standard_food_data():
         print(f"[SUCCESS] Created {created_recipes} comprehensive recipes")
 
 
+_RETIRED_STAFF_FOODS = {
+    "Trash Lettuce": "Brussels sprouts, raw",
+    "Cheese Toothpaste": "Cream cheese, full fat, block",
+}
+
+
+def _apply_fdc_record_to_recipe(recipe, record, categories) -> None:
+    cat = categories.get(record.app_category)
+    recipe.meal_name = record.meal_name
+    recipe.description = record.description
+    recipe.calories = record.calories
+    recipe.protein_g = record.protein_g
+    recipe.fiber_g = record.fiber_g
+    recipe.quantity = record.quantity
+    recipe.unit_of_measurement = record.unit_of_measurement
+    recipe.source = record.source
+    recipe.fdc_id = record.fdc_id
+    recipe.food_category = record.app_category
+    if hasattr(record, "gram_weight"):
+        recipe.gram_weight = record.gram_weight
+    if cat:
+        recipe.category_id = cat.id
+
+
 def ensure_custom_display_foods():
-    """Ensure staff custom food names exist and stay linked to USDA FDC when CSVs are present."""
-    from backend.models.entry import FoodCategory, Recipe
+    """Optional staff names from custom_foods.json; restore USDA labels for retired nicknames."""
+    from backend.models.entry import FoodCategory, Meals, Recipe
 
     custom_path = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "data", "fdc", "custom_foods.json"
@@ -264,20 +288,78 @@ def ensure_custom_display_foods():
     raw_ff = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "data", "fdc", "raw", "foundation_food.csv"
     )
-    if not os.path.isfile(custom_path) or not os.path.isfile(raw_ff):
+    if not os.path.isfile(raw_ff):
         return
 
-    try:
-        with open(custom_path, encoding="utf-8") as f:
-            custom = json.load(f).get("custom_display_names", {})
-    except (OSError, json.JSONDecodeError):
-        return
+    custom = {}
+    if os.path.isfile(custom_path):
+        try:
+            with open(custom_path, encoding="utf-8") as f:
+                custom = json.load(f).get("custom_display_names", {})
+        except (OSError, json.JSONDecodeError):
+            custom = {}
 
     try:
         from backend.utils.fdc_loader import FdcFoundationLoader, _normalize_desc, load_category_map
 
         loader = FdcFoundationLoader()
         category_map = load_category_map()
+        categories = {c.name: c for c in FoodCategory.query.filter_by(is_active=True).all()}
+        changed = False
+
+        fdc_by_desc = {}
+        for record in loader.iter_records(category_map, include_excluded_categories=True):
+            fdc_by_desc[_normalize_desc(record.description)] = record
+
+        def _remove_recipe(recipe: Recipe) -> None:
+            nonlocal changed
+            Meals.query.filter_by(recipe_id=recipe.id).delete(synchronize_session=False)
+            db.session.delete(recipe)
+            changed = True
+
+        for staff_name, fdc_desc in _RETIRED_STAFF_FOODS.items():
+            if staff_name in custom:
+                continue
+            record = fdc_by_desc.get(_normalize_desc(fdc_desc))
+            if not record:
+                continue
+            staff_recipe = Recipe.query.filter_by(meal_name=staff_name).first()
+            usda_recipe = Recipe.query.filter_by(fdc_id=record.fdc_id).first()
+            if staff_recipe and usda_recipe and staff_recipe.id != usda_recipe.id:
+                Meals.query.filter_by(recipe_id=staff_recipe.id).update(
+                    {"recipe_id": usda_recipe.id},
+                    synchronize_session=False,
+                )
+                _remove_recipe(staff_recipe)
+                _apply_fdc_record_to_recipe(usda_recipe, record, categories)
+            elif staff_recipe:
+                _apply_fdc_record_to_recipe(staff_recipe, record, categories)
+                changed = True
+            elif not usda_recipe:
+                cat = categories.get(record.app_category)
+                recipe = Recipe(
+                    meal_name=record.meal_name,
+                    description=record.description,
+                    calories=record.calories,
+                    quantity=record.quantity,
+                    unit_of_measurement=record.unit_of_measurement,
+                    food_category=record.app_category,
+                    protein_g=record.protein_g,
+                    fiber_g=record.fiber_g,
+                    source=record.source,
+                    fdc_id=record.fdc_id,
+                    category_id=cat.id if cat else None,
+                )
+                if hasattr(record, "gram_weight"):
+                    recipe.gram_weight = record.gram_weight
+                db.session.add(recipe)
+                changed = True
+
+        if not custom:
+            if changed:
+                db.session.commit()
+            return
+
         targets = {_normalize_desc(m["fdc_description"]): (name, m) for name, m in custom.items()}
         records = {}
         for record in loader.iter_records(category_map, include_excluded_categories=True):
@@ -285,24 +367,23 @@ def ensure_custom_display_foods():
             if key in targets:
                 records[targets[key][0]] = record
 
-        categories = {c.name: c for c in FoodCategory.query.filter_by(is_active=True).all()}
-        changed = False
         for meal_name, meta in custom.items():
             record = records.get(meal_name)
             if not record:
                 continue
-            for other in Recipe.query.filter(
-                Recipe.fdc_id == record.fdc_id,
-                Recipe.meal_name != meal_name,
-            ).all():
-                other.fdc_id = None
-                changed = True
+            desc = meta.get("description", "")
+            fdc_desc_norm = _normalize_desc(meta["fdc_description"])
+            for other in Recipe.query.filter(Recipe.meal_name != meal_name).all():
+                if other.fdc_id == record.fdc_id:
+                    _remove_recipe(other)
+                elif _normalize_desc(other.meal_name) == fdc_desc_norm:
+                    _remove_recipe(other)
             recipe = Recipe.query.filter_by(meal_name=meal_name).first()
             cat = categories.get(meta["food_category"])
             if not recipe:
                 recipe = Recipe(
                     meal_name=meal_name,
-                    description=meta["description"],
+                    description=desc,
                     calories=record.calories,
                     quantity=record.quantity,
                     unit_of_measurement=record.unit_of_measurement,
@@ -313,21 +394,29 @@ def ensure_custom_display_foods():
                     fdc_id=record.fdc_id,
                     category_id=cat.id if cat else None,
                 )
+                if hasattr(record, "gram_weight"):
+                    recipe.gram_weight = record.gram_weight
                 db.session.add(recipe)
                 changed = True
-            elif recipe.fdc_id != record.fdc_id or recipe.calories != record.calories:
-                recipe.calories = record.calories
-                recipe.protein_g = record.protein_g
-                recipe.fiber_g = record.fiber_g
-                recipe.quantity = record.quantity
-                recipe.unit_of_measurement = record.unit_of_measurement
-                recipe.source = record.source
-                recipe.fdc_id = record.fdc_id
-                recipe.description = meta["description"]
-                recipe.food_category = meta["food_category"]
-                if cat:
+            else:
+                if recipe.fdc_id != record.fdc_id or recipe.calories != record.calories:
+                    recipe.calories = record.calories
+                    recipe.protein_g = record.protein_g
+                    recipe.fiber_g = record.fiber_g
+                    recipe.quantity = record.quantity
+                    recipe.unit_of_measurement = record.unit_of_measurement
+                    recipe.source = record.source
+                    recipe.fdc_id = record.fdc_id
+                    changed = True
+                if recipe.description != desc:
+                    recipe.description = desc
+                    changed = True
+                if recipe.food_category != meta["food_category"]:
+                    recipe.food_category = meta["food_category"]
+                    changed = True
+                if cat and recipe.category_id != cat.id:
                     recipe.category_id = cat.id
-                changed = True
+                    changed = True
 
         if changed:
             db.session.commit()

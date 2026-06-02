@@ -1,14 +1,3 @@
 {
-  "custom_display_names": {
-    "Cheese Toothpaste": {
-      "fdc_description": "Cream cheese, full fat, block",
-      "description": "Cream cheese (staff name: Cheese Toothpaste)",
-      "food_category": "Dairy & Alternatives"
-    },
-    "Trash Lettuce": {
-      "fdc_description": "Brussels sprouts, raw",
-      "description": "Brussels sprouts (staff name: Trash Lettuce)",
-      "food_category": "Vegetables"
-    }
-  }
+  "custom_display_names": {}
 }

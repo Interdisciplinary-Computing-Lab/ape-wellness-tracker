@@ -1,5 +1,5 @@
 /**
- * Portion nutrition math for log feeding (catalog Recipe vs logged qty/unit).
+ * Portion nutrition math for log feeding (USDA FDC gram-weight scaling).
  */
 (function (global) {
     'use strict';
@@ -7,6 +7,8 @@
     const VOLUME_TO_CUP = { cup: 1, tbsp: 0.0625, tsp: 0.0208333 };
     const WEIGHT_TO_G = { g: 1, oz: 28.3495, lb: 453.592 };
     const COUNT_UNITS = ['piece', 'slice', 'serving'];
+    const WEIGHT_UNITS = ['g', 'oz', 'lb'];
+    const VOLUME_UNITS = ['cup', 'tbsp', 'tsp'];
 
     const STANDARD_UNIT_ALIASES = {
         cup: ['cup', 'cups'],
@@ -33,6 +35,9 @@
         for (const [canonical, aliases] of Object.entries(STANDARD_UNIT_ALIASES)) {
             if (aliases.includes(t)) return canonical;
         }
+        if (/\bcups?\b/.test(t)) return 'cup';
+        if (/\btbsp\b|\btablespoon/.test(t)) return 'tbsp';
+        if (/\btsp\b|\bteaspoon/.test(t)) return 'tsp';
         return null;
     }
 
@@ -41,6 +46,18 @@
         const raw = (unitStr || '').trim();
         let catalogQuantity = recipeQuantity > 0 ? recipeQuantity : 1.0;
         let unitPart = raw;
+        let catalogVolumeCups = null;
+
+        if (/^100\s*g$/i.test(raw)) {
+            return {
+                catalogQuantity: 100,
+                catalogUnit: 'g',
+                servingLabel: '100 g',
+                foodSpecificServing: false,
+                per100g: true,
+                catalogVolumeCups: null,
+            };
+        }
 
         const leading = raw.match(/^(\d+(?:\.\d+)?)\s+(.+)$/);
         if (leading) {
@@ -52,22 +69,33 @@
         }
 
         const std = matchStandardUnit(unitPart);
+        if (std === 'g' && catalogQuantity === 100) {
+            return {
+                catalogQuantity: 100,
+                catalogUnit: 'g',
+                servingLabel: raw || '100 g',
+                foodSpecificServing: false,
+                per100g: true,
+                catalogVolumeCups: null,
+            };
+        }
+
         if (std) {
+            if (VOLUME_UNITS.includes(std)) {
+                catalogVolumeCups = catalogQuantity;
+            }
             return {
                 catalogQuantity,
                 catalogUnit: std,
                 servingLabel: raw || std,
                 foodSpecificServing: false,
+                per100g: false,
+                catalogVolumeCups,
             };
         }
 
-        if (/^100\s*g$/i.test(raw)) {
-            return {
-                catalogQuantity: 100,
-                catalogUnit: 'g',
-                servingLabel: '100 g',
-                foodSpecificServing: false,
-            };
+        if (/\bcups?\b/i.test(unitPart)) {
+            catalogVolumeCups = catalogQuantity;
         }
 
         return {
@@ -75,13 +103,16 @@
             catalogUnit: 'serving',
             servingLabel: unitPart || 'serving',
             foodSpecificServing: true,
+            per100g: false,
+            catalogVolumeCups,
         };
     }
 
     function normalizeUnit(unit) {
-        if (!unit || !String(unit).trim()) return 'piece';
+        if (!unit || !String(unit).trim()) return 'serving';
         const parsed = parseCatalogUnit(String(unit).trim(), 1);
         if (!parsed.foodSpecificServing) return parsed.catalogUnit;
+        if (parsed.catalogVolumeCups != null) return 'cup';
         return 'serving';
     }
 
@@ -119,50 +150,111 @@
         return NaN;
     }
 
-    function amountInCatalogUnits(item) {
-        item.approximateCalories = false;
-        const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
-        const catalogUnit = item.catalogUnit || 'serving';
-        const qty = item.quantity > 0 ? item.quantity : 1.0;
-        const displayUnit = normalizeUnit(item.unit || catalogUnit);
+    /** FDC reference weight in grams for one catalog serving (e.g. 100 for per 100 g). */
+    function referenceGrams(item) {
+        if (item.gramsPerServing > 0) return item.gramsPerServing;
+        if (item.per100g || (item.catalogUnit === 'g' && item.recipeQuantity > 0)) {
+            return item.recipeQuantity > 0 ? item.recipeQuantity : 100;
+        }
+        return 0;
+    }
 
-        if (item.foodSpecificServing) {
-            if (displayUnit === 'serving' || COUNT_UNITS.includes(displayUnit)) {
-                return qty * catalogQty;
-            }
-            if (getUnitCategory(displayUnit) === 'weight') {
-                item.approximateCalories = true;
-                const grams = convertUnit(qty, displayUnit, 'g');
-                if (!isNaN(grams) && grams > 0 && item.gramsPerServing > 0) {
-                    return (grams / item.gramsPerServing) * catalogQty;
-                }
-            }
-            if (getUnitCategory(displayUnit) === 'volume') {
-                item.approximateCalories = true;
+    /** Grams consumed from logged qty + unit using USDA portion weight. */
+    function loggedGrams(item) {
+        const qty = item.quantity > 0 ? item.quantity : 1.0;
+        const displayUnit = normalizeUnit(item.unit || item.catalogUnit);
+        const refG = referenceGrams(item);
+        const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
+
+        if (refG <= 0) return NaN;
+
+        const cat = getUnitCategory(displayUnit);
+
+        if (COUNT_UNITS.includes(displayUnit)) {
+            return (qty / catalogQty) * refG;
+        }
+
+        if (cat === 'weight') {
+            return convertUnit(qty, displayUnit, 'g');
+        }
+
+        if (cat === 'volume') {
+            const catalogCups = item.catalogVolumeCups;
+            if (catalogCups != null && catalogCups > 0) {
                 const cups = convertUnit(qty, displayUnit, 'cup');
-                if (!isNaN(cups) && cups > 0) {
-                    return cups * catalogQty;
-                }
+                if (isNaN(cups)) return NaN;
+                return (cups / catalogCups) * refG;
             }
             return NaN;
         }
 
-        if (displayUnit === catalogUnit) {
-            return qty;
-        }
-
-        if (canConvertUnits(displayUnit, catalogUnit)) {
-            const converted = convertUnit(qty, displayUnit, catalogUnit);
-            if (!isNaN(converted) && converted > 0) return converted;
+        if (displayUnit === item.catalogUnit && !item.foodSpecificServing) {
+            if (item.catalogUnit === 'g') {
+                return qty;
+            }
+            return (qty / catalogQty) * refG;
         }
 
         return NaN;
+    }
+
+    function amountInCatalogUnits(item) {
+        item.approximateCalories = false;
+        const refG = referenceGrams(item);
+        const grams = loggedGrams(item);
+        if (isNaN(grams) || grams < 0 || refG <= 0) return NaN;
+
+        const displayUnit = normalizeUnit(item.unit);
+        if (item.per100g && getUnitCategory(displayUnit) === 'volume') {
+            return NaN;
+        }
+        if (item.per100g && COUNT_UNITS.includes(displayUnit)) {
+            return NaN;
+        }
+
+        if (displayUnit !== item.catalogUnit && !item.per100g && !COUNT_UNITS.includes(displayUnit)) {
+            item.approximateCalories = getUnitCategory(displayUnit) !== getUnitCategory(item.catalogUnit);
+        }
+
+        return (grams / refG) * (item.recipeQuantity > 0 ? item.recipeQuantity : 1.0);
+    }
+
+    function unitsForItem(item) {
+        if (item.per100g || (item.catalogUnit === 'g' && item.recipeQuantity >= 100)) {
+            return WEIGHT_UNITS.slice();
+        }
+        if (item.catalogVolumeCups != null) {
+            return ['serving', 'cup', 'tbsp', 'tsp', 'g', 'oz', 'lb'];
+        }
+        if (item.foodSpecificServing) {
+            return ['serving', 'piece', 'slice', 'g', 'oz', 'lb'];
+        }
+        if (item.catalogUnit === 'g') {
+            return WEIGHT_UNITS.slice();
+        }
+        if (VOLUME_UNITS.includes(item.catalogUnit)) {
+            return VOLUME_UNITS.concat(WEIGHT_UNITS);
+        }
+        return ['piece', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'];
     }
 
     function buildFeedingItem(opts) {
         const parsed = parseCatalogUnit(opts.unitRaw || '', opts.recipeQuantity || 1);
         const recipeQuantity = parsed.catalogQuantity;
         const catalogCalories = opts.calories > 0 ? opts.calories : 0;
+        let gramsPerServing = opts.gramsPerServing > 0 ? opts.gramsPerServing : 0;
+        if (!gramsPerServing && parsed.per100g) {
+            gramsPerServing = 100;
+        }
+
+        const defaultUnit = parsed.per100g
+            ? 'g'
+            : parsed.catalogVolumeCups != null
+              ? 'cup'
+              : parsed.foodSpecificServing
+                ? 'serving'
+                : parsed.catalogUnit;
+
         return {
             name: opts.name,
             calories: catalogCalories,
@@ -170,20 +262,17 @@
             catalogUnit: parsed.catalogUnit,
             servingLabel: parsed.servingLabel,
             foodSpecificServing: parsed.foodSpecificServing,
-            originalRecipeUnit: parsed.foodSpecificServing ? 'serving' : parsed.catalogUnit,
+            per100g: parsed.per100g,
+            catalogVolumeCups: parsed.catalogVolumeCups,
+            originalRecipeUnit: defaultUnit,
             proteinPerCatalog: opts.proteinG != null ? opts.proteinG : 0,
             fiberPerCatalog: opts.fiberG != null ? opts.fiberG : 0,
             quantity: 1.0,
-            unit: parsed.foodSpecificServing ? 'serving' : parsed.catalogUnit,
+            unit: defaultUnit,
             source: opts.source || '',
             caloriesOverride: null,
             manualCalories: false,
-            gramsPerServing:
-                opts.gramsPerServing > 0
-                    ? opts.gramsPerServing
-                    : !parsed.foodSpecificServing && parsed.catalogUnit === 'g'
-                      ? parsed.catalogQuantity
-                      : 0,
+            gramsPerServing,
             caloriesInvalid: false,
             crossUnitNote: false,
             totalCalories: catalogCalories,
@@ -208,10 +297,10 @@
         }
 
         const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
-        const perCatalog = item.calories > 0 ? item.calories / catalogQty : 0;
-        const qtyInCatalog = amountInCatalogUnits(item);
+        const refG = referenceGrams(item);
+        const grams = loggedGrams(item);
 
-        if (isNaN(qtyInCatalog)) {
+        if (refG <= 0 || isNaN(grams) || grams < 0) {
             item.caloriesInvalid = true;
             item.totalCalories = null;
             item.totalProtein = null;
@@ -219,15 +308,11 @@
             return 0;
         }
 
+        const scale = grams / refG;
         item.caloriesInvalid = false;
-        const displayUnit = normalizeUnit(item.unit);
-        item.crossUnitNote =
-            item.approximateCalories ||
-            (displayUnit !== item.catalogUnit && !item.foodSpecificServing);
-
-        item.totalCalories = Math.max(0, Math.round(perCatalog * qtyInCatalog));
-        item.totalProtein = round1((item.proteinPerCatalog / catalogQty) * qtyInCatalog);
-        item.totalFiber = round1((item.fiberPerCatalog / catalogQty) * qtyInCatalog);
+        item.totalCalories = Math.max(0, Math.round(item.calories * scale));
+        item.totalProtein = round1((item.proteinPerCatalog || 0) * scale);
+        item.totalFiber = round1((item.fiberPerCatalog || 0) * scale);
         return item.totalCalories;
     }
 
@@ -237,13 +322,18 @@
 
     global.FeedingNutrition = {
         ALL_FEEDING_UNITS: ['piece', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'],
+        WEIGHT_UNITS,
+        VOLUME_UNITS,
         formatQuantity,
         parseCatalogUnit,
         normalizeUnit,
         getUnitCategory,
         canConvertUnits,
         convertUnit,
+        referenceGrams,
+        loggedGrams,
         amountInCatalogUnits,
+        unitsForItem,
         buildFeedingItem,
         recalculateItem,
     };

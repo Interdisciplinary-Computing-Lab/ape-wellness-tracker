@@ -101,7 +101,7 @@
     </div>
 </div>
 
-<!-- Enhanced Food Selection Interface -->
+<!-- Food selection + custom add + current meals -->
 <div class="row">
     <div class="col-lg-8">
         <div class="card food-selection-card">
@@ -111,8 +111,9 @@
                 </h3>
                 <div class="card-tools">
                     <div class="input-group input-group-sm" style="width: 250px;">
-                        <input type="text" id="foodSearch" class="form-control float-right" 
-                               placeholder="Search foods..." onkeyup="searchFoods()">
+                        <input type="text" id="foodSearch" class="form-control float-right"
+                               placeholder="Search all foods…" autocomplete="off"
+                               aria-label="Search foods by name, category, or description">
                         <div class="input-group-append">
                             <button type="button" class="btn btn-default" onclick="clearSearch()">
                                 <i class="fas fa-times"></i>
@@ -172,9 +173,7 @@
                                     data-quantity="{{ recipe.quantity or 1.0 }}"
                                     data-unit="{{ recipe.unit_of_measurement or '' }}"
                                     data-source="{{ recipe.source or '' }}"
-                                    data-protein="{{ recipe.protein_g or 0 }}"
-                                    data-fiber="{{ recipe.fiber_g or 0 }}"
-                                    data-grams="{{ recipe.gram_weight or 0 }}"
+                                    data-grams="{{ recipe.gram_weight or (100 if (recipe.unit_of_measurement or '').replace(' ', '')|lower == '100g' or ((recipe.quantity or 0) >= 100 and 'g' in (recipe.unit_of_measurement or '')|lower) else 0) }}"
                                     data-name="{{ recipe.meal_name }}" 
                                     data-category="{{ recipe.food_category or 'Other' }}"
                                     title="{{ recipe.description or 'No description' }}"
@@ -213,67 +212,74 @@
                         <i class="fas fa-redo mr-1"></i>Show All Foods
                     </button>
                 </div>
+            </div>
+        </div>
 
-                <!-- Quick Custom Food Entry (Compact) -->
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <div class="card card-outline card-secondary">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">
-                                    <i class="fas fa-plus mr-1"></i>Quick Add Custom Food
-                                </h6>
-                                <div class="card-tools">
-                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                        <i class="fas fa-minus"></i>
+        <div class="card card-outline card-secondary custom-food-card mt-3">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-plus mr-2"></i>Quick Add Custom Food
+                </h3>
+            </div>
+            <div class="card-body">
+                <form id="customFoodForm" class="custom-food-form">
+                    <div class="form-group custom-food-field custom-food-field-name">
+                        <label for="customFoodName" class="small text-muted mb-1">Food name</label>
+                        <input type="text" class="form-control" id="customFoodName"
+                               placeholder="e.g. enrichment mix" value="{{ pre_filled_food }}">
+                    </div>
+                    <div class="form-group custom-food-field custom-food-field-qty">
+                        <label for="customQuantity" class="small text-muted mb-1">Qty</label>
+                        <div class="input-group custom-food-qty">
+                            <input type="number" class="form-control" id="customQuantity"
+                                   value="1" min="1" step="1">
+                            <div class="input-group-append custom-food-qty-append">
+                                <div class="custom-food-qty-stepper" role="group" aria-label="Adjust quantity">
+                                    <button type="button" class="custom-food-qty-btn"
+                                            data-custom-qty-step="1" title="Add 1" aria-label="Add 1">
+                                        <i class="fas fa-chevron-up" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="button" class="custom-food-qty-btn"
+                                            data-custom-qty-step="-1" title="Subtract 1" aria-label="Subtract 1">
+                                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <form id="customFoodForm" class="row">
-                                    <div class="col-md-3">
-                                        <input type="text" class="form-control" id="customFoodName" 
-                                               placeholder="Food name..." value="{{ pre_filled_food }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="input-group">
-                                            <input type="number" class="form-control" id="customQuantity" value="1.0" step="0.01" min="0.01">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text">qty</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <select class="form-control" id="customUnit" title="Unit of measurement">
-                                            <option value="piece" selected>piece</option>
-                                            <option value="cup">cup</option>
-                                            <option value="g">g</option>
-                                            <option value="oz">oz</option>
-                                            <option value="tbsp">tbsp</option>
-                                            <option value="tsp">tsp</option>
-                                            <option value="slice">slice</option>
-                                            <option value="serving">serving</option>
-                                            <option value="lb">lb</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="input-group">
-                                            <input type="number" class="form-control" id="customCalories" 
-                                                   placeholder="Calories" min="0" max="999" value="{{ pre_filled_calories }}">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text">cal</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button type="button" class="btn btn-primary w-100" onclick="addCustomFood()">
-                                            <i class="fas fa-plus"></i> Add
-                                        </button>
-                                    </div>
-                                </form>
+                        </div>
+                    </div>
+                    <div class="form-group custom-food-field custom-food-field-unit">
+                        <label for="customUnit" class="small text-muted mb-1">Unit</label>
+                        <select class="form-control" id="customUnit">
+                            <option value="piece" selected>piece</option>
+                            <option value="cup">cup</option>
+                            <option value="g">g</option>
+                            <option value="oz">oz</option>
+                            <option value="tbsp">tbsp</option>
+                            <option value="tsp">tsp</option>
+                            <option value="slice">slice</option>
+                            <option value="serving">serving</option>
+                            <option value="lb">lb</option>
+                        </select>
+                    </div>
+                    <div class="form-group custom-food-field custom-food-field-cal">
+                        <label for="customCalories" class="small text-muted mb-1">Calories</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="customCalories"
+                                   placeholder="0" min="0" max="9999"
+                                   value="{{ pre_filled_calories }}">
+                            <div class="input-group-append">
+                                <span class="input-group-text">cal</span>
                             </div>
                         </div>
                     </div>
-                </div>
+                    <div class="form-group custom-food-field custom-food-field-add">
+                        <label class="small text-muted mb-1 custom-food-add-label" aria-hidden="true">&nbsp;</label>
+                        <button type="button" class="btn btn-primary btn-block custom-food-add"
+                                onclick="addCustomFood()">
+                            <i class="fas fa-plus mr-1"></i>Add
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -300,7 +306,6 @@
                                 <th>Qty</th>
                                 <th>Unit</th>
                                 <th>Cal</th>
-                                <th>P / F (g)</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -311,7 +316,6 @@
                             <tr>
                                 <td colspan="3" class="font-weight-bold">Total</td>
                                 <td class="font-weight-bold" id="totalCalories">0</td>
-                                <td class="font-weight-bold small" id="totalMacros">—</td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -356,8 +360,11 @@
                 <p class="mb-0">Total calories logged: <strong id="savedTotalCalories">0</strong></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="window.location.reload()">Log Another</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Stay Here</button>
+                <button type="button" class="btn btn-outline-primary" onclick="window.location.reload()">Log Another</button>
+                <a href="{{ url_for('site.dashboard') }}" class="btn btn-primary" id="successModalDashboardBtn">
+                    <i class="fas fa-tachometer-alt mr-1"></i>View Dashboard
+                </a>
             </div>
         </div>
     </div>
@@ -522,6 +529,114 @@
     font-size: 0.6rem;
     padding: 0 0.25rem;
 }
+.custom-food-card {
+    width: 100%;
+}
+.custom-food-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.65rem 0.75rem;
+}
+.custom-food-form .custom-food-field {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+}
+.custom-food-form .custom-food-field-name {
+    flex: 1 1 10rem;
+    min-width: 8rem;
+}
+.custom-food-form .custom-food-field-qty {
+    width: 7.25rem;
+}
+.custom-food-form .custom-food-field-unit {
+    width: 6.5rem;
+}
+.custom-food-form .custom-food-field-cal {
+    width: 8.5rem;
+}
+.custom-food-form .custom-food-field-add {
+    width: 6.25rem;
+}
+.custom-food-form .custom-food-add-label {
+    visibility: hidden;
+}
+.custom-food-form #customQuantity {
+    text-align: center;
+    -moz-appearance: textfield;
+    max-width: 4rem;
+}
+.custom-food-form #customQuantity::-webkit-outer-spin-button,
+.custom-food-form #customQuantity::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.custom-food-form .custom-food-qty.input-group {
+    align-items: stretch;
+}
+.custom-food-form .custom-food-qty-append {
+    display: flex;
+    margin-left: 0;
+}
+.custom-food-form .custom-food-qty-stepper {
+    display: flex;
+    flex-direction: column;
+    width: 1.75rem;
+    min-height: 100%;
+    border: 1px solid #ced4da;
+    border-left: 0;
+    border-radius: 0 0.25rem 0.25rem 0;
+    overflow: hidden;
+    background: #fff;
+}
+.custom-food-form .custom-food-qty-btn {
+    flex: 1 1 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    min-height: 0;
+    border: 0;
+    background: #fff;
+    color: #6c757d;
+    line-height: 1;
+    cursor: pointer;
+}
+.custom-food-form .custom-food-qty-btn:first-child {
+    border-bottom: 1px solid #ced4da;
+}
+.custom-food-form .custom-food-qty-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+.custom-food-form .custom-food-qty-btn:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px rgba(0, 123, 255, 0.25);
+    z-index: 1;
+}
+.custom-food-form .custom-food-qty-btn i {
+    font-size: 0.65rem;
+    line-height: 1;
+    display: block;
+}
+.custom-food-form .custom-food-qty.input-group > .form-control {
+    flex: 1 1 auto;
+}
+@media (max-width: 575.98px) {
+    .custom-food-form .custom-food-field-name {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+    .custom-food-form .custom-food-field-qty,
+    .custom-food-form .custom-food-field-unit {
+        width: calc(50% - 0.4rem);
+    }
+    .custom-food-form .custom-food-field-cal,
+    .custom-food-form .custom-food-field-add {
+        width: calc(50% - 0.4rem);
+    }
+}
 </style>
 {% endblock %}
 
@@ -530,6 +645,7 @@
 <script>
 let selectedApes = new Set();
 let feedingItems = [];
+let saveFeedingInProgress = false;
 let currentCategory = ''; // Start with no category selected (hide all foods until clicked)
 const FN = window.FeedingNutrition;
 
@@ -548,24 +664,54 @@ function recalculateItemCalories(item) {
     return FN.recalculateItem(item);
 }
 
+function showNoApesWarning() {
+    const el = document.getElementById('noApesSelected');
+    if (el) {
+        el.style.display = 'block';
+    }
+}
+
+function hideNoApesWarning() {
+    const el = document.getElementById('noApesSelected');
+    if (el) {
+        el.style.display = 'none';
+    }
+}
+
+function requireApeBeforeAddingFood() {
+    if (selectedApes.size > 0) {
+        return true;
+    }
+    showNoApesWarning();
+    return false;
+}
+
+function stepCustomQuantity(delta) {
+    const input = document.getElementById('customQuantity');
+    if (!input) return;
+    const current = parseFloat(input.value) || 1;
+    const next = Math.max(1, Math.round(current) + delta);
+    input.value = formatQuantity(next);
+}
+
 // Global function for inline onclick handlers (most reliable) - defined first
 function addFoodFromButton(btn) {
     try {
+        if (!requireApeBeforeAddingFood()) {
+            return false;
+        }
+
         // Try multiple ways to get the data
         const food = btn.getAttribute('data-food') || btn.dataset.food;
         const caloriesStr = btn.getAttribute('data-calories') || btn.dataset.calories;
         const quantityStr = btn.getAttribute('data-quantity') || btn.dataset.quantity || '1.0';
         const unit = btn.getAttribute('data-unit') || btn.dataset.unit || '';
         const source = btn.getAttribute('data-source') || btn.dataset.source || '';
-        const proteinStr = btn.getAttribute('data-protein') || btn.dataset.protein || '0';
-        const fiberStr = btn.getAttribute('data-fiber') || btn.dataset.fiber || '0';
         const gramsStr = btn.getAttribute('data-grams') || btn.dataset.grams || '0';
         const name = btn.getAttribute('data-name') || btn.dataset.name || food;
         
         const calories = parseInt(caloriesStr, 10);
         const quantity = parseFloat(quantityStr) || 1.0;
-        const proteinG = parseFloat(proteinStr) || 0;
-        const fiberG = parseFloat(fiberStr) || 0;
         const gramsPerServing = parseFloat(gramsStr) || 0;
         
         if (!name) {
@@ -586,7 +732,7 @@ function addFoodFromButton(btn) {
             return false;
         }
         
-        addFoodItem(name, calories, quantity, unit, source, proteinG, fiberG, gramsPerServing);
+        addFoodItem(name, calories, quantity, unit, source, gramsPerServing);
         
         // Visual feedback
         btn.classList.add('btn-success');
@@ -614,6 +760,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const existing = link.getAttribute('title');
         link.setAttribute('title', existing ? existing + ' — click again to hide' : 'Click again to hide foods');
     });
+
+    const foodSearchInput = document.getElementById('foodSearch');
+    if (foodSearchInput) {
+        foodSearchInput.addEventListener('input', applyFoodFilters);
+        foodSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                clearSearch();
+            }
+        });
+    }
     
     // Initialize date field with today's date (using local timezone, not UTC)
     const today = new Date();
@@ -667,23 +823,29 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.setAttribute('onclick', 'addFoodFromButton(this); return false;');
         }
     });
-    // Ensure save button is clickable
+    // Ensure save button is clickable (onclick only — duplicate listeners broke save spinner)
     const saveBtn = document.getElementById('saveFeedingBtn');
     if (saveBtn) {
         saveBtn.style.pointerEvents = 'auto';
         saveBtn.style.cursor = 'pointer';
         saveBtn.style.zIndex = '100';
         saveBtn.style.position = 'relative';
-        
-        // Add backup event listener
-        saveBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            saveFeeding();
-        });
     }
     
     initFeedingSummaryListeners();
+
+    const customFoodForm = document.getElementById('customFoodForm');
+    if (customFoodForm) {
+        customFoodForm.addEventListener('click', function(e) {
+            const stepBtn = e.target.closest('[data-custom-qty-step]');
+            if (!stepBtn) return;
+            e.preventDefault();
+            const delta = parseInt(stepBtn.getAttribute('data-custom-qty-step'), 10);
+            if (!isNaN(delta)) {
+                stepCustomQuantity(delta);
+            }
+        });
+    }
 });
 
 function initFeedingSummaryListeners() {
@@ -762,6 +924,9 @@ function toggleApeSelection(element, apeId) {
         selectedApes.add(id);
         element.classList.add('selected');
     }
+    if (selectedApes.size > 0) {
+        hideNoApesWarning();
+    }
     updateSelectedCount();
     updateSaveButton();
     updateStats();
@@ -774,6 +939,7 @@ function selectAllApes() {
         selectedApes.add(apeId);
         element.classList.add('selected');
     });
+    hideNoApesWarning();
     updateSelectedCount();
     updateSaveButton();
     updateStats();
@@ -803,63 +969,83 @@ function updateStats() {
 
 function updateSaveButton() {
     const saveBtn = document.getElementById('saveFeedingBtn');
-    const noApesAlert = document.getElementById('noApesSelected');
-    
-    // Button should be enabled only if both apes are selected AND food items are added
-    if (selectedApes.size === 0 || feedingItems.length === 0) {
-        saveBtn.disabled = true;
-        // Only show warning if we're not in the middle of clearing after a successful save
-        if (!window.isClearingAfterSave && selectedApes.size === 0) {
-            noApesAlert.style.display = 'block';
-        } else {
-            noApesAlert.style.display = 'none';
-        }
-    } else {
-        saveBtn.disabled = false;
-        noApesAlert.style.display = 'none';
+    if (!saveBtn) {
+        return;
     }
+    saveBtn.disabled = selectedApes.size === 0 || feedingItems.length === 0;
 }
 
-// Search functionality
-function searchFoods() {
-    const searchTerm = document.getElementById('foodSearch').value.toLowerCase();
+function foodItemMatchesSearch(item, searchTerm) {
+    const name = (item.getAttribute('data-name') || '').toLowerCase();
+    const description = (item.getAttribute('data-description') || '').toLowerCase();
+    const category = (item.getAttribute('data-category') || '').toLowerCase();
+    return name.includes(searchTerm) ||
+        description.includes(searchTerm) ||
+        category.includes(searchTerm);
+}
+
+function foodItemMatchesCategory(item, category) {
+    if (!category) {
+        return false;
+    }
+    if (category === 'all') {
+        return true;
+    }
+    return item.getAttribute('data-category') === category;
+}
+
+function applyFoodFilters() {
+    const searchInput = document.getElementById('foodSearch');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const isSearching = searchTerm.length > 0;
     const foodItems = document.querySelectorAll('.food-item');
     let visibleCount = 0;
-    
+
     foodItems.forEach(function(item) {
-        const foodName = item.getAttribute('data-name');
-        const foodDescription = item.getAttribute('data-description');
-        const matchesSearch = foodName.includes(searchTerm) || foodDescription.includes(searchTerm);
-        // If currentCategory is empty, show nothing unless searching
-        const matchesCategory = (currentCategory === 'all' || (currentCategory && item.getAttribute('data-category') === currentCategory));
-        // Only show if category is selected (not empty) and matches
-        const isVisible = currentCategory && matchesSearch && matchesCategory;
-        
-        if (isVisible) {
+        const matchesSearch = !isSearching || foodItemMatchesSearch(item, searchTerm);
+        let matchesCategory;
+        if (isSearching && !currentCategory) {
+            matchesCategory = true;
+        } else {
+            matchesCategory = foodItemMatchesCategory(item, currentCategory);
+        }
+        if (matchesSearch && matchesCategory) {
             item.classList.remove('hidden');
             visibleCount++;
         } else {
             item.classList.add('hidden');
         }
     });
-    
-    // Show/hide no results message
+
     const noResults = document.getElementById('noResults');
-    if (visibleCount === 0) {
-        if (currentCategory === '' && searchTerm === '') {
-            // Don't show "no results" if no category is selected and no search term
-            noResults.style.display = 'none';
+    const foodsGrid = document.getElementById('foodsGrid');
+    if (noResults) {
+        if (visibleCount === 0) {
+            if (!currentCategory && !isSearching) {
+                noResults.style.display = 'none';
+            } else {
+                noResults.style.display = 'block';
+            }
         } else {
-            noResults.style.display = 'block';
+            noResults.style.display = 'none';
         }
-    } else {
-        noResults.style.display = 'none';
+    }
+    if (foodsGrid) {
+        foodsGrid.style.display = (visibleCount === 0 && (currentCategory || isSearching)) ? 'none' : '';
     }
 }
 
+function searchFoods() {
+    applyFoodFilters();
+}
+
 function clearSearch() {
-    document.getElementById('foodSearch').value = '';
-    searchFoods();
+    const searchInput = document.getElementById('foodSearch');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+    }
+    applyFoodFilters();
 }
 
 // Collapse food grid and clear category selection
@@ -876,6 +1062,10 @@ function hideFoodGrid() {
     if (noResults) {
         noResults.style.display = 'none';
     }
+    const foodsGrid = document.getElementById('foodsGrid');
+    if (foodsGrid) {
+        foodsGrid.style.display = '';
+    }
 }
 
 // Category filtering (click the active tab again to collapse)
@@ -887,17 +1077,12 @@ function filterByCategory(category, clickedElement) {
     }
 
     currentCategory = category;
-    const foodItems = document.querySelectorAll('.food-item');
-    const searchTerm = document.getElementById('foodSearch').value.toLowerCase();
-    let visibleCount = 0;
-    
-    // Update active tab state
+
     document.querySelectorAll('#categoryTabs .nav-link').forEach(function(navLink) {
         navLink.classList.remove('active');
         navLink.setAttribute('aria-selected', 'false');
     });
-    
-    // Find and activate the clicked tab
+
     if (clickedTab) {
         clickedTab.classList.add('active');
         clickedTab.setAttribute('aria-selected', 'true');
@@ -908,40 +1093,16 @@ function filterByCategory(category, clickedElement) {
             allTab.setAttribute('aria-selected', 'true');
         }
     }
-    
-    foodItems.forEach(function(item) {
-        const itemCategory = item.getAttribute('data-category');
-        const foodName = item.getAttribute('data-name');
-        const foodDescription = item.getAttribute('data-description');
-        // If category is empty string, show nothing (unless it's 'all')
-        const matchesCategory = category === 'all' || (category && itemCategory === category);
-        const matchesSearch = foodName.includes(searchTerm) || foodDescription.includes(searchTerm);
-        
-        // Only show items if a category is selected (not empty string)
-        if (category && matchesCategory && matchesSearch) {
-            item.classList.remove('hidden');
-            visibleCount++;
-        } else {
-            item.classList.add('hidden');
-        }
-    });
-    
-    // Show/hide no results message
-    const noResults = document.getElementById('noResults');
-    if (visibleCount === 0) {
-        if (category === '' || (!category && currentCategory === '')) {
-            // Don't show "no results" if no category is selected (initial state)
-            noResults.style.display = 'none';
-        } else {
-            noResults.style.display = 'block';
-        }
-    } else {
-        noResults.style.display = 'none';
-    }
+
+    applyFoodFilters();
 }
 
 // Food management functions
 function addCustomFood() {
+    if (!requireApeBeforeAddingFood()) {
+        return;
+    }
+
     const name = document.getElementById('customFoodName').value.trim();
     const quantity = parseFloat(document.getElementById('customQuantity').value) || 1.0;
     const unitSelect = document.getElementById('customUnit');
@@ -977,8 +1138,6 @@ function addCustomFood() {
             recipeQuantity: quantity,
             unitRaw: unit,
             source: '',
-            proteinG: 0,
-            fiberG: 0,
         });
         item.quantity = quantity;
         item.unit = normalizedUnit;
@@ -988,7 +1147,7 @@ function addCustomFood() {
     
     // Clear form
     document.getElementById('customFoodName').value = '';
-    document.getElementById('customQuantity').value = '1.0';
+    document.getElementById('customQuantity').value = '1';
     document.getElementById('customUnit').selectedIndex = 0; // Reset to "piece"
     document.getElementById('customCalories').value = '';
     
@@ -997,7 +1156,7 @@ function addCustomFood() {
     updateStats();
 }
 
-function addFoodItem(name, calories, recipeQuantity, unitRaw, source, proteinG, fiberG, gramsPerServing) {
+function addFoodItem(name, calories, recipeQuantity, unitRaw, source, gramsPerServing) {
     recipeQuantity = recipeQuantity || 1.0;
     const existingIndex = feedingItems.findIndex(function(item) { return item.name === name; });
     if (existingIndex !== -1) {
@@ -1010,8 +1169,6 @@ function addFoodItem(name, calories, recipeQuantity, unitRaw, source, proteinG, 
             recipeQuantity: recipeQuantity,
             unitRaw: unitRaw || '',
             source: source || '',
-            proteinG: proteinG,
-            fiberG: fiberG,
             gramsPerServing: gramsPerServing || 0,
         });
         recalculateItemCalories(item);
@@ -1024,22 +1181,14 @@ function addFoodItem(name, calories, recipeQuantity, unitRaw, source, proteinG, 
 
 function updateFeedingTotalsInDom() {
     let totalCal = 0;
-    let totalP = 0;
-    let totalF = 0;
     feedingItems.forEach(function(itm) {
         if (!itm.caloriesInvalid && itm.totalCalories != null) {
             totalCal += itm.totalCalories;
-            totalP += itm.totalProtein || 0;
-            totalF += itm.totalFiber || 0;
         }
     });
     const totalCalEl = document.getElementById('totalCalories');
     if (totalCalEl) {
         totalCalEl.textContent = Math.round(totalCal);
-    }
-    const totalMacrosEl = document.getElementById('totalMacros');
-    if (totalMacrosEl) {
-        totalMacrosEl.textContent = Math.round(totalP * 10) / 10 + ' / ' + Math.round(totalF * 10) / 10;
     }
 }
 
@@ -1072,7 +1221,7 @@ function syncCaloriesCellFromItem(calCell, item, flash) {
         calInput.value = '';
         calInput.disabled = true;
         calCell.classList.add('calories-invalid');
-        calCell.title = 'Cannot convert ' + (item.unit || '') + ' to catalog serving (' + catalogServingHint(item) + ').';
+        calCell.title = 'Cannot convert ' + (item.unit || '') + ' for this food (USDA basis: ' + catalogServingHint(item) + '). Try a weight unit (g, oz, lb) or the catalog serving.';
         return;
     }
 
@@ -1105,14 +1254,6 @@ function syncRowFromItem(index, flash) {
     if (!row) return;
 
     syncCaloriesCellFromItem(row.querySelector('td.calories-cell'), item, flash);
-    const macrosCell = row.querySelector('td.macros-cell');
-    if (macrosCell) {
-        if (item.caloriesInvalid) {
-            macrosCell.textContent = '—';
-        } else {
-            macrosCell.textContent = (item.totalProtein || 0) + ' / ' + (item.totalFiber || 0);
-        }
-    }
 
     const qtyInput = row.querySelector('input[data-feeding-qty]');
     if (qtyInput) {
@@ -1235,7 +1376,8 @@ function updateFeedingSummary() {
         unitSelect.title = 'Catalog serving: ' + catalogServingHint(item) + '. Change unit within the same type (g/oz, cup/tbsp, serving/piece).';
 
         const selectedUnit = normalizeUnit(item.unit || baseUnit);
-        ALL_FEEDING_UNITS.forEach(function(opt) {
+        const allowedUnits = FN.unitsForItem(item);
+        allowedUnits.forEach(function(opt) {
             const option = document.createElement('option');
             option.value = opt;
             option.textContent = opt;
@@ -1244,7 +1386,7 @@ function updateFeedingSummary() {
             }
             unitSelect.appendChild(option);
         });
-        if (selectedUnit && ALL_FEEDING_UNITS.indexOf(selectedUnit) === -1) {
+        if (selectedUnit && allowedUnits.indexOf(selectedUnit) === -1) {
             const option = document.createElement('option');
             option.value = selectedUnit;
             option.textContent = selectedUnit;
@@ -1256,7 +1398,7 @@ function updateFeedingSummary() {
         recalculateItemCalories(item);
 
         const nameCell = document.createElement('td');
-        nameCell.title = item.name + (item.source ? ' (' + item.source + ')' : '');
+        nameCell.title = item.name;
         nameCell.textContent = item.name.length > 18 ? item.name.substr(0, 18) + '…' : item.name;
 
         const qtyCell = document.createElement('td');
@@ -1290,10 +1432,6 @@ function updateFeedingSummary() {
         calCell.appendChild(calWrap);
         syncCaloriesCellFromItem(calCell, item, false);
 
-        const macrosCell = document.createElement('td');
-        macrosCell.className = 'macros-cell small text-muted';
-        macrosCell.textContent = item.caloriesInvalid ? '—' : (item.totalProtein || 0) + ' / ' + (item.totalFiber || 0);
-
         const actionCell = document.createElement('td');
         actionCell.innerHTML = '<button type="button" class="btn btn-sm btn-outline-danger" title="Remove"><i class="fas fa-times"></i></button>';
         actionCell.querySelector('button').addEventListener('click', function() { removeFoodItem(index); });
@@ -1302,7 +1440,6 @@ function updateFeedingSummary() {
         row.appendChild(qtyCell);
         row.appendChild(unitCell);
         row.appendChild(calCell);
-        row.appendChild(macrosCell);
         row.appendChild(actionCell);
         tbody.appendChild(row);
         if (!item.caloriesInvalid && item.totalCalories != null) {
@@ -1354,13 +1491,10 @@ function clearAll() {
 
 // Save meals function - must be global for inline onclick
 function saveFeeding() {
-    if (selectedApes.size === 0) {
-        alert('Please select at least one ape');
+    if (saveFeedingInProgress) {
         return;
     }
-    
-    if (feedingItems.length === 0) {
-        alert('Please add at least one food item');
+    if (selectedApes.size === 0 || feedingItems.length === 0) {
         return;
     }
 
@@ -1379,9 +1513,12 @@ function saveFeeding() {
         return;
     }
 
-    // Show loading state
     const saveBtn = document.getElementById('saveFeedingBtn');
+    if (!saveBtn) {
+        return;
+    }
     const originalText = saveBtn.innerHTML;
+    saveFeedingInProgress = true;
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
     saveBtn.disabled = true;
     
@@ -1436,32 +1573,41 @@ function saveFeeding() {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify(feedingData)
+        body: JSON.stringify(feedingData),
+        credentials: 'same-origin'
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success modal with real data
-            document.getElementById('savedApeCount').textContent = data.ape_count;
-            document.getElementById('savedTotalCalories').textContent = data.total_calories;
+    .then(function(response) {
+        return response.json().then(function(data) {
+            return { ok: response.ok, data: data };
+        });
+    })
+    .then(function(result) {
+        if (result.ok && result.data.success) {
+            document.getElementById('savedApeCount').textContent = result.data.ape_count;
+            document.getElementById('savedTotalCalories').textContent = result.data.total_calories;
+            const dashBtn = document.getElementById('successModalDashboardBtn');
+            if (dashBtn && result.data.ape_count === 1 && feedingData.ape_ids.length === 1) {
+                const apeId = feedingData.ape_ids[0];
+                dashBtn.href = '/ape/' + encodeURIComponent(apeId);
+                dashBtn.innerHTML = '<i class="fas fa-user mr-1"></i>View Ape Profile';
+            } else if (dashBtn) {
+                dashBtn.href = '{{ url_for("site.dashboard") }}';
+                dashBtn.innerHTML = '<i class="fas fa-tachometer-alt mr-1"></i>View Dashboard';
+            }
             $('#successModal').modal('show');
-            
-            // Clear the form after successful save
             clearAll();
-            
-            console.log('Meals saved successfully:', data);
         } else {
-            alert('Error saving meals: ' + (data.error || 'Unknown error'));
+            alert('Error saving meals: ' + (result.data.error || 'Unknown error'));
         }
     })
-    .catch(error => {
+    .catch(function(error) {
         console.error('Error:', error);
         alert('Failed to save meals. Please try again.');
     })
-    .finally(() => {
-        // Restore button state
+    .finally(function() {
+        saveFeedingInProgress = false;
         saveBtn.innerHTML = originalText;
-        saveBtn.disabled = false;
+        updateSaveButton();
     });
 }
 
@@ -1499,29 +1645,29 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Focus search input when typing (if not in input field)
-// Exclude number inputs in the checkout table to avoid interfering with quantity input
-document.addEventListener('keypress', function(e) {
-    // Don't interfere if user is in any input, textarea, or select
+// Type-to-search: focus food search and append the key (when not already in a field)
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) {
+        return;
+    }
+    if (e.key.length !== 1 || !/^[a-zA-Z0-9]$/.test(e.key)) {
+        return;
+    }
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
         return;
     }
-    
-    // Don't interfere if the target is inside the checkout table
     const checkoutTable = document.getElementById('feedingSummaryTable');
     if (checkoutTable && checkoutTable.contains(e.target)) {
         return;
     }
-    
-    // Only focus search for alphanumeric keys
-    if (e.key.match(/[a-zA-Z0-9]/)) {
-        const searchInput = document.getElementById('foodSearch');
-        if (searchInput) {
-            searchInput.focus();
-            searchInput.value = e.key;
-            searchFoods();
-        }
+    const searchInput = document.getElementById('foodSearch');
+    if (!searchInput || document.activeElement === searchInput) {
+        return;
     }
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.value = searchInput.value + e.key;
+    applyFoodFilters();
 });
 
 // Date quick selection functions
