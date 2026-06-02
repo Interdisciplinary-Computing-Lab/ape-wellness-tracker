@@ -250,9 +250,8 @@ def ape_profile_page(ape_id):
     ape = Apes.query.get_or_404(ape_id)
     user_meals = meals_for_current_user().filter(Meals.ape_id == ape_id)
     
-    # Recent meals for activity feed and summary (queried fresh, not stale relationship cache)
     recent_meals = (
-        user_meals.order_by(Meals.date.desc(), Meals.id.desc())
+        user_meals.order_by(Meals.logged_at.desc(), Meals.id.desc())
         .limit(30)
         .all()
     )
@@ -274,7 +273,7 @@ def ape_profile_page(ape_id):
         Recipe.food_category,
         func.count(Meals.id).label('count'),
         func.sum(effective_calories).label('total_calories')
-    ).join(Meals).filter(
+    ).join(Meals, Meals.recipe_id == Recipe.id).filter(
         Meals.ape_id == ape_id,
         Meals.user_id == current_user.id,
     ).group_by(Recipe.food_category)\
@@ -292,7 +291,7 @@ def ape_profile_page(ape_id):
         func.strftime('%Y-%m', Meals.date).label('month'),
         func.sum(effective_calories).label('total_calories'),
         func.count(Meals.id).label('meal_count')
-    ).join(Recipe).filter(
+    ).join(Recipe, Meals.recipe_id == Recipe.id).filter(
         Meals.ape_id == ape_id,
         Meals.user_id == current_user.id,
     ).group_by(func.strftime('%Y-%m', Meals.date))\

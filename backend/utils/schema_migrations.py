@@ -143,10 +143,62 @@ def ensure_apes_archive_columns(db_uri, app_instance_path):
         conn.close()
 
 
+def ensure_meals_logged_at(db_uri, app_instance_path):
+    """Add meals.logged_at for recent-activity ordering (when entry was saved)."""
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('PRAGMA table_info(meals)')
+        columns = {row[1] for row in cursor.fetchall()}
+        if not columns:
+            return
+        if 'logged_at' not in columns:
+            cursor.execute('ALTER TABLE meals ADD COLUMN logged_at DATETIME')
+        cursor.execute(
+            "UPDATE meals SET logged_at = datetime('2000-01-01', '+' || id || ' seconds') "
+            "WHERE logged_at IS NULL"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_meals_logged_at_save_order(db_uri, app_instance_path):
+    """
+    Legacy DBs copied feeding date into logged_at; restore save order from entry id.
+    Rows saved after the fix keep a real logged_at and are not matched.
+    """
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('PRAGMA table_info(meals)')
+        columns = {row[1] for row in cursor.fetchall()}
+        if 'logged_at' not in columns:
+            return
+        cursor.execute(
+            "UPDATE meals SET logged_at = datetime('2000-01-01', '+' || id || ' seconds') "
+            "WHERE logged_at = date"
+        )
+        if cursor.rowcount:
+            conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_schema_updates(db_uri, app_instance_path):
     """Run all lightweight migrations before ORM queries."""
     ensure_recipe_columns(db_uri, app_instance_path)
     ensure_recipe_fdc_id(db_uri, app_instance_path)
     ensure_recipe_gram_weight(db_uri, app_instance_path)
     ensure_meals_calories_logged(db_uri, app_instance_path)
+    ensure_meals_logged_at(db_uri, app_instance_path)
+    ensure_meals_logged_at_save_order(db_uri, app_instance_path)
     ensure_apes_archive_columns(db_uri, app_instance_path)

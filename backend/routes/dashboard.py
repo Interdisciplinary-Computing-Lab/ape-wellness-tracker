@@ -5,7 +5,7 @@ Dashboard routes for the Ape Wellness Tracker application.
 from flask import render_template
 from backend.models.entry import Apes, Recipe, Meals
 from backend.utils.meal_nutrition import meal_calories
-from backend.utils.meal_queries import meals_for_current_user
+from backend.utils.meal_queries import meals_for_current_user, recent_meals_for_current_user
 from flask_security import login_required
 from datetime import datetime
 from sqlalchemy import func
@@ -22,15 +22,9 @@ def dashboard():
     
     recipes = Recipe.query.order_by(Recipe.food_category, Recipe.meal_name).all()
     
-    # Recent activity (newest first)
-    recent_meals = (
-        meals_for_current_user()
-        .order_by(Meals.date.desc(), Meals.id.desc())
-        .limit(30)
-        .all()
-    )
+    recent_meals = recent_meals_for_current_user(limit=30)
 
-    # Today's statistics — calendar day only (exclude future-dated logs)
+    # Today's statistics — meals whose feeding date is today (server calendar)
     today = datetime.now().date()
     today_meals = meals_for_current_user().filter(func.date(Meals.date) == today).all()
     total_meals_today = len(today_meals)

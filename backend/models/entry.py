@@ -205,7 +205,8 @@ class Meals(db.Model):
         id (int): Primary key.
         ape_id (int): Foreign key to Apes.
         recipe_id (int): Foreign key to Recipe.
-        date (datetime): Date and time of the meal.
+        date (datetime): Date and time of the meal (feeding date / period).
+        logged_at (datetime): When this entry was saved in the app.
         feeding_period (str): Time period when feeding occurred (Morning, Afternoon, Evening, Night).
         calories_logged (int): Actual calories for this feeding (scaled portion); null uses recipe.calories.
         user_id (int): Foreign key to User - tracks who entered the data.
@@ -219,6 +220,7 @@ class Meals(db.Model):
     ape_id = db.Column(db.Integer, sa.ForeignKey('apes.id'), nullable=False)
     recipe_id = db.Column(db.Integer, sa.ForeignKey('recipe.id'), nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=sa.func.now())
+    logged_at = db.Column(db.DateTime, nullable=False, default=sa.func.now())
     feeding_period = db.Column(db.String(20), nullable=True)  # Morning, Afternoon, Evening, Night
     calories_logged = db.Column(db.Integer, nullable=True)
     user_id = db.Column(db.Integer, sa.ForeignKey('user.id'), nullable=False)

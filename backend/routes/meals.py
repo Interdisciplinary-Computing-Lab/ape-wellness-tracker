@@ -28,10 +28,12 @@ def add_meal():
     date = datetime.strptime(date_str, "%Y-%m-%d")
     recipe = Recipe.query.get(int(recipe_id))
 
+    now = datetime.now()
     new_meal = Meals(
         ape_id=int(ape_id),
         recipe_id=int(recipe_id),
         date=date,
+        logged_at=now,
         calories_logged=recipe.calories if recipe else None,
         user_id=current_user.id
     )
@@ -107,7 +109,8 @@ def log_feeding():
                          categories=categories,
                          pre_filled_food=pre_filled_food,
                          pre_filled_calories=pre_filled_calories,
-                         pre_filled_ape=pre_filled_ape)
+                         pre_filled_ape=pre_filled_ape,
+                         default_feeding_date=datetime.now().strftime('%Y-%m-%d'))
 
 
 @site.route('/save_feeding', methods=['POST'])
@@ -147,6 +150,8 @@ def save_feeding():
         
         saved_meals = []
         total_calories = 0
+        from datetime import timedelta
+        logged_at = datetime.now()
         from backend.utils.config_loader import get_nutrition_defaults
         nutrition_defaults = get_nutrition_defaults()
 
@@ -193,6 +198,7 @@ def save_feeding():
                         ape_id=int(ape_id),
                         recipe_id=recipe.id,
                         date=feeding_datetime,
+                        logged_at=logged_at,
                         feeding_period=feeding_period,
                         calories_logged=logged_calories,
                         user_id=current_user.id,
@@ -204,6 +210,7 @@ def save_feeding():
                         'calories': logged_calories,
                     })
                     total_calories += logged_calories
+                    logged_at += timedelta(microseconds=1)
 
             if not saved_meals:
                 db.session.rollback()

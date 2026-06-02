@@ -76,7 +76,7 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
         download_name=filename,
         mimetype='text/csv; charset=utf-8'
     )
-    # Add headers to ensure download works in all browsers and pywebview
+    # Add headers to ensure download works in browsers
     # Use filename* for UTF-8 encoding support
     response.headers['Content-Disposition'] = f'attachment; filename="{filename}"; filename*=UTF-8\'\'{filename}'
     response.headers['Content-Type'] = 'text/csv; charset=utf-8'

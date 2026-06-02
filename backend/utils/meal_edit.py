@@ -131,6 +131,7 @@ def apply_meal_edit(meal, data: dict) -> None:
     if date_str:
         meal.date = feeding_datetime_from_parts(date_str, feeding_period)
     meal.feeding_period = feeding_period
+    meal.logged_at = datetime.now()
 
     source = (data.get('source') or '').strip()
     if source and not recipe.source:

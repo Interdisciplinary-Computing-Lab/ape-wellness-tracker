@@ -18,3 +18,16 @@ def meals_for_current_user():
 def get_user_meal_or_404(meal_id):
     """Load a meal log only if it belongs to the current user."""
     return meals_for_current_user().filter_by(id=meal_id).first_or_404()
+
+
+def recent_meals_for_current_user(limit=30):
+    """
+    Meals the user saved most recently, regardless of feeding date on the row.
+    Uses logged_at (save time), then id for ties.
+    """
+    return (
+        meals_for_current_user()
+        .order_by(Meals.logged_at.desc(), Meals.id.desc())
+        .limit(limit)
+        .all()
+    )
