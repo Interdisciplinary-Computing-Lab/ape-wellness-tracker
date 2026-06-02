@@ -1,5 +1,6 @@
 from backend.extensions import db
 from backend.models.entry import Meals, Apes, Recipe
+from backend.utils.meal_queries import meals_for_current_user
 import sys
 import sqlalchemy as sa
 from datetime import datetime
@@ -14,14 +15,14 @@ def add_to_db(table_object, name):
         print(f"Could not update the {name} table: {e}", file=sys.stderr)
 
 def query_meals():
-    """Query meals with joins."""
-    query = db.select(
-        Meals.date,
-        Apes.ape_name,
-        Recipe.meal_name,
-        Recipe.calories
-    ).select_from(Meals).join(Apes).join(Recipe)
-    return db.session.execute(query).all()
+    """Query current user's meals with joins."""
+    return (
+        meals_for_current_user()
+        .join(Apes)
+        .join(Recipe)
+        .with_entities(Meals.date, Apes.ape_name, Recipe.meal_name, Recipe.calories)
+        .all()
+    )
 
 def query_db():
     """Return all apes, recipes, and meals."""

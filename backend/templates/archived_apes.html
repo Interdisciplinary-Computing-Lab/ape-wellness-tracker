@@ -45,8 +45,8 @@
                                         </div>
                                         <div class="col-6">
                                             <div class="description-block">
-                                                <h5 class="description-header">{{ ape.meals|length }}</h5>
-                                                <span class="description-text">Total Meals</span>
+                                                <h5 class="description-header">{{ meal_counts.get(ape.id, 0) }}</h5>
+                                                <span class="description-text">Your Meals Logged</span>
                                             </div>
                                         </div>
                                     </div>

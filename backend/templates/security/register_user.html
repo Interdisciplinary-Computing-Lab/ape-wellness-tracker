@@ -118,9 +118,21 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
+
+                {% if register_user_form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    <ul class="mb-0 pl-3">
+                        {% for field, errors in register_user_form.errors.items() %}
+                            {% for error in errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
                 
                 <!-- Register Form -->
-                <form action="{{ url_for_security('register') }}" method="POST" name="register_user_form">
+                <form action="{{ url_for_security('register') }}" method="POST" name="register_user_form" novalidate>
                     {{ register_user_form.hidden_tag() }}
                     
                     <div class="input-group mb-3">
@@ -129,8 +141,11 @@
                                 <i class="fas fa-envelope"></i>
                             </span>
                         </div>
-                        {{ register_user_form.email(class="form-control", placeholder="Email", required=true) }}
+                        {{ register_user_form.email(class="form-control" + (" is-invalid" if register_user_form.email.errors else ""), placeholder="Email", required=true, id="email", autocomplete="email") }}
                     </div>
+                    {% if register_user_form.email.errors %}
+                    <div class="text-danger small mb-2">{{ register_user_form.email.errors[0] }}</div>
+                    {% endif %}
                     
                     <div class="input-group mb-2">
                         <div class="input-group-prepend">
@@ -138,8 +153,11 @@
                                 <i class="fas fa-lock"></i>
                             </span>
                         </div>
-                        {{ register_user_form.password(class="form-control", placeholder="Password", required=true, id="password", minlength=8, autocomplete="new-password") }}
+                        {{ register_user_form.password(class="form-control" + (" is-invalid" if register_user_form.password.errors else ""), placeholder="Password", required=true, id="password", minlength=8, autocomplete="new-password") }}
                     </div>
+                    {% if register_user_form.password.errors %}
+                    <div class="text-danger small mb-2">{{ register_user_form.password.errors[0] }}</div>
+                    {% endif %}
                     <div class="password-policy mb-3" id="passwordPolicy">
                         <span class="text-muted d-block mb-1"><strong>Password must include:</strong></span>
                         <ul class="password-policy-list text-muted">
@@ -157,8 +175,11 @@
                                 <i class="fas fa-lock"></i>
                             </span>
                         </div>
-                        {{ register_user_form.password_confirm(class="form-control", placeholder="Confirm Password", required=true, id="password_confirm") }}
+                        {{ register_user_form.password_confirm(class="form-control" + (" is-invalid" if register_user_form.password_confirm.errors else ""), placeholder="Confirm Password", required=true, id="password_confirm", autocomplete="new-password") }}
                     </div>
+                    {% if register_user_form.password_confirm.errors %}
+                    <div class="text-danger small mb-2">{{ register_user_form.password_confirm.errors[0] }}</div>
+                    {% endif %}
                     
                     <div class="row">
                         <div class="col-12">
@@ -231,9 +252,20 @@
                 }
             });
             
-            // Add loading state to form submission
-            $('form').on('submit', function() {
-                $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Registering...');
+            $('form[name="register_user_form"]').on('submit', function(e) {
+                var form = this;
+                var password = $('#password').val();
+                var confirm = $('#password_confirm').val();
+                if (confirm && password !== confirm) {
+                    e.preventDefault();
+                    $('#password_confirm').addClass('is-invalid');
+                    return;
+                }
+                if (!form.checkValidity()) {
+                    return;
+                }
+                var $btn = $(form).find('button[type="submit"]');
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Registering...');
             });
             
             // Auto-dismiss alerts after 5 seconds

@@ -64,13 +64,15 @@ def calculate_date_range():
 
 
 def get_meals_in_range(start_date, end_date):
-    """Get meals within date range"""
+    """Get current user's meal logs within date range."""
+    from backend.utils.meal_queries import meals_for_current_user
+
     start_datetime = datetime.combine(start_date, datetime.min.time())
     end_datetime = datetime.combine(end_date, datetime.max.time())
     
-    return Meals.query.filter(
+    return meals_for_current_user().filter(
         Meals.date >= start_datetime,
-        Meals.date <= end_datetime
+        Meals.date <= end_datetime,
     ).all()
 
 
@@ -314,7 +316,9 @@ def download_raw_data():
                     ])
             
             # 2. Meal_Logs.csv from Meals table (with optional date filtering)
-            meals_query = Meals.query
+            from backend.utils.meal_queries import meals_for_current_user
+
+            meals_query = meals_for_current_user()
             if start_date and end_date:
                 # Convert date objects to datetime for proper comparison
                 start_datetime = datetime.combine(start_date, datetime.min.time())

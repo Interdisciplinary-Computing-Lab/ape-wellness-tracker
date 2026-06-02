@@ -7,7 +7,7 @@ from backend.extensions import db
 from backend.models.entry import Apes, Meals, Recipe
 from backend.helpers import add_to_db
 from backend.utils.file_utils import allowed_file, MAX_FILE_SIZE
-from flask_security import login_required, roles_required
+from flask_security import login_required, roles_required, current_user
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from backend.routes import site
@@ -211,8 +211,21 @@ def archived_apes():
     """
     Display all archived apes.
     """
+    from backend.utils.meal_queries import meals_for_current_user
+    from sqlalchemy import func
+
     archived_apes_list = Apes.query.filter_by(is_archived=True).order_by(Apes.archived_at.desc()).all()
-    return render_template('archived_apes.html', apes=archived_apes_list)
+    meal_counts = dict(
+        meals_for_current_user()
+        .with_entities(Meals.ape_id, func.count(Meals.id))
+        .group_by(Meals.ape_id)
+        .all()
+    )
+    return render_template(
+        'archived_apes.html',
+        apes=archived_apes_list,
+        meal_counts=meal_counts,
+    )
 
 
 @site.route('/apes')
@@ -232,22 +245,24 @@ def ape_profile_page(ape_id):
     from backend.models.entry import Recipe
     from backend.utils.meal_nutrition import meal_calories
     
+    from backend.utils.meal_queries import meals_for_current_user
+
     ape = Apes.query.get_or_404(ape_id)
+    user_meals = meals_for_current_user().filter(Meals.ape_id == ape_id)
     
     # Recent meals for activity feed and summary (queried fresh, not stale relationship cache)
     recent_meals = (
-        Meals.query.filter_by(ape_id=ape_id)
-        .order_by(Meals.date.desc(), Meals.id.desc())
+        user_meals.order_by(Meals.date.desc(), Meals.id.desc())
         .limit(30)
         .all()
     )
     
+    all_meals = user_meals.order_by(Meals.date.desc(), Meals.id.desc()).all()
+    user_meal_count = len(all_meals)
+    
     # Calculate nutrition summary for last 7 days
     seven_days_ago = datetime.now() - timedelta(days=7)
-    recent_meals_week = Meals.query.filter(
-        Meals.ape_id == ape_id,
-        Meals.date >= seven_days_ago
-    ).all()
+    recent_meals_week = user_meals.filter(Meals.date >= seven_days_ago).all()
     
     total_calories_week = sum(meal_calories(meal) for meal in recent_meals_week)
     avg_calories_per_meal = total_calories_week / len(recent_meals_week) if recent_meals_week else 0
@@ -259,8 +274,10 @@ def ape_profile_page(ape_id):
         Recipe.food_category,
         func.count(Meals.id).label('count'),
         func.sum(effective_calories).label('total_calories')
-    ).join(Meals).filter(Meals.ape_id == ape_id)\
-     .group_by(Recipe.food_category)\
+    ).join(Meals).filter(
+        Meals.ape_id == ape_id,
+        Meals.user_id == current_user.id,
+    ).group_by(Recipe.food_category)\
      .all()
     
     pie_chart_data = {
@@ -275,8 +292,10 @@ def ape_profile_page(ape_id):
         func.strftime('%Y-%m', Meals.date).label('month'),
         func.sum(effective_calories).label('total_calories'),
         func.count(Meals.id).label('meal_count')
-    ).join(Recipe).filter(Meals.ape_id == ape_id)\
-     .group_by(func.strftime('%Y-%m', Meals.date))\
+    ).join(Recipe).filter(
+        Meals.ape_id == ape_id,
+        Meals.user_id == current_user.id,
+    ).group_by(func.strftime('%Y-%m', Meals.date))\
      .order_by(func.strftime('%Y-%m', Meals.date))\
      .all()
     
@@ -288,6 +307,8 @@ def ape_profile_page(ape_id):
                          edit_apes=edit_apes,
                          recipes=recipes,
                          recent_meals=recent_meals,
+                         all_meals=all_meals,
+                         user_meal_count=user_meal_count,
                          recent_meals_week=recent_meals_week,
                          total_calories_week=total_calories_week,
                          avg_calories_per_meal=avg_calories_per_meal,

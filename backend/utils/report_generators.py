@@ -6,10 +6,17 @@ These functions generate Excel reports using pandas and openpyxl.
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
+from flask_security import current_user
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory, User
 from sqlalchemy import func
 from backend.extensions import db
 from collections import defaultdict
+
+
+def _scope_meals_query(query):
+    if current_user.is_authenticated:
+        return query.filter(Meals.user_id == current_user.id)
+    return query.filter(False)
 
 
 def format_excel_headers(file_path, sheet_name, header_row=1):
@@ -58,6 +65,7 @@ def generate_individual_summary(output_file, start_date=None, end_date=None):
         Recipe.fiber_g,
         Apes.ape_name
     ).join(Recipe).join(Apes)
+    query = _scope_meals_query(query)
     
     # Filter by date range if provided
     if start_date:
@@ -155,6 +163,7 @@ def generate_group_and_category_breakdown(output_file, start_date=None, end_date
         effective_calories.label('calories'),
         Recipe.food_category
     ).join(Recipe)
+    query = _scope_meals_query(query)
     
     # Filter by date range if provided
     if start_date:

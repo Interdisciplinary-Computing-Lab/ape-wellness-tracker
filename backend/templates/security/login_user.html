@@ -131,23 +131,7 @@
         <div class="card login-card-body">
             <div class="card-body login-card-body">
                 <p class="login-box-msg">Sign in to start your session</p>
-                
-                <!-- Flash Messages -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <!-- Only show messages that are not the default login required message -->
-                            {% if message != 'You must sign in to view this resource.' %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible">
-                                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                                <i class="icon fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info' }}"></i>
-                                {{ message }}
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-                
+
                 <!-- Login Form -->
                 <form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
                     {{ login_user_form.hidden_tag() }}
@@ -183,18 +167,6 @@
                             </div>
                         {% endif %}
                     </div>
-                    
-                    {% if login_user_form.errors %}
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                {% for field, errors in login_user_form.errors.items() %}
-                                    {% for error in errors %}
-                                        <li>{{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
                     
                     <div class="row mb-3">
                         <div class="col-12">
@@ -264,11 +236,6 @@
                     }, 5000);
                 }
             });
-            
-            // Auto-dismiss alerts after 5 seconds
-            setTimeout(function() {
-                $('.alert').fadeOut();
-            }, 5000);
             
             // Display form validation errors
             $('form[name="login_user_form"]').on('submit', function(e) {

@@ -8,6 +8,7 @@ from backend.models.entry import Apes, Recipe, Meals, FoodCategory
 from flask_security import login_required, current_user
 from datetime import datetime
 from backend.routes import site
+from backend.utils.meal_queries import get_user_meal_or_404
 
 
 @site.route('/add_meal', methods=['POST'])
@@ -46,7 +47,7 @@ def edit_meal(meal_id):
     """
     Display and handle the form for editing an existing meal.
     """
-    meal = Meals.query.get_or_404(meal_id)
+    meal = get_user_meal_or_404(meal_id)
     apes = Apes.query.all()
     recipes = Recipe.query.all()
     
@@ -65,7 +66,7 @@ def delete_meal(meal_id):
     """
     Delete a meal from the database.
     """
-    meal = Meals.query.get_or_404(meal_id)
+    meal = get_user_meal_or_404(meal_id)
     db.session.delete(meal)
     db.session.commit()
     return redirect(url_for('dashboard.dashboard'))
@@ -236,7 +237,7 @@ def save_feeding():
 @login_required
 def api_get_meal(meal_id):
     """Load one saved meal for the edit modal."""
-    meal = Meals.query.get_or_404(meal_id)
+    meal = get_user_meal_or_404(meal_id)
     from backend.utils.meal_edit import meal_to_edit_dict
     return jsonify({'success': True, 'meal': meal_to_edit_dict(meal)})
 
@@ -245,7 +246,7 @@ def api_get_meal(meal_id):
 @login_required
 def api_update_meal(meal_id):
     """Update a saved meal from the edit modal."""
-    meal = Meals.query.get_or_404(meal_id)
+    meal = get_user_meal_or_404(meal_id)
     data = request.get_json()
     if not data:
         return jsonify({'success': False, 'error': 'No data received'}), 400
@@ -277,7 +278,7 @@ def api_update_meal(meal_id):
 @login_required
 def api_delete_meal(meal_id):
     """Delete a saved meal from the edit modal."""
-    meal = Meals.query.get_or_404(meal_id)
+    meal = get_user_meal_or_404(meal_id)
     try:
         db.session.delete(meal)
         db.session.commit()

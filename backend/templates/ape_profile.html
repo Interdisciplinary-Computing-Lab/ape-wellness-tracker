@@ -60,7 +60,7 @@
                                 </li>
                                 {% endif %}
                                 <li class="list-group-item">
-                                    <b>Total Meals</b> <a class="float-right">{{ ape.meals|length }}</a>
+                                    <b>Your Meals Logged</b> <a class="float-right">{{ user_meal_count }}</a>
                                 </li>
                             </ul>
 
@@ -209,11 +209,10 @@
                         <div class="card-header">
                             <h3 class="card-title">
                                 <i class="fas fa-chart-pie mr-1"></i>
-                                Nutrition Summary (All Time)
+                                Nutrition Summary (Your Logs)
                             </h3>
                         </div>
                         <div class="card-body">
-                            {% set all_meals = ape.meals|list %}
                             {% if all_meals %}
                                 {% set total_calories = namespace(value=0) %}
                                 {% for m in all_meals %}{% set total_calories.value = total_calories.value + meal_calories(m) %}{% endfor %}

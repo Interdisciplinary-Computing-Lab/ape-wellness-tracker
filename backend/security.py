@@ -1,3 +1,4 @@
+from flask import request, session
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_security.signals import user_registered
 from backend.extensions import db
@@ -19,6 +20,9 @@ def init_security(app):
     
     # Disable email confirmation requirement - auto-confirm users on registration
     app.config['SECURITY_CONFIRMABLE'] = False
+
+    # Registration validates deliverability by default; disable DNS/MX checks for staff emails
+    app.config['SECURITY_EMAIL_VALIDATOR_ARGS'] = {'check_deliverability': False}
     
     # Redirect after login
     app.config['SECURITY_POST_LOGIN_VIEW'] = '/dashboard'
@@ -27,7 +31,14 @@ def init_security(app):
     
     # Custom templates for better user experience
     app.config['SECURITY_UNAUTHORIZED_VIEW'] = 'security.forbidden'
-    
+
+    @app.after_request
+    def _discard_flashes_after_login_page(response):
+        """Login shows no banners; discard flashes so they do not appear here or after sign-in."""
+        if request.endpoint == 'security.login':
+            session.pop('_flashes', None)
+        return response
+
     # Register signal handler to auto-confirm and ensure user is saved
     @user_registered.connect_via(app)
     def on_user_registered(sender, user, confirm_token, **extra):
