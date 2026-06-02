@@ -190,7 +190,8 @@
                                     {% elif recipe.food_category == 'Mixed Meals & Combinations' %}<i class="fas fa-utensils mb-1 text-orange"></i>
                                     {% else %}<i class="fas fa-tag mb-1 text-secondary"></i>{% endif %}
                                     <div class="d-block small font-weight-bold">{{ recipe.meal_name }}</div>
-                                    <small class="text-muted">{{ recipe.calories }} cal</small>
+                                    <small class="text-muted d-block">per {{ recipe.catalog_serving_label() }}</small>
+                                    <small class="text-muted font-weight-bold">{{ recipe.calories }} cal</small>
                                     {% if recipe.description %}
                                     <div class="small text-muted mt-1" style="font-size: 0.7rem; opacity: 0.8;">
                                         {{ recipe.description[:30] }}{% if recipe.description|length > 30 %}...{% endif %}
@@ -232,17 +233,33 @@
                         <label for="customQuantity" class="small text-muted mb-1">Qty</label>
                         <div class="input-group custom-food-qty">
                             <input type="number" class="form-control" id="customQuantity"
-                                   value="1" min="1" step="1">
+                                   value="1" min="0.01" step="any">
                             <div class="input-group-append custom-food-qty-append">
-                                <div class="custom-food-qty-stepper" role="group" aria-label="Adjust quantity">
-                                    <button type="button" class="custom-food-qty-btn"
-                                            data-custom-qty-step="1" title="Add 1" aria-label="Add 1">
-                                        <i class="fas fa-chevron-up" aria-hidden="true"></i>
-                                    </button>
-                                    <button type="button" class="custom-food-qty-btn"
-                                            data-custom-qty-step="-1" title="Subtract 1" aria-label="Subtract 1">
-                                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                                    </button>
+                                <div class="custom-food-qty-steppers d-flex" role="group" aria-label="Adjust quantity">
+                                    <div class="custom-food-qty-stepper">
+                                        <button type="button" class="custom-food-qty-btn"
+                                                data-custom-qty-step="1" data-custom-qty-step-size="1"
+                                                title="Add 1" aria-label="Add 1">
+                                            <i class="fas fa-chevron-up" aria-hidden="true"></i>
+                                        </button>
+                                        <button type="button" class="custom-food-qty-btn"
+                                                data-custom-qty-step="-1" data-custom-qty-step-size="1"
+                                                title="Subtract 1" aria-label="Subtract 1">
+                                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                    <div class="custom-food-qty-stepper custom-food-qty-stepper--fine">
+                                        <button type="button" class="custom-food-qty-btn"
+                                                data-custom-qty-step="1" data-custom-qty-step-size="0.1"
+                                                title="Add 0.1" aria-label="Add 0.1">
+                                            <i class="fas fa-chevron-up" aria-hidden="true"></i>
+                                        </button>
+                                        <button type="button" class="custom-food-qty-btn"
+                                                data-custom-qty-step="-1" data-custom-qty-step-size="0.1"
+                                                title="Subtract 0.1" aria-label="Subtract 0.1">
+                                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -291,11 +308,6 @@
                 <h3 class="card-title">
                     <i class="fas fa-list mr-2"></i>Current Meals
                 </h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool btn-sm" onclick="clearFeedingList()" title="Clear all items">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -332,8 +344,8 @@
                         <button type="button" class="btn btn-success btn-lg" id="saveFeedingBtn" onclick="saveFeeding(); return false;" style="pointer-events: auto !important; z-index: 100; position: relative;" disabled>
                             <i class="fas fa-save mr-2"></i>Save Meals
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="clearAll(); return false;">
-                            <i class="fas fa-eraser mr-2"></i>Clear All
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetFeedingSession(); return false;">
+                            <i class="fas fa-redo mr-2"></i>Reset Session
                         </button>
                     </div>
                 </div>
@@ -530,7 +542,7 @@
     min-width: 8rem;
 }
 .custom-food-form .custom-food-field-qty {
-    width: 7.25rem;
+    width: 10rem;
 }
 .custom-food-form .custom-food-field-unit {
     width: 6.5rem;
@@ -544,15 +556,26 @@
 .custom-food-form .custom-food-add-label {
     visibility: hidden;
 }
-.custom-food-form #customQuantity {
-    text-align: center;
+.custom-food-form #customQuantity,
+.custom-food-form #customCalories,
+.feeding-qty-control input[data-feeding-qty],
+#feedingSummaryBody input[data-calories-input] {
     -moz-appearance: textfield;
-    max-width: 4rem;
 }
 .custom-food-form #customQuantity::-webkit-outer-spin-button,
-.custom-food-form #customQuantity::-webkit-inner-spin-button {
+.custom-food-form #customQuantity::-webkit-inner-spin-button,
+.custom-food-form #customCalories::-webkit-outer-spin-button,
+.custom-food-form #customCalories::-webkit-inner-spin-button,
+.feeding-qty-control input[data-feeding-qty]::-webkit-outer-spin-button,
+.feeding-qty-control input[data-feeding-qty]::-webkit-inner-spin-button,
+#feedingSummaryBody input[data-calories-input]::-webkit-outer-spin-button,
+#feedingSummaryBody input[data-calories-input]::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
+}
+.custom-food-form #customQuantity {
+    text-align: center;
+    max-width: 4rem;
 }
 .custom-food-form .custom-food-qty.input-group {
     align-items: stretch;
@@ -561,6 +584,10 @@
     display: flex;
     margin-left: 0;
 }
+.custom-food-form .custom-food-qty-steppers {
+    gap: 0.15rem;
+    align-items: stretch;
+}
 .custom-food-form .custom-food-qty-stepper {
     display: flex;
     flex-direction: column;
@@ -568,9 +595,17 @@
     min-height: 100%;
     border: 1px solid #ced4da;
     border-left: 0;
-    border-radius: 0 0.25rem 0.25rem 0;
     overflow: hidden;
     background: #fff;
+}
+.custom-food-form .custom-food-qty-stepper:first-child {
+    border-radius: 0;
+}
+.custom-food-form .custom-food-qty-stepper:last-child {
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+.custom-food-form .custom-food-qty-stepper--fine .custom-food-qty-btn i {
+    font-size: 0.55rem;
 }
 .custom-food-form .custom-food-qty-btn {
     flex: 1 1 50%;
@@ -689,11 +724,15 @@ function requireApeBeforeAddingFood() {
     return false;
 }
 
-function stepCustomQuantity(delta) {
+function stepCustomQuantity(delta, stepSize) {
+    stepSize = stepSize > 0 ? stepSize : 1;
     const input = document.getElementById('customQuantity');
     if (!input) return;
     const current = parseFloat(input.value) || 1;
-    const next = Math.max(1, Math.round(current) + delta);
+    const minQty = stepSize < 1 ? 0.01 : 1;
+    let next = current + delta * stepSize;
+    next = Math.round(next * 1000) / 1000;
+    next = Math.max(minQty, next);
     input.value = formatQuantity(next);
 }
 
@@ -844,8 +883,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!stepBtn) return;
             e.preventDefault();
             const delta = parseInt(stepBtn.getAttribute('data-custom-qty-step'), 10);
+            const stepSize = parseFloat(stepBtn.getAttribute('data-custom-qty-step-size') || '1');
             if (!isNaN(delta)) {
-                stepCustomQuantity(delta);
+                stepCustomQuantity(delta, stepSize);
             }
         });
     }
@@ -1163,7 +1203,7 @@ function addFoodItem(name, calories, recipeQuantity, unitRaw, source, gramsPerSe
     recipeQuantity = recipeQuantity || 1.0;
     const existingIndex = feedingItems.findIndex(function(item) { return item.name === name; });
     if (existingIndex !== -1) {
-        feedingItems[existingIndex].quantity += 1.0;
+        feedingItems[existingIndex].quantity += FN.catalogServingIncrement(feedingItems[existingIndex]);
         recalculateItemCalories(feedingItems[existingIndex]);
     } else {
         const item = FN.buildFeedingItem({
@@ -1477,15 +1517,24 @@ function clearFeedingList() {
     updateStats();
 }
 
+function resetFeedingSession() {
+    if (!confirm(
+        'Reset this session?\n\nThis will clear selected apes, all foods in the list, and your search.'
+    )) {
+        return;
+    }
+    clearAll();
+}
+
 function clearAll() {
     // Set flag to prevent showing warning during clear
     window.isClearingAfterSave = true;
-    
+
     clearSelection();
     clearFeedingList();
     clearSearch();
     hideFoodGrid();
-    
+
     // Reset flag after a short delay to allow the clear operations to complete
     setTimeout(() => {
         window.isClearingAfterSave = false;
@@ -1678,10 +1727,10 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         selectAllApes();
     }
-    // Ctrl/Cmd + C to clear all
+    // Ctrl/Cmd + C to reset session
     if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
         e.preventDefault();
-        clearAll();
+        resetFeedingSession();
     }
     // Ctrl/Cmd + F to focus search
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {

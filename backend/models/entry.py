@@ -179,6 +179,25 @@ class Recipe(db.Model):
         formatted = f"{self.quantity:.2f}".rstrip('0').rstrip('.')
         return formatted
 
+    def catalog_serving_label(self):
+        """Label for one catalog serving shown on food cards (e.g. '100 g', '1 cup')."""
+        import re
+        unit = (self.unit_of_measurement or '').strip()
+        if not unit:
+            return '1 serving'
+        normalized = unit.lower().replace(' ', '')
+        if normalized in ('100g',):
+            return '100 g'
+        if re.match(r'^\d', unit):
+            return unit
+        qty = self.format_quantity()
+        try:
+            if float(qty) == 1.0:
+                return unit
+        except (TypeError, ValueError):
+            pass
+        return f'{qty} {unit}'
+
 class Meals(db.Model):
     """
     Represents a meal entry for an ape, linking an ape to a recipe on a specific date.

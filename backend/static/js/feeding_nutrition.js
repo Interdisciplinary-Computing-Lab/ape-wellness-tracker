@@ -219,6 +219,65 @@
         return (grams / refG) * (item.recipeQuantity > 0 ? item.recipeQuantity : 1.0);
     }
 
+    /** Default qty + unit for one full catalog serving when a food is added. */
+    function defaultLoggedServing(parsed) {
+        if (parsed.per100g) {
+            return { quantity: parsed.catalogQuantity, unit: 'g' };
+        }
+        if (parsed.catalogVolumeCups != null) {
+            return { quantity: parsed.catalogQuantity, unit: 'cup' };
+        }
+        if (parsed.foodSpecificServing) {
+            return { quantity: 1.0, unit: 'serving' };
+        }
+        if (
+            VOLUME_UNITS.includes(parsed.catalogUnit) ||
+            WEIGHT_UNITS.includes(parsed.catalogUnit) ||
+            COUNT_UNITS.includes(parsed.catalogUnit)
+        ) {
+            return { quantity: parsed.catalogQuantity, unit: parsed.catalogUnit };
+        }
+        return {
+            quantity: parsed.catalogQuantity > 0 ? parsed.catalogQuantity : 1.0,
+            unit: parsed.catalogUnit || 'serving',
+        };
+    }
+
+    /** Amount to add when the same food is clicked again (one more catalog serving). */
+    function catalogServingIncrement(item) {
+        if (!item) return 1;
+        const catQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1;
+        const displayUnit = normalizeUnit(item.unit);
+
+        if (item.per100g && displayUnit === 'g') {
+            return catQty;
+        }
+        if (item.catalogVolumeCups != null && displayUnit === 'cup') {
+            return catQty;
+        }
+        if (displayUnit === item.catalogUnit && !item.foodSpecificServing) {
+            return catQty;
+        }
+        if (item.foodSpecificServing && displayUnit === 'serving') {
+            return 1;
+        }
+
+        const refG = referenceGrams(item);
+        if (refG > 0 && getUnitCategory(displayUnit) === 'weight') {
+            const delta = convertUnit(refG, 'g', displayUnit);
+            if (!isNaN(delta) && delta > 0) {
+                return delta;
+            }
+        }
+        if (item.catalogVolumeCups != null && getUnitCategory(displayUnit) === 'volume') {
+            const delta = convertUnit(item.catalogVolumeCups, 'cup', displayUnit);
+            if (!isNaN(delta) && delta > 0) {
+                return delta;
+            }
+        }
+        return 1;
+    }
+
     function unitsForItem(item) {
         if (item.per100g || (item.catalogUnit === 'g' && item.recipeQuantity >= 100)) {
             return WEIGHT_UNITS.slice();
@@ -247,15 +306,11 @@
             gramsPerServing = 100;
         }
 
-        const defaultUnit = parsed.per100g
-            ? 'g'
-            : parsed.catalogVolumeCups != null
-              ? 'cup'
-              : parsed.foodSpecificServing
-                ? 'serving'
-                : parsed.catalogUnit;
+        const serving = defaultLoggedServing(parsed);
+        const defaultUnit = serving.unit;
+        const defaultQuantity = serving.quantity;
 
-        return {
+        const item = {
             name: opts.name,
             calories: catalogCalories,
             recipeQuantity,
@@ -267,7 +322,7 @@
             originalRecipeUnit: defaultUnit,
             proteinPerCatalog: opts.proteinG != null ? opts.proteinG : 0,
             fiberPerCatalog: opts.fiberG != null ? opts.fiberG : 0,
-            quantity: 1.0,
+            quantity: defaultQuantity,
             unit: defaultUnit,
             source: opts.source || '',
             caloriesOverride: null,
@@ -275,10 +330,12 @@
             gramsPerServing,
             caloriesInvalid: false,
             crossUnitNote: false,
-            totalCalories: catalogCalories,
-            totalProtein: opts.proteinG || 0,
-            totalFiber: opts.fiberG || 0,
+            totalCalories: null,
+            totalProtein: null,
+            totalFiber: null,
         };
+        recalculateItem(item);
+        return item;
     }
 
     function recalculateItem(item) {
@@ -334,6 +391,8 @@
         loggedGrams,
         amountInCatalogUnits,
         unitsForItem,
+        defaultLoggedServing,
+        catalogServingIncrement,
         buildFeedingItem,
         recalculateItem,
     };
