@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ape-wellness-tracker
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 run:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SECURITY_PASSWORD_SALT
+        generateValue: true
+      - key: EXPORT_HASH_SALT
+        generateValue: true
+    disk:
+      name: instance-data
+      mountPath: /opt/render/project/src/instance
+      sizeGB: 1
