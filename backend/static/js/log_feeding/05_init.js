@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStats();
     updateSaveButton();
     
-    // Hide all food items initially - user must click "All" or a category to see foods
-    hideFoodGrid();
+    // Shared facility catalog: every account sees the same foods — show all by default
+    filterByCategory('all', document.getElementById('all-tab'));
 
     document.querySelectorAll('#categoryTabs .nav-link').forEach(function(link) {
         const existing = link.getAttribute('title');

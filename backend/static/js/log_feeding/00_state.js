@@ -3,7 +3,7 @@ let selectedApes = new Set();
 let feedingItems = [];
 let saveFeedingInProgress = false;
 let feedingSaveSuccessTimer = null;
-let currentCategory = ''; // Start with no category selected (hide all foods until clicked)
+let currentCategory = 'all'; // Shared catalog; init opens the full list (see 05_init.js)
 const FN = window.FeedingNutrition;
 
 // Helper function to format quantity to avoid floating point precision issues

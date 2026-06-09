@@ -343,16 +343,13 @@
 {% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
 <style>
 .reports-export-hero .custom-control-input:checked ~ .custom-control-label::before {
     background-color: #fff;
     border-color: #fff;
 }
 </style>
-{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
 {% endblock %}
 
 {% block extra_js %}
