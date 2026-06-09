@@ -94,11 +94,11 @@
                                     <option value="custom_range" {% if date_range == 'custom_range' %}selected{% endif %}>Custom date range</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-3" id="customDateGroup" style="display: {{ 'block' if date_range == 'custom' else 'none' }};">
+                            <div class="col-md-4 mb-3" id="customDateGroup" style="display: {{ 'block' if date_range == 'custom' else 'none' }};">
                                 <label for="date" class="form-label">Date</label>
                                 <input type="date" name="date" id="date" class="form-control" value="{{ custom_date }}">
                             </div>
-                            <div class="col-md-6 mb-3" id="customRangeGroup" style="display: {{ 'block' if date_range == 'custom_range' else 'none' }};">
+                            <div class="col-md-8 mb-3" id="customRangeGroup" style="display: {{ 'block' if date_range == 'custom_range' else 'none' }};">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <label for="start_date" class="form-label">Start date</label>
@@ -114,7 +114,7 @@
                         <div class="reports-download-bar mt-2 pt-3 border-top d-flex flex-wrap align-items-center">
                             <button type="button"
                                     class="btn btn-outline-success download-csv-btn"
-                                    data-url="{{ url_for('site.download_reports', format='csv', range=date_range, date=custom_date, start_date=custom_start_date, end_date=custom_end_date) }}">
+                                    data-base-url="{{ url_for('site.download_reports', format='csv') }}">
                                 <i class="fas fa-file-csv mr-1"></i>
                                 Download summary CSV
                             </button>
