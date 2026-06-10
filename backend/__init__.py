@@ -1,9 +1,12 @@
 import os
 import json
 import secrets
+import uuid
 import warnings
+from datetime import datetime
 from pathlib import Path
 from flask import Flask
+from flask_security.utils import hash_password
 from dotenv import load_dotenv
 from backend.extensions import db
 from backend.security import init_security
@@ -127,6 +130,7 @@ def create_app():
             app.instance_path,
         )
         _ensure_users_confirmed()
+        ensure_bootstrap_users()
 
         # Ensure standard apes exist when app starts
         ensure_standard_apes()
@@ -136,6 +140,48 @@ def create_app():
         ensure_custom_display_foods()
 
     return app
+
+
+def ensure_bootstrap_users():
+    """Create default roles/admin on fresh deploys; promote first user if no admin exists."""
+    from backend.models.entry import User, Role
+
+    roles_to_create = [
+        ('Admin', 'Administrator with full access to all features'),
+        ('Researcher', 'Can view and log feeding data for all apes'),
+        ('Viewer', 'Can view data but cannot log feeding sessions'),
+    ]
+    created_roles = False
+    for role_name, description in roles_to_create:
+        if not Role.query.filter_by(name=role_name).first():
+            db.session.add(Role(name=role_name, description=description))
+            created_roles = True
+    if created_roles:
+        db.session.commit()
+
+    admin_role = Role.query.filter_by(name='Admin').first()
+    if not admin_role:
+        return
+
+    users = User.query.order_by(User.id).all()
+    if not users:
+        admin_user = User(
+            email='admin@apeinitiative.org',
+            password=hash_password('admin123'),
+            active=True,
+            confirmed_at=datetime.utcnow(),
+            fs_uniquifier=str(uuid.uuid4()),
+        )
+        admin_user.roles.append(admin_role)
+        db.session.add(admin_user)
+        db.session.commit()
+        print('[SUCCESS] Bootstrap admin created: admin@apeinitiative.org / admin123')
+        return
+
+    if not any(admin_role in user.roles for user in users):
+        users[0].roles.append(admin_role)
+        db.session.commit()
+        print(f'[SUCCESS] Promoted {users[0].email} to Admin (no admin user existed)')
 
 
 def _ensure_users_confirmed():
