@@ -5,7 +5,7 @@ User profile management routes for the Ape Wellness Tracker application.
 from flask import render_template, request, redirect, url_for, flash
 from backend.extensions import db
 from backend.models.entry import User
-from flask_security import login_required, current_user
+from flask_security import login_required, current_user, login_user
 from flask_security.utils import hash_password, verify_password
 from backend.security import user_datastore
 from backend.routes import site
@@ -64,6 +64,10 @@ def update_profile():
         return redirect(url_for('site.user_profile'))
 
 
+def _password_change_redirect(**params):
+    return redirect(url_for('site.user_profile', **params))
+
+
 @site.route('/user_profile/change_password', methods=['POST'])
 @login_required
 def change_password():
@@ -72,40 +76,37 @@ def change_password():
         current_password = request.form.get('current_password')
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
-        
+
+        user = user_datastore.find_user(id=current_user.id)
+        if not user:
+            return _password_change_redirect(password_error='account')
+
         if not all([current_password, new_password, confirm_password]):
-            flash('All password fields are required.', 'error')
-            return redirect(url_for('site.user_profile'))
-        
+            return _password_change_redirect(password_error='required')
+
         if new_password != confirm_password:
-            flash('New passwords do not match.', 'error')
-            return redirect(url_for('site.user_profile'))
-        
+            return _password_change_redirect(password_error='mismatch')
+
         from backend.utils.password_policy import validate_password
         policy_errors = validate_password(new_password)
         if policy_errors:
-            flash(
-                'New password does not meet requirements: ' + '; '.join(policy_errors),
-                'error',
+            return _password_change_redirect(
+                password_error='policy',
+                password_error_detail='; '.join(policy_errors),
             )
-            return redirect(url_for('site.user_profile'))
-        
-        # Verify current password (Flask-Security 5: use verify_password util, not user method)
-        if not verify_password(current_password, current_user.password):
-            flash('Current password is incorrect.', 'error')
-            return redirect(url_for('site.user_profile'))
-        
-        user = user_datastore.find_user(id=current_user.id)
+
+        if not verify_password(current_password, user.password):
+            return _password_change_redirect(password_error='incorrect')
+
         user.password = hash_password(new_password)
         db.session.commit()
-        
-        flash('Password changed successfully!', 'success')
-        return redirect(url_for('site.user_profile'))
-        
+        login_user(user)
+
+        return _password_change_redirect(password_changed=1)
+
     except Exception as e:
         db.session.rollback()
-        flash(f'Error changing password: {str(e)}', 'error')
-        return redirect(url_for('site.user_profile'))
+        return _password_change_redirect(password_error='server', password_error_detail=str(e))
 
 
 @site.route('/forbidden')

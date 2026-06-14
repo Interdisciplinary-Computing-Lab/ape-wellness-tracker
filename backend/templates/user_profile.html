@@ -140,6 +140,7 @@
                 </h3>
             </div>
             <div class="card-body">
+                <div id="passwordChangeFeedback" class="mb-2" style="display: none;"></div>
                 <div class="account-actions-buttons">
                     <button type="button" class="btn btn-primary btn-block mb-2" data-toggle="modal" data-target="#changePasswordModal">
                         <i class="fas fa-key mr-2"></i>
@@ -202,6 +203,48 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    var passwordMessages = {
+        incorrect: 'Current password is incorrect.',
+        mismatch: 'New passwords do not match.',
+        required: 'All password fields are required.',
+        policy: 'New password does not meet requirements.',
+        account: 'Unable to update password for this account.',
+        server: 'Error changing password. Please try again.'
+    };
+
+    function showPasswordFeedback(type, message, openModal) {
+        var el = $('#passwordChangeFeedback');
+        el.removeClass('alert-success alert-danger alert-info')
+          .addClass(type === 'success' ? 'alert alert-success' : 'alert alert-danger')
+          .text(message)
+          .show();
+        if (openModal) {
+            $('#changePasswordModal').modal('show');
+        }
+        if (type === 'success') {
+            setTimeout(function() { el.fadeOut(); }, 4000);
+        }
+    }
+
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('password_changed') === '1') {
+        showPasswordFeedback('success', 'Password changed successfully!');
+        if (window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    } else if (params.get('password_error')) {
+        var key = params.get('password_error');
+        var detail = params.get('password_error_detail');
+        var message = passwordMessages[key] || 'Unable to change password.';
+        if (detail) {
+            message += ' ' + detail;
+        }
+        showPasswordFeedback('error', message, true);
+        if (window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+
     // Profile edit mode toggle
     $('#editProfileBtn').on('click', function() {
         $('#viewMode').hide();
@@ -249,6 +292,10 @@ $(document).ready(function() {
     $('#changePasswordModal').on('hidden.bs.modal', function() {
         $('#current_password, #new_password, #confirm_password').removeClass('is-valid is-invalid');
         $('#changePasswordModal form')[0].reset();
+    });
+
+    $('#changePasswordModal').on('shown.bs.modal', function() {
+        $('#passwordChangeFeedback').hide();
     });
     
     // Email validation for profile editing
