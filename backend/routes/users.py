@@ -6,6 +6,8 @@ from flask import render_template, request, redirect, url_for, flash
 from backend.extensions import db
 from backend.models.entry import User
 from flask_security import login_required, current_user
+from flask_security.utils import hash_password, verify_password
+from backend.security import user_datastore
 from backend.routes import site
 
 
@@ -88,14 +90,13 @@ def change_password():
             )
             return redirect(url_for('site.user_profile'))
         
-        # Verify current password
-        if not current_user.verify_password(current_password):
+        # Verify current password (Flask-Security 5: use verify_password util, not user method)
+        if not verify_password(current_password, current_user.password):
             flash('Current password is incorrect.', 'error')
             return redirect(url_for('site.user_profile'))
         
-        # Change the password using Flask-Security's method
-        from flask_security.utils import hash_password
-        current_user.password = hash_password(new_password)
+        user = user_datastore.find_user(id=current_user.id)
+        user.password = hash_password(new_password)
         db.session.commit()
         
         flash('Password changed successfully!', 'success')
