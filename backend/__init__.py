@@ -38,7 +38,7 @@ def _load_or_create_instance_secret(instance_path, filename, env_var, nbytes=32)
     return value
 
 
-def create_app():
+def create_app(*, sync_fdc_catalog: bool = True):
     template_folder = os.path.join(os.path.dirname(__file__), 'templates')
     static_folder = os.path.join(os.path.dirname(__file__), 'static')
 
@@ -138,6 +138,8 @@ def create_app():
         # Ensure food categories (and staff custom names with FDC data when CSVs present)
         ensure_standard_food_data()
         ensure_custom_display_foods()
+        if sync_fdc_catalog:
+            ensure_fdc_food_catalog()
 
     return app
 
@@ -232,8 +234,8 @@ def ensure_standard_apes():
         print(f"[SUCCESS] Created {created_count} standard apes for new users")
 
 def ensure_standard_food_data():
-    """Ensure comprehensive food categories and recipes exist in the database - loaded from data file"""
-    from backend.models.entry import FoodCategory, Recipe
+    """Ensure food categories exist in the database (recipes come from USDA FDC import)."""
+    from backend.models.entry import FoodCategory
     
     # Load food data from JSON file
     data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'default_foods.json')
@@ -261,23 +263,32 @@ def ensure_standard_food_data():
     if created_categories > 0:
         db.session.commit()
         print(f"[SUCCESS] Created {created_categories} comprehensive food categories")
-    
-    # Load recipes
-    comprehensive_recipes = food_data.get('recipes', [])
-    created_recipes = 0
-    for recipe_data in comprehensive_recipes:
-        existing_recipe = Recipe.query.filter_by(meal_name=recipe_data['meal_name']).first()
-        if not existing_recipe:
-            # Ensure protein_g and fiber_g have defaults if not provided
-            recipe_data.setdefault('protein_g', 2.0)
-            recipe_data.setdefault('fiber_g', 1.0)
-            new_recipe = Recipe(**recipe_data)
-            db.session.add(new_recipe)
-            created_recipes += 1
-    
-    if created_recipes > 0:
+
+
+def ensure_fdc_food_catalog():
+    """Import bundled USDA Foundation Foods and remove legacy non-FDC catalog entries."""
+    from backend.utils.fdc_loader import FdcFoundationLoader, RAW_DIR, load_category_map
+
+    if not os.path.isfile(os.path.join(RAW_DIR, "foundation_food.csv")):
+        return
+
+    from misc.scripts.import_fdc_foundation import import_all_fdc_foods
+    from misc.scripts.prune_non_fdc_foods import prune_non_fdc_recipes
+
+    loader = FdcFoundationLoader()
+    category_map = load_category_map()
+    created, updated, _skipped = import_all_fdc_foods(
+        loader, category_map, dry_run=False, include_excluded=False, verbose=False
+    )
+    if created or updated:
         db.session.commit()
-        print(f"[SUCCESS] Created {created_recipes} comprehensive recipes")
+
+    removed = prune_non_fdc_recipes(dry_run=False, verbose=False)
+    if created or updated or removed:
+        print(
+            f"[SUCCESS] FDC catalog sync: {created} created, {updated} updated, "
+            f"{removed} legacy food(s) removed"
+        )
 
 
 _RETIRED_STAFF_FOODS = {

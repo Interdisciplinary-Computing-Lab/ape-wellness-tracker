@@ -64,7 +64,7 @@ def _apply_record_to_recipe(recipe: Recipe, record, food_category: str, descript
     recipe.category_id = cat.id if cat else None
 
 
-def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool) -> list[int]:
+def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool, *, verbose: bool = True) -> list[int]:
     """Assign FDC nutrition to custom display names; return recipe ids to remove (duplicates)."""
     custom = load_custom_foods()
     duplicate_ids: list[int] = []
@@ -72,7 +72,8 @@ def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool) -> list[int]:
     for meal_name, meta in custom.items():
         record = _find_fdc_record(loader, meta["fdc_description"])
         if not record:
-            print(f"  [ERROR] No FDC match for {meal_name} -> {meta['fdc_description']}")
+            if verbose:
+                print(f"  [ERROR] No FDC match for {meal_name} -> {meta['fdc_description']}")
             continue
 
         for dup in Recipe.query.filter(
@@ -83,7 +84,8 @@ def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool) -> list[int]:
 
         recipe = Recipe.query.filter_by(meal_name=meal_name).first()
         if not recipe:
-            print(f"  {'[dry-run] ' if dry_run else ''}create custom {meal_name} from FDC {record.fdc_id}")
+            if verbose:
+                print(f"  {'[dry-run] ' if dry_run else ''}create custom {meal_name} from FDC {record.fdc_id}")
             if not dry_run:
                 categories = {c.name: c for c in FoodCategory.query.filter_by(is_active=True).all()}
                 cat = categories.get(meta["food_category"])
@@ -103,10 +105,11 @@ def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool) -> list[int]:
                 db.session.add(recipe)
                 db.session.flush()
         else:
-            print(
-                f"  {'[dry-run] ' if dry_run else ''}link {meal_name}: "
-                f"cal {recipe.calories} -> {record.calories} (FDC {record.fdc_id})"
-            )
+            if verbose:
+                print(
+                    f"  {'[dry-run] ' if dry_run else ''}link {meal_name}: "
+                    f"cal {recipe.calories} -> {record.calories} (FDC {record.fdc_id})"
+                )
             if not dry_run:
                 _apply_record_to_recipe(
                     recipe, record, meta["food_category"], meta.get("description", "")
@@ -117,7 +120,8 @@ def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool) -> list[int]:
             Recipe.meal_name != meal_name,
         ).all():
             if dup.id not in duplicate_ids:
-                print(f"    remove duplicate catalog entry: {dup.meal_name}")
+                if verbose:
+                    print(f"    remove duplicate catalog entry: {dup.meal_name}")
                 duplicate_ids.append(dup.id)
 
     return duplicate_ids
@@ -138,22 +142,22 @@ def collect_recipes_to_remove(keep_names: set[str], extra_ids: list[int]) -> lis
     return remove
 
 
-def run_prune(dry_run: bool) -> int:
+def prune_non_fdc_recipes(*, dry_run: bool = False, verbose: bool = True) -> int:
+    """Remove recipes without fdc_id except custom display names. Requires app context."""
     custom = load_custom_foods()
     keep_names = set(custom.keys())
 
     loader = FdcFoundationLoader()
-    app = create_app()
-
-    with app.app_context():
+    if verbose:
         print("Linking custom foods to USDA Foundation Foods...")
-        duplicate_ids = link_custom_foods(loader, dry_run)
+    duplicate_ids = link_custom_foods(loader, dry_run, verbose=verbose)
 
-        to_remove = collect_recipes_to_remove(keep_names, duplicate_ids)
-        meal_count = sum(
-            Meals.query.filter_by(recipe_id=r.id).count() for r in to_remove
-        )
+    to_remove = collect_recipes_to_remove(keep_names, duplicate_ids)
+    meal_count = sum(
+        Meals.query.filter_by(recipe_id=r.id).count() for r in to_remove
+    )
 
+    if verbose:
         print(f"\nWill remove {len(to_remove)} food(s) and {meal_count} meal log row(s).")
         for r in to_remove[:20]:
             print(f"  - {r.meal_name} (fdc_id={r.fdc_id})")
@@ -167,16 +171,26 @@ def run_prune(dry_run: bool) -> int:
             f"{remaining_custom} custom display name(s)"
         )
 
-        if dry_run:
+    if dry_run:
+        if verbose:
             print("\n(dry run — no changes written)")
-            return 0
+        return len(to_remove)
 
-        for recipe in to_remove:
-            Meals.query.filter_by(recipe_id=recipe.id).delete(synchronize_session=False)
-            db.session.delete(recipe)
+    for recipe in to_remove:
+        Meals.query.filter_by(recipe_id=recipe.id).delete(synchronize_session=False)
+        db.session.delete(recipe)
 
-        db.session.commit()
+    db.session.commit()
+    if verbose:
         print("\nDone.")
+    return len(to_remove)
+
+
+def run_prune(dry_run: bool) -> int:
+    app = create_app(sync_fdc_catalog=False)
+
+    with app.app_context():
+        prune_non_fdc_recipes(dry_run=dry_run, verbose=True)
     return 0
 
 

@@ -201,4 +201,9 @@ ApeWellnessTracker-App/
 # USDA FoodData Central bulk downloads (keep data/fdc/README.md)
 data/fdc/raw/*
 !data/fdc/raw/.gitkeep
+!data/fdc/raw/foundation_food.csv
+!data/fdc/raw/measure_unit.csv
+!data/fdc/raw/food_nutrient.csv
+!data/fdc/raw/food_portion.csv
+!data/fdc/raw/food.csv
 data/fdc/*.zip

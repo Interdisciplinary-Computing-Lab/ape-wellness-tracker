@@ -221,11 +221,13 @@ def _update_existing(
     return updated, skipped, missing_nutrient
 
 
-def _import_all(
+def import_all_fdc_foods(
     loader: FdcFoundationLoader,
     category_map: dict,
     dry_run: bool,
     include_excluded: bool,
+    *,
+    verbose: bool = True,
 ) -> tuple[int, int, int]:
     """Upsert all foundation foods into Recipe by fdc_id."""
     created = updated = skipped = 0
@@ -253,10 +255,11 @@ def _import_all(
                 n += 1
 
         action = "create" if not recipe else "update"
-        print(
-            f"  {'[dry-run] ' if dry_run else ''}{action} [{record.app_category}] "
-            f"{meal_name}: {record.calories} cal / {record.quantity} {record.unit_of_measurement}"
-        )
+        if verbose:
+            print(
+                f"  {'[dry-run] ' if dry_run else ''}{action} [{record.app_category}] "
+                f"{meal_name}: {record.calories} cal / {record.quantity} {record.unit_of_measurement}"
+            )
 
         if dry_run:
             if recipe:
@@ -305,12 +308,12 @@ def run_import(
     category_map = load_category_map()
     print(f"Loaded {len(loader.foundation_ids())} foundation foods from {loader.raw_dir}")
 
-    app = create_app()
+    app = create_app(sync_fdc_catalog=False)
     with app.app_context():
         if import_all:
             print("Mode: import all foundation foods into catalog")
-            created, updated, skipped = _import_all(
-                loader, category_map, dry_run, include_excluded
+            created, updated, skipped = import_all_fdc_foods(
+                loader, category_map, dry_run, include_excluded, verbose=True
             )
             if not dry_run:
                 db.session.commit()
