@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Keep USDA FDC catalog foods plus any names listed in data/fdc/custom_foods.json.
-Link those two to Foundation Foods nutrition, then remove all other non-FDC recipes
-and their meal log rows.
+Keep USDA FDC catalog foods and all staff-created recipes (fdc_id is NULL).
+Link custom display names in data/fdc/custom_foods.json to Foundation Foods nutrition,
+then remove only duplicate FDC catalog entries and their meal log rows.
 
 Usage (from project root):
   python misc/scripts/prune_non_fdc_foods.py --dry-run
@@ -127,32 +127,26 @@ def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool, *, verbose: bo
     return duplicate_ids
 
 
-def collect_recipes_to_remove(keep_names: set[str], extra_ids: list[int]) -> list[Recipe]:
-    remove: list[Recipe] = []
-    extra_set = set(extra_ids)
-    for recipe in Recipe.query.all():
-        if recipe.id in extra_set:
-            remove.append(recipe)
-            continue
-        if recipe.meal_name in keep_names:
-            continue
-        if recipe.fdc_id:
-            continue
-        remove.append(recipe)
-    return remove
+def collect_recipes_to_remove(extra_ids: list[int]) -> list[Recipe]:
+    """Return recipes to delete after custom-food linking.
+
+    Staff-created foods (fdc_id is NULL) are always kept — including quick-adds
+    from meal logging and admin-created entries. Only explicit duplicate FDC
+    catalog rows (extra_ids from link_custom_foods) are removed.
+    """
+    if not extra_ids:
+        return []
+    return Recipe.query.filter(Recipe.id.in_(extra_ids)).all()
 
 
 def prune_non_fdc_recipes(*, dry_run: bool = False, verbose: bool = True) -> int:
-    """Remove recipes without fdc_id except custom display names. Requires app context."""
-    custom = load_custom_foods()
-    keep_names = set(custom.keys())
-
+    """Link custom display names and remove duplicate FDC catalog entries. Requires app context."""
     loader = FdcFoundationLoader()
     if verbose:
         print("Linking custom foods to USDA Foundation Foods...")
     duplicate_ids = link_custom_foods(loader, dry_run, verbose=verbose)
 
-    to_remove = collect_recipes_to_remove(keep_names, duplicate_ids)
+    to_remove = collect_recipes_to_remove(duplicate_ids)
     meal_count = sum(
         Meals.query.filter_by(recipe_id=r.id).count() for r in to_remove
     )
@@ -165,10 +159,10 @@ def prune_non_fdc_recipes(*, dry_run: bool = False, verbose: bool = True) -> int
             print(f"  ... and {len(to_remove) - 20} more")
 
         remaining_fdc = Recipe.query.filter(Recipe.fdc_id.isnot(None)).count()
-        remaining_custom = Recipe.query.filter(Recipe.meal_name.in_(keep_names)).count()
+        remaining_staff = Recipe.query.filter(Recipe.fdc_id.is_(None)).count()
         print(
             f"\nAfter prune: ~{remaining_fdc} USDA foods + "
-            f"{remaining_custom} custom display name(s)"
+            f"{remaining_staff} staff/custom food(s) (fdc_id NULL, kept)"
         )
 
     if dry_run:
@@ -196,7 +190,7 @@ def run_prune(dry_run: bool) -> int:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Remove non-USDA foods except custom display names in custom_foods.json"
+        description="Link custom_foods.json entries to FDC and remove duplicate catalog rows"
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
