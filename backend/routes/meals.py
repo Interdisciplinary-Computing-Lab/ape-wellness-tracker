@@ -7,8 +7,25 @@ from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory
 from flask_security import login_required, current_user
 from datetime import datetime
+import re
 from backend.routes import site
 from backend.utils.meal_queries import get_user_meal_or_404
+
+
+def _recipe_unit_label(unit, recipe_quantity):
+    """Format unit_of_measurement so catalog quick-add parses quantity + unit correctly."""
+    unit = (unit or '').strip()
+    if not unit:
+        return None
+    if re.match(r'^\d', unit):
+        return unit
+    qty = recipe_quantity if recipe_quantity and recipe_quantity > 0 else 1.0
+    if qty == 1.0 or qty == 1:
+        return unit
+    if qty == int(qty):
+        return f'{int(qty)} {unit}'
+    qty_str = f'{qty:.2f}'.rstrip('0').rstrip('.')
+    return f'{qty_str} {unit}'
 
 
 @site.route('/add_meal', methods=['POST'])
@@ -162,6 +179,7 @@ def save_feeding():
                 food_name = item.get('name', '').strip()
                 calories = int(item.get('calories', 0) or 0)
                 quantity = float(item.get('quantity', 1))
+                recipe_quantity = float(item.get('recipe_quantity', 0) or 0)
                 unit = item.get('unit', '')
                 source = (item.get('source') or '').strip() or None
 
@@ -172,6 +190,15 @@ def save_feeding():
                     quantity = 1.0
                 logged_calories = max(0, round(calories * quantity))
 
+                if recipe_quantity > 0:
+                    catalog_calories = calories
+                    catalog_quantity = recipe_quantity
+                    catalog_unit = _recipe_unit_label(unit, catalog_quantity)
+                else:
+                    catalog_calories = max(calories, logged_calories)
+                    catalog_quantity = 1.0
+                    catalog_unit = unit if unit else None
+
                 recipe = Recipe.query.filter_by(meal_name=food_name).first()
                 if not recipe:
                     default_category = FoodCategory.query.filter_by(is_active=True).first()
@@ -179,9 +206,9 @@ def save_feeding():
                     recipe = Recipe(
                         meal_name=food_name,
                         description=f"Quick added: {food_name}",
-                        calories=max(calories, logged_calories),
-                        quantity=1.0,
-                        unit_of_measurement=unit if unit else None,
+                        calories=catalog_calories,
+                        quantity=catalog_quantity,
+                        unit_of_measurement=catalog_unit,
                         source=source,
                         food_category=food_category,
                         protein_g=nutrition_defaults['protein_g'],
