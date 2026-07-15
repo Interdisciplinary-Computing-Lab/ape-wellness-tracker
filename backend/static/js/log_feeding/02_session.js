@@ -267,10 +267,7 @@ function updateFeedingSummary() {
         const row = document.createElement('tr');
         // Create unit select
         const unitSelect = document.createElement('select');
-        unitSelect.className = 'form-control form-control-sm';
-        unitSelect.style.width = '120px';
-        unitSelect.style.pointerEvents = 'auto';
-        unitSelect.style.zIndex = '10';
+        unitSelect.className = 'form-control form-control-sm feeding-summary-unit';
         unitSelect.dataset.index = index;
         unitSelect.setAttribute('data-feeding-unit', '1');
         unitSelect.disabled = false;
@@ -315,8 +312,7 @@ function updateFeedingSummary() {
         calWrap.className = 'd-flex align-items-center';
         const calInput = document.createElement('input');
         calInput.type = 'number';
-        calInput.className = 'form-control form-control-sm';
-        calInput.style.width = '62px';
+        calInput.className = 'form-control form-control-sm feeding-summary-cal-input';
         calInput.min = '0';
         calInput.dataset.index = index;
         calInput.setAttribute('data-calories-input', '1');
