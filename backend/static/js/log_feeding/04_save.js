@@ -34,9 +34,12 @@ function showFeedingSaveSuccess(apeCount, totalCalories, mealCount) {
     const meals = Number(mealCount) || 0;
     const apeLabel = apes === 1 ? '1 ape' : apes + ' apes';
     const mealLabel = meals === 1 ? '1 meal' : meals + ' meals';
+    const dashboardUrl = (window.LOG_FEEDING_CONFIG && window.LOG_FEEDING_CONFIG.dashboardUrl) || '/dashboard';
     textEl.innerHTML =
-        'Meals logged for <strong>' + apeLabel + '</strong> (' + mealLabel + ') — ' +
-        '<span id="feedingSaveSuccessCal">' + cals + ' cal</span>';
+        '<strong>Saved!</strong> Meals logged for <strong>' + apeLabel + '</strong> (' + mealLabel + ') — ' +
+        '<span id="feedingSaveSuccessCal">' + cals + ' cal</span>. ' +
+        'View them on the <a href="' + dashboardUrl + '" class="alert-link font-weight-bold">Dashboard</a> ' +
+        'or each ape\'s profile.';
     el.classList.remove('d-none', 'is-hiding');
     el.classList.add('is-visible');
     feedingSaveSuccessTimer = setTimeout(function() {
@@ -44,8 +47,8 @@ function showFeedingSaveSuccess(apeCount, totalCalories, mealCount) {
         feedingSaveSuccessTimer = setTimeout(function() {
             hideFeedingSaveSuccess();
             feedingSaveSuccessTimer = null;
-        }, 400);
-    }, 4500);
+        }, 500);
+    }, 8000);
 }
 
 // Save meals function - must be global for inline onclick
@@ -150,7 +153,7 @@ function saveFeeding() {
                 result.data.total_calories,
                 result.data.meal_count
             );
-            clearAll();
+            clearFeedingList();
         } else {
             alert('Error saving meals: ' + (result.data.error || 'Unknown error'));
         }
