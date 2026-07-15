@@ -2,6 +2,11 @@
 {% block title %}Log Meals - Ape Meal Tracker{% endblock %}
 {% block page_title %}Log Meals{% endblock %}
 {% block body %}
+<div class="alert alert-info mb-3 feeding-save-tip" role="note">
+    <i class="fas fa-lightbulb mr-2" aria-hidden="true"></i>
+    <strong>Tip:</strong> Click Save Meals to store this session. Each save writes meals for the selected date.
+</div>
+
 <!-- Date Selection Header -->
 <div class="row mb-3">
     <div class="col-12">
@@ -341,13 +346,18 @@
                         Please select at least one ape
                     </div>
                     
-                    <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-success btn-lg" id="saveFeedingBtn" onclick="saveFeeding(); return false;" style="pointer-events: auto !important; z-index: 100; position: relative;" disabled>
-                            <i class="fas fa-save mr-2"></i>Save Meals
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="resetFeedingSession(); return false;">
-                            <i class="fas fa-redo mr-2"></i>Reset Session
-                        </button>
+                    <div class="feeding-save-action">
+                        <p class="feeding-save-helper text-muted mb-2">
+                            Meals are saved to the database when you click Save—no separate end-of-day step.
+                        </p>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-success btn-lg feeding-save-btn" id="saveFeedingBtn" onclick="saveFeeding(); return false;" style="pointer-events: auto !important; z-index: 100; position: relative;" disabled>
+                                <i class="fas fa-save mr-2"></i>Save meals for selected apes
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetFeedingSession(); return false;">
+                                <i class="fas fa-redo mr-2"></i>Reset Session
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -376,6 +386,7 @@
 <script>
 window.LOG_FEEDING_CONFIG = {
     saveUrl: {{ url_for('site.save_feeding')|tojson }},
+    dashboardUrl: {{ url_for('site.dashboard')|tojson }},
     defaultFeedingDate: {{ default_feeding_date|tojson }},
     preFilledFood: {{ pre_filled_food|tojson }},
     preFilledCalories: {{ pre_filled_calories|tojson }},
