@@ -24,25 +24,29 @@ function addCustomFood() {
     // Normalize unit
     const normalizedUnit = normalizeUnit(unit);
     
-    // For custom foods, the user enters total calories for the quantity they want to log
-    // We'll treat this as: base quantity = 1.0, base calories = calories/quantity
-    // This way, 1.0 unit = (calories/quantity) calories
-    const catalogCalories = calories;
+    // User enters total calories for the quantity they are logging; store that as the catalog
+    // serving (calories + recipeQuantity) so quantity scaling applies without gram_weight.
     const existingIndex = feedingItems.findIndex(function(item) { return item.name === name; });
     if (existingIndex !== -1) {
+        feedingItems[existingIndex].calories = calories;
+        feedingItems[existingIndex].recipeQuantity = quantity;
         feedingItems[existingIndex].quantity = quantity;
         feedingItems[existingIndex].unit = normalizedUnit;
+        feedingItems[existingIndex].catalogUnit = normalizedUnit;
         recalculateItemCalories(feedingItems[existingIndex]);
     } else {
         const item = FN.buildFeedingItem({
             name: name,
-            calories: catalogCalories,
+            calories: calories,
             recipeQuantity: quantity,
             unitRaw: unit,
             source: '',
         });
+        item.calories = calories;
+        item.recipeQuantity = quantity;
         item.quantity = quantity;
         item.unit = normalizedUnit;
+        item.catalogUnit = normalizedUnit;
         recalculateItemCalories(item);
         feedingItems.push(item);
     }
@@ -175,8 +179,29 @@ function applyQuantityChange(index, newQuantity, flash) {
     if (index < 0 || index >= feedingItems.length) return;
     if (isNaN(newQuantity) || newQuantity <= 0) return;
 
-    feedingItems[index].quantity = newQuantity;
+    const item = feedingItems[index];
+    item.quantity = newQuantity;
+    if (!item.manualCalories) {
+        item.caloriesOverride = null;
+    }
     syncRowFromItem(index, flash);
+}
+
+function applyCaloriesChange(index, targetCalories) {
+    if (index < 0 || index >= feedingItems.length) return;
+    if (isNaN(targetCalories) || targetCalories < 0) return;
+
+    const item = feedingItems[index];
+    if (!item.manualCalories) return;
+
+    item.caloriesOverride = targetCalories;
+    if (item.calories > 0) {
+        const newQty = FN.quantityForTargetCalories(item, targetCalories);
+        if (!isNaN(newQty) && newQty > 0) {
+            item.quantity = Math.round(newQty * 1000) / 1000;
+        }
+    }
+    syncRowFromItem(index, false);
 }
 
 function applyQuantityStep(index, delta, stepSize) {
@@ -267,10 +292,7 @@ function updateFeedingSummary() {
         const row = document.createElement('tr');
         // Create unit select
         const unitSelect = document.createElement('select');
-        unitSelect.className = 'form-control form-control-sm';
-        unitSelect.style.width = '120px';
-        unitSelect.style.pointerEvents = 'auto';
-        unitSelect.style.zIndex = '10';
+        unitSelect.className = 'form-control form-control-sm feeding-summary-unit';
         unitSelect.dataset.index = index;
         unitSelect.setAttribute('data-feeding-unit', '1');
         unitSelect.disabled = false;
@@ -315,8 +337,7 @@ function updateFeedingSummary() {
         calWrap.className = 'd-flex align-items-center';
         const calInput = document.createElement('input');
         calInput.type = 'number';
-        calInput.className = 'form-control form-control-sm';
-        calInput.style.width = '62px';
+        calInput.className = 'form-control form-control-sm feeding-summary-cal-input';
         calInput.min = '0';
         calInput.dataset.index = index;
         calInput.setAttribute('data-calories-input', '1');
@@ -351,6 +372,7 @@ function updateFeedingSummary() {
 
     updateFeedingTotalsInDom();
     initFeedingSummaryListeners();
+    updateStats();
 }
 
 // Backward-compatible aliases (if referenced elsewhere)
@@ -410,13 +432,8 @@ function initFeedingSummaryListeners() {
         const calInput = e.target.closest('input[data-calories-input]');
         if (calInput) {
             const index = parseInt(calInput.dataset.index, 10);
-            const item = feedingItems[index];
-            if (!item || !item.manualCalories) return;
             const v = parseInt(calInput.value, 10);
-            if (isNaN(v) || v < 0) return;
-            item.caloriesOverride = v;
-            recalculateItemCalories(item);
-            syncRowFromItem(index, false);
+            applyCaloriesChange(index, v);
             return;
         }
         const qtyInput = e.target.closest('input[data-feeding-qty]');

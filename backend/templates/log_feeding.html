@@ -99,6 +99,7 @@
                         </div>
                         <small class="d-block text-center mt-1 font-weight-bold">{{ ape.ape_name }}</small>
                         <small class="text-muted">{{ ape.age }}y</small>
+                        <small class="d-block ape-session-calories text-muted" data-ape-calories="{{ ape.id }}">—</small>
                     </div>
                 </div>
                 {% endfor %}
@@ -109,7 +110,7 @@
 
 <!-- Food selection + custom add + current meals -->
 <div class="row">
-    <div class="col-lg-8">
+    <div class="col-lg-8 order-last order-lg-first">
         <div class="card food-selection-card">
             <div class="card-header">
                 <h3 class="card-title">
@@ -132,6 +133,12 @@
                 <!-- Category Filter Tabs (click active tab again to collapse) -->
                 <div class="mb-4 d-flex flex-wrap align-items-start">
                     <ul class="nav nav-pills nav-fill flex-grow-1 mb-0" id="categoryTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" id="favorites-tab" data-toggle="pill" href="#favorites"
+                               role="tab" aria-controls="favorites" aria-selected="false" onclick="filterByCategory('favorites', this)">
+                                <i class="fas fa-star text-warning"></i> Favorites ({{ recipes|selectattr('is_favorite')|list|length }})
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" id="all-tab" data-toggle="pill" href="#all" 
                                role="tab" aria-controls="all" aria-selected="false" onclick="filterByCategory('all', this)">
@@ -169,11 +176,23 @@
                     <div class="row" id="foodsGrid">
                         {% for recipe in recipes %}
                         <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb-2 food-item" 
+                             data-recipe-id="{{ recipe.id }}"
+                             data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
                              data-category="{{ recipe.food_category or 'Other' }}"
                              data-name="{{ recipe.meal_name|lower }}"
                              data-description="{{ (recipe.description or '')|lower }}"
                              data-calories="{{ recipe.calories }}">
-                            <button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card" 
+                            <div class="food-card-wrap position-relative">
+                                <button type="button"
+                                        class="btn btn-link btn-sm food-favorite-btn p-0"
+                                        data-recipe-id="{{ recipe.id }}"
+                                        data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
+                                        onclick="toggleFoodFavorite(event, this)"
+                                        title="{{ 'Remove from favorites' if recipe.is_favorite else 'Add to favorites' }}"
+                                        aria-label="{{ 'Remove from favorites' if recipe.is_favorite else 'Add to favorites' }}">
+                                    <i class="fas fa-star{{ '' if recipe.is_favorite else '-o' }}"></i>
+                                </button>
+                            <button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card{% if recipe.is_favorite %} food-card--favorite{% endif %}" 
                                     data-food="{{ recipe.meal_name }}" 
                                     data-calories="{{ recipe.calories }}" 
                                     data-quantity="{{ recipe.quantity or 1.0 }}"
@@ -205,6 +224,7 @@
                                     {% endif %}
                                 </div>
                             </button>
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -274,11 +294,12 @@
                         <label for="customUnit" class="small text-muted mb-1">Unit</label>
                         <select class="form-control" id="customUnit">
                             <option value="piece" selected>piece</option>
+                            <option value="whole">whole</option>
                             <option value="cup">cup</option>
-                            <option value="g">g</option>
-                            <option value="oz">oz</option>
                             <option value="tbsp">tbsp</option>
                             <option value="tsp">tsp</option>
+                            <option value="g">g</option>
+                            <option value="oz">oz</option>
                             <option value="slice">slice</option>
                             <option value="serving">serving</option>
                             <option value="lb">lb</option>
@@ -308,8 +329,8 @@
     </div>
 
     <!-- Current Meals Summary -->
-    <div class="col-lg-4">
-        <div class="card">
+    <div class="col-lg-4 order-first order-lg-last">
+        <div class="card" id="feedingSummary">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-list mr-2"></i>Current Meals
@@ -334,6 +355,11 @@
                             <tr>
                                 <td colspan="3" class="font-weight-bold">Total</td>
                                 <td class="font-weight-bold" id="totalCalories">0</td>
+                                <td></td>
+                            </tr>
+                            <tr class="table-light">
+                                <td colspan="3" class="small text-muted">Per selected ape</td>
+                                <td class="font-weight-bold text-success" id="perApeCalories">—</td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -387,6 +413,7 @@
 window.LOG_FEEDING_CONFIG = {
     saveUrl: {{ url_for('site.save_feeding')|tojson }},
     dashboardUrl: {{ url_for('site.dashboard')|tojson }},
+    favoriteUrlTemplate: {{ url_for('site.toggle_recipe_favorite', recipe_id=0)|tojson }},
     defaultFeedingDate: {{ default_feeding_date|tojson }},
     preFilledFood: {{ pre_filled_food|tojson }},
     preFilledCalories: {{ pre_filled_calories|tojson }},

@@ -1,3 +1,32 @@
+.food-card-wrap {
+    position: relative;
+}
+
+.food-favorite-btn {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    z-index: 110;
+    line-height: 1;
+    color: #ffc107;
+    opacity: 0.85;
+}
+
+.food-favorite-btn:hover,
+.food-favorite-btn:focus {
+    color: #e0a800;
+    opacity: 1;
+    text-decoration: none;
+}
+
+.food-favorite-btn .fa-star-o {
+    color: #adb5bd;
+}
+
+.food-card--favorite {
+    border-color: #ffc107;
+}
+
 .food-card {
     -webkit-transition: all 0.2s ease;
     -moz-transition: all 0.2s ease;
@@ -90,6 +119,15 @@
 
 .ape-avatar.selected .selection-indicator {
     display: block;
+}
+
+.ape-session-calories {
+    font-size: 0.75rem;
+    margin-top: 0.15rem;
+}
+
+.ape-avatar.selected .ape-session-calories.text-success {
+    color: #155724 !important;
 }
 
 .avatar-circle {
@@ -332,4 +370,113 @@
 }
 .feeding-save-toast #feedingSaveSuccessCal {
     font-weight: 700;
+}
+
+/* Feeding summary table — desktop sizing */
+.feeding-summary-unit {
+    width: 120px;
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
+}
+.feeding-summary-cal-input {
+    width: 62px;
+}
+#feedingSummary .table-responsive {
+    overflow-x: auto;
+}
+
+@media (max-width: 767.98px) {
+    #feedingSummary .table-responsive {
+        overflow-x: visible;
+    }
+
+    #feedingSummaryTable thead {
+        display: none;
+    }
+
+    #feedingSummaryBody tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    #feedingSummaryBody td {
+        border: none;
+        padding: 0.25rem;
+    }
+
+    #feedingSummaryBody td:first-child {
+        flex: 1 1 100%;
+        font-weight: 600;
+        padding-bottom: 0.35rem;
+    }
+
+    #feedingSummaryBody td:nth-child(2) {
+        flex: 1 1 auto;
+        min-width: 7rem;
+    }
+
+    #feedingSummaryBody td:nth-child(3) {
+        flex: 1 1 100%;
+        min-width: 6rem;
+    }
+
+    #feedingSummaryBody td:nth-child(4) {
+        flex: 1 1 auto;
+        min-width: 8rem;
+    }
+
+    #feedingSummaryBody td:last-child {
+        flex: 0 0 auto;
+        margin-left: auto;
+        align-self: center;
+    }
+
+    .feeding-qty-control {
+        flex-wrap: wrap;
+    }
+
+    .feeding-qty-control input[data-feeding-qty] {
+        min-height: 44px;
+        min-width: 4.5rem;
+        width: auto;
+        flex: 1 1 auto;
+    }
+
+    .feeding-qty-stepper--fine {
+        display: none;
+    }
+
+    .feeding-summary-unit {
+        width: 100%;
+        min-height: 44px;
+        font-size: 1rem;
+    }
+
+    #feedingSummaryBody input[data-calories-input],
+    .feeding-summary-cal-input {
+        min-height: 44px;
+        min-width: 5rem;
+        width: auto;
+        flex: 1 1 auto;
+        font-size: 1rem;
+    }
+
+    #feedingSummaryBody td.calories-cell .d-flex {
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    #feedingSummaryTable tfoot tr {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0.5rem 0.75rem;
+    }
+
+    #feedingSummaryTable tfoot td {
+        border: none;
+    }
 }
