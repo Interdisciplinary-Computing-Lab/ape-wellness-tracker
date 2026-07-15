@@ -4,8 +4,8 @@ Recipe/Food management routes for the Ape Wellness Tracker application.
 
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from backend.extensions import db
-from backend.models.entry import Recipe
-from backend.helpers import add_to_db
+from backend.models.entry import Recipe, FoodCategory
+from backend.helpers import add_to_db, sync_recipe_category
 from flask_security import login_required
 from backend.routes import site
 
@@ -51,7 +51,7 @@ def edit_recipe(recipe_id):
                 recipe.quantity = 1.0
             recipe.unit_of_measurement = request.form.get('unit_of_measurement', '')
             recipe.source = request.form.get('source', '')
-            recipe.food_category = request.form.get('food_category', 'Other')
+            sync_recipe_category(recipe, request.form.get('food_category', 'Other'))
             
             db.session.commit()
             
@@ -62,7 +62,10 @@ def edit_recipe(recipe_id):
             flash(f'Error updating food item: {str(e)}', 'error')
             return redirect(url_for('site.manage_foods'))
     
-    return render_template('edit_recipe.html', recipe=recipe)
+    categories = FoodCategory.query.filter_by(is_active=True).order_by(
+        FoodCategory.sort_order, FoodCategory.name
+    ).all()
+    return render_template('edit_recipe.html', recipe=recipe, categories=categories)
 
 
 @site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
@@ -95,7 +98,6 @@ def delete_recipe_form(recipe_id):
 @login_required
 def manage_foods():
     """Display food management page"""
-    from backend.models.entry import FoodCategory
     recipes = Recipe.query.all()
     categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order, FoodCategory.name).all()
     
@@ -121,9 +123,9 @@ def create_recipe():
             quantity=quantity,
             unit_of_measurement=data.get('unit_of_measurement', ''),
             source=data.get('source', ''),
-            food_category=data.get('food_category', 'Other'),
             description=data.get('description', '')
         )
+        sync_recipe_category(new_recipe, data.get('food_category', 'Other'))
         
         db.session.add(new_recipe)
         db.session.commit()
@@ -153,8 +155,8 @@ def update_recipe(recipe_id):
             recipe.unit_of_measurement = data['unit_of_measurement']
         if data.get('source') is not None:
             recipe.source = data['source']
-        if data.get('food_category'):
-            recipe.food_category = data['food_category']
+        if data.get('food_category') is not None:
+            sync_recipe_category(recipe, data['food_category'])
         if data.get('description') is not None:
             recipe.description = data['description']
         
@@ -268,9 +270,9 @@ def add_recipe_form():
             quantity=quantity_float,
             unit_of_measurement=unit_of_measurement,
             source=source,
-            food_category=food_category,
             description=description
         )
+        sync_recipe_category(new_recipe, food_category)
         
         db.session.add(new_recipe)
         db.session.commit()

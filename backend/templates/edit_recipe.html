@@ -23,6 +23,17 @@
                                value="{{ recipe.description }}" placeholder="Brief description of the meal">
                     </div>
                     <div class="form-group">
+                        <label for="food_category">Category</label>
+                        <select class="form-control" name="food_category" id="food_category">
+                            {% set current_category = recipe.food_category or 'Other' %}
+                            {% set category_names = categories | map(attribute='name') | list %}
+                            {% for category in categories %}
+                            <option value="{{ category.name }}" {% if current_category == category.name %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
+                            <option value="Other" {% if current_category == 'Other' or current_category not in category_names %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="calories">Calories</label>
                         <div class="input-group input-group-lg">
                             <input type="number" class="form-control" name="calories" id="calories" 
@@ -96,6 +107,10 @@
                         <p class="text-muted">{{ recipe.description }}</p>
                     </div>
                     {% endif %}
+                    <div class="mt-3">
+                        <h6>Category:</h6>
+                        <p class="text-muted">{{ recipe.food_category or 'Other' }}</p>
+                    </div>
                     <div class="mt-3">
                         <a href="{{ url_for('site.dashboard') }}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-arrow-left mr-1"></i>Back to Dashboard

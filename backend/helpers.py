@@ -1,9 +1,17 @@
 from backend.extensions import db
-from backend.models.entry import Meals, Apes, Recipe
+from backend.models.entry import Meals, Apes, Recipe, FoodCategory
 from backend.utils.meal_queries import meals_for_current_user
 import sys
 import sqlalchemy as sa
 from datetime import datetime
+
+def sync_recipe_category(recipe, food_category_name):
+    """Keep recipe.food_category and recipe.category_id in sync."""
+    name = (food_category_name or 'Other').strip() or 'Other'
+    recipe.food_category = name
+    cat = FoodCategory.query.filter_by(name=name, is_active=True).first()
+    recipe.category_id = cat.id if cat else None
+
 
 def add_to_db(table_object, name):
     """Add an initialized table object to the database."""
