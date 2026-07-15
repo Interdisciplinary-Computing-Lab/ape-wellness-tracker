@@ -55,27 +55,47 @@
     }
 
     function refreshCaloriesDisplay() {
-        const display = document.getElementById('mealEditCaloriesDisplay');
+        const calInput = document.getElementById('mealEditCalories');
         const hint = document.getElementById('mealEditCaloriesHint');
-        if (!editItem || !display) return;
+        if (!editItem || !calInput) return;
 
         FN.recalculateItem(editItem);
         if (editItem.caloriesInvalid) {
-            display.textContent = '—';
-            display.classList.add('text-danger');
+            calInput.value = '';
+            calInput.disabled = true;
+            calInput.classList.add('text-danger');
             if (hint) {
                 hint.textContent = 'This unit does not match how this food is stored. Pick another unit or food.';
                 hint.classList.add('text-danger');
             }
             return;
         }
-        display.classList.remove('text-danger');
+        calInput.disabled = false;
+        calInput.classList.remove('text-danger');
         if (hint) hint.classList.remove('text-danger');
         const total = editItem.totalCalories != null ? editItem.totalCalories : 0;
-        display.textContent = total.toLocaleString() + ' cal';
+        calInput.value = Math.round(total);
         if (hint) {
             hint.textContent = editItem.name + ' · catalog base ' + (editItem.calories || 0) + ' cal';
         }
+    }
+
+    function applyCaloriesToItem(targetCalories) {
+        if (!editItem || isNaN(targetCalories) || targetCalories < 0) return;
+
+        editItem.caloriesOverride = targetCalories;
+        editItem.manualCalories = true;
+        if (editItem.calories > 0) {
+            const newQty = FN.quantityForTargetCalories(editItem, targetCalories);
+            if (!isNaN(newQty) && newQty > 0) {
+                editItem.quantity = Math.round(newQty * 1000) / 1000;
+                const qtyInput = document.getElementById('mealEditQuantity');
+                if (qtyInput) {
+                    qtyInput.value = FN.formatQuantity(editItem.quantity);
+                }
+            }
+        }
+        refreshCaloriesDisplay();
     }
 
     function loadItemFromRecipe(recipe, quantity, unit) {
@@ -102,9 +122,7 @@
             if (meal.calories_logged > 0 && editItem) {
                 const target = meal.calories_logged;
                 if (Math.abs((editItem.totalCalories || 0) - target) > 1) {
-                    editItem.caloriesOverride = target;
-                    editItem.manualCalories = true;
-                    FN.recalculateItem(editItem);
+                    applyCaloriesToItem(target);
                 }
             }
             document.getElementById('mealEditQuantity').value = FN.formatQuantity(editItem.quantity);
@@ -123,6 +141,8 @@
                 fiberPerCatalog: meal.fiber_g || 0,
                 catalogUnit: 'serving',
                 caloriesInvalid: false,
+                manualCalories: false,
+                caloriesOverride: null,
             };
             document.getElementById('mealEditRecipeId').value = meal.recipe_id || '';
             document.getElementById('mealEditFoodSearch').value = meal.food_name;
@@ -208,9 +228,18 @@
 
     function onQtyOrUnitChange() {
         if (!editItem) return;
+        editItem.manualCalories = false;
+        editItem.caloriesOverride = null;
         editItem.quantity = parseFloat(document.getElementById('mealEditQuantity').value) || 1;
         editItem.unit = FN.normalizeUnit(document.getElementById('mealEditUnit').value);
         refreshCaloriesDisplay();
+    }
+
+    function onCaloriesChange() {
+        if (!editItem) return;
+        const v = parseInt(document.getElementById('mealEditCalories').value, 10);
+        if (isNaN(v) || v < 0) return;
+        applyCaloriesToItem(v);
     }
 
     function buildPayload() {
@@ -319,6 +348,7 @@
         const foodInput = document.getElementById('mealEditFoodSearch');
         const qtyInput = document.getElementById('mealEditQuantity');
         const unitSelect = document.getElementById('mealEditUnit');
+        const calInput = document.getElementById('mealEditCalories');
         const saveBtn = document.getElementById('mealEditSaveBtn');
         const deleteBtn = document.getElementById('mealEditDeleteBtn');
 
@@ -328,6 +358,7 @@
         }
         if (qtyInput) qtyInput.addEventListener('input', onQtyOrUnitChange);
         if (unitSelect) unitSelect.addEventListener('change', onQtyOrUnitChange);
+        if (calInput) calInput.addEventListener('input', onCaloriesChange);
         if (saveBtn) saveBtn.addEventListener('click', saveMealEdit);
         if (deleteBtn) deleteBtn.addEventListener('click', deleteMealEdit);
 

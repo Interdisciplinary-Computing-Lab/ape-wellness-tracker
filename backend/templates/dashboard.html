@@ -125,6 +125,11 @@
 
                                             <h5 class="font-weight-bold mb-2">{{ ape.ape_name }}</h5>
 
+                                            <div class="mb-2">
+                                                <small class="text-muted">Today:</small>
+                                                <span class="font-weight-bold">{{ ape_calories_today.get(ape.id, 0) }} cal</span>
+                                            </div>
+
                                             <div class="row text-center">
                                                 <div class="col-6">
                                                     <small class="text-muted">Age</small>
@@ -132,7 +137,7 @@
                                                 </div>
                                                 <div class="col-6">
                                                     <small class="text-muted">Weight</small>
-                                                    <div class="font-weight-bold">{{ ape.weight or 'N/A' }} kg</div>
+                                                    <div class="font-weight-bold">{{ kg_to_lb(ape.weight) or 'N/A' }} lb</div>
                                                 </div>
                                             </div>
 

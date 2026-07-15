@@ -6,7 +6,7 @@
 
     const VOLUME_TO_CUP = { cup: 1, tbsp: 0.0625, tsp: 0.0208333 };
     const WEIGHT_TO_G = { g: 1, oz: 28.3495, lb: 453.592 };
-    const COUNT_UNITS = ['piece', 'slice', 'serving'];
+    const COUNT_UNITS = ['piece', 'whole', 'slice', 'serving'];
     const WEIGHT_UNITS = ['g', 'oz', 'lb'];
     const VOLUME_UNITS = ['cup', 'tbsp', 'tsp'];
 
@@ -17,7 +17,7 @@
         g: ['g', 'gram', 'grams', 'gm'],
         oz: ['oz', 'ounce', 'ounces'],
         lb: ['lb', 'lbs', 'pound', 'pounds'],
-        piece: ['piece', 'pieces', 'pc'],
+        piece: ['piece', 'pieces', 'pc', 'whole', 'wholes'],
         slice: ['slice', 'slices'],
         serving: ['serving', 'servings'],
     };
@@ -286,7 +286,7 @@
             return ['serving', 'cup', 'tbsp', 'tsp', 'g', 'oz', 'lb'];
         }
         if (item.foodSpecificServing) {
-            return ['serving', 'piece', 'slice', 'g', 'oz', 'lb'];
+            return ['serving', 'piece', 'whole', 'slice', 'g', 'oz', 'lb'];
         }
         if (item.catalogUnit === 'g') {
             return WEIGHT_UNITS.slice();
@@ -294,7 +294,7 @@
         if (VOLUME_UNITS.includes(item.catalogUnit)) {
             return VOLUME_UNITS.concat(WEIGHT_UNITS);
         }
-        return ['piece', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'];
+        return ['piece', 'whole', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'];
     }
 
     function buildFeedingItem(opts) {
@@ -338,6 +338,46 @@
         return item;
     }
 
+    /** Quantity in the item's current unit so logged calories match targetCalories. */
+    function quantityForTargetCalories(item, targetCalories) {
+        if (!item || targetCalories < 0 || item.calories <= 0) return NaN;
+
+        const refG = referenceGrams(item);
+        if (refG <= 0) return NaN;
+
+        const desiredScale = targetCalories / item.calories;
+        const desiredGrams = desiredScale * refG;
+        const displayUnit = normalizeUnit(item.unit || item.catalogUnit);
+        const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
+
+        if (COUNT_UNITS.includes(displayUnit)) {
+            return desiredScale * catalogQty;
+        }
+
+        const cat = getUnitCategory(displayUnit);
+        if (cat === 'weight') {
+            return convertUnit(desiredGrams, 'g', displayUnit);
+        }
+
+        if (cat === 'volume') {
+            const catalogCups = item.catalogVolumeCups;
+            if (catalogCups != null && catalogCups > 0) {
+                const cups = (desiredGrams / refG) * catalogCups;
+                return convertUnit(cups, 'cup', displayUnit);
+            }
+            return NaN;
+        }
+
+        if (displayUnit === item.catalogUnit && !item.foodSpecificServing) {
+            if (item.catalogUnit === 'g') {
+                return desiredGrams;
+            }
+            return desiredScale * catalogQty;
+        }
+
+        return NaN;
+    }
+
     function recalculateItem(item) {
         if (!item) return 0;
 
@@ -354,10 +394,8 @@
         }
 
         const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
-        const refG = referenceGrams(item);
-        const grams = loggedGrams(item);
-
-        if (refG <= 0 || isNaN(grams) || grams < 0) {
+        const cal = item.calories;
+        if (cal == null || isNaN(cal) || cal < 0) {
             item.caloriesInvalid = true;
             item.totalCalories = null;
             item.totalProtein = null;
@@ -365,9 +403,22 @@
             return 0;
         }
 
-        const scale = grams / refG;
+        const refG = referenceGrams(item);
+        const grams = loggedGrams(item);
+
+        if (refG > 0 && !isNaN(grams) && grams >= 0) {
+            const scale = grams / refG;
+            item.caloriesInvalid = false;
+            item.totalCalories = Math.max(0, Math.round(cal * scale));
+            item.totalProtein = round1((item.proteinPerCatalog || 0) * scale);
+            item.totalFiber = round1((item.fiberPerCatalog || 0) * scale);
+            return item.totalCalories;
+        }
+
+        const loggedQty = item.quantity > 0 ? item.quantity : 1.0;
+        const scale = loggedQty / catalogQty;
         item.caloriesInvalid = false;
-        item.totalCalories = Math.max(0, Math.round(item.calories * scale));
+        item.totalCalories = Math.max(0, Math.round(cal * scale));
         item.totalProtein = round1((item.proteinPerCatalog || 0) * scale);
         item.totalFiber = round1((item.fiberPerCatalog || 0) * scale);
         return item.totalCalories;
@@ -378,7 +429,7 @@
     }
 
     global.FeedingNutrition = {
-        ALL_FEEDING_UNITS: ['piece', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'],
+        ALL_FEEDING_UNITS: ['piece', 'whole', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'],
         WEIGHT_UNITS,
         VOLUME_UNITS,
         formatQuantity,
@@ -394,6 +445,7 @@
         defaultLoggedServing,
         catalogServingIncrement,
         buildFeedingItem,
+        quantityForTargetCalories,
         recalculateItem,
     };
 })(typeof window !== 'undefined' ? window : global);

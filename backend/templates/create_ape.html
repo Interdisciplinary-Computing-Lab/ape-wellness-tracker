@@ -25,10 +25,10 @@
                         <small class="form-text text-muted">Enter the ape's birthday</small>
                     </div>
                     <div class="form-group">
-                        <label for="weight">Weight (kg)</label>
+                        <label for="weight">Weight (lb)</label>
                         <input type="number" class="form-control" name="weight" id="weight" 
-                               placeholder="42.5" min="0" max="200" step="0.1">
-                        <small class="form-text text-muted">Enter the ape's weight in kilograms (optional)</small>
+                               placeholder="94" min="0" max="440" step="0.1">
+                        <small class="form-text text-muted">Enter the ape's weight in pounds (optional)</small>
                     </div>
                     <div class="form-group">
                         <label for="image">Profile Photo</label>
@@ -138,9 +138,9 @@ document.querySelector('form').addEventListener('submit', function(e) {
         return;
     }
     
-    if (weight && (weight < 0 || weight > 200)) {
+    if (weight && (weight < 0 || weight > 440)) {
         e.preventDefault();
-        alert('Please enter a valid weight (0-200 kg)');
+        alert('Please enter a valid weight (0-440 lb)');
         document.getElementById('weight').focus();
         return;
     }

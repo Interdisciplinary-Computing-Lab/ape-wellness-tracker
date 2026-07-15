@@ -7,6 +7,18 @@
 .food-item.hidden {
     display: none;
 }
+.food-favorite-btn {
+    color: #ffc107;
+    line-height: 1;
+}
+.food-favorite-btn:hover,
+.food-favorite-btn:focus {
+    color: #e0a800;
+    text-decoration: none;
+}
+.food-favorite-btn .fa-star-o {
+    color: #adb5bd;
+}
 .card {
     -webkit-transition: all 0.2s ease;
     -moz-transition: all 0.2s ease;

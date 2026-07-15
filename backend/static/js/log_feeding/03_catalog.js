@@ -68,7 +68,107 @@ function foodItemMatchesCategory(item, category) {
     if (category === 'all') {
         return true;
     }
+    if (category === 'favorites') {
+        return item.getAttribute('data-favorite') === 'true';
+    }
     return item.getAttribute('data-category') === category;
+}
+
+function favoriteUrlForRecipe(recipeId) {
+    const cfg = window.LOG_FEEDING_CONFIG || {};
+    const template = cfg.favoriteUrlTemplate || '/api/recipes/0/favorite';
+    return template.replace('/0/', '/' + encodeURIComponent(recipeId) + '/');
+}
+
+function updateFavoriteUi(foodItem, isFavorite) {
+    const favoriteValue = isFavorite ? 'true' : 'false';
+    foodItem.setAttribute('data-favorite', favoriteValue);
+    const starBtn = foodItem.querySelector('.food-favorite-btn');
+    if (starBtn) {
+        starBtn.setAttribute('data-favorite', favoriteValue);
+        starBtn.title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+        starBtn.setAttribute('aria-label', starBtn.title);
+        const icon = starBtn.querySelector('i');
+        if (icon) {
+            icon.className = isFavorite ? 'fas fa-star' : 'fas fa-star-o';
+        }
+    }
+    const cardBtn = foodItem.querySelector('.quick-food-btn');
+    if (cardBtn) {
+        cardBtn.classList.toggle('food-card--favorite', isFavorite);
+    }
+}
+
+function updateFavoritesTabCount() {
+    const favoritesTab = document.getElementById('favorites-tab');
+    if (!favoritesTab) {
+        return;
+    }
+    const count = document.querySelectorAll('.food-item[data-favorite="true"]').length;
+    favoritesTab.innerHTML = '<i class="fas fa-star text-warning"></i> Favorites (' + count + ')';
+}
+
+function reorderFoodItemsByFavorite() {
+    const foodsGrid = document.getElementById('foodsGrid');
+    if (!foodsGrid) {
+        return;
+    }
+    const items = Array.from(foodsGrid.querySelectorAll('.food-item'));
+    items.sort(function(a, b) {
+        const aFav = a.getAttribute('data-favorite') === 'true' ? 0 : 1;
+        const bFav = b.getAttribute('data-favorite') === 'true' ? 0 : 1;
+        if (aFav !== bFav) {
+            return aFav - bFav;
+        }
+        return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+    });
+    items.forEach(function(item) {
+        foodsGrid.appendChild(item);
+    });
+}
+
+function toggleFoodFavorite(event, btn) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const recipeId = btn.getAttribute('data-recipe-id');
+    if (!recipeId) {
+        return false;
+    }
+    fetch(favoriteUrlForRecipe(recipeId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            return { ok: response.ok, data: data };
+        });
+    })
+    .then(function(result) {
+        if (!result.ok || !result.data.success) {
+            alert('Could not update favorite: ' + (result.data.message || 'Unknown error'));
+            return;
+        }
+        const foodItem = btn.closest('.food-item');
+        if (foodItem) {
+            updateFavoriteUi(foodItem, result.data.is_favorite);
+            reorderFoodItemsByFavorite();
+            updateFavoritesTabCount();
+            if (currentCategory) {
+                applyFoodFilters();
+            }
+        }
+    })
+    .catch(function(error) {
+        console.error('Error toggling favorite:', error);
+        alert('Failed to update favorite. Please try again.');
+    });
+    return false;
 }
 
 function applyFoodFilters() {
