@@ -338,6 +338,46 @@
         return item;
     }
 
+    /** Quantity in the item's current unit so logged calories match targetCalories. */
+    function quantityForTargetCalories(item, targetCalories) {
+        if (!item || targetCalories < 0 || item.calories <= 0) return NaN;
+
+        const refG = referenceGrams(item);
+        if (refG <= 0) return NaN;
+
+        const desiredScale = targetCalories / item.calories;
+        const desiredGrams = desiredScale * refG;
+        const displayUnit = normalizeUnit(item.unit || item.catalogUnit);
+        const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
+
+        if (COUNT_UNITS.includes(displayUnit)) {
+            return desiredScale * catalogQty;
+        }
+
+        const cat = getUnitCategory(displayUnit);
+        if (cat === 'weight') {
+            return convertUnit(desiredGrams, 'g', displayUnit);
+        }
+
+        if (cat === 'volume') {
+            const catalogCups = item.catalogVolumeCups;
+            if (catalogCups != null && catalogCups > 0) {
+                const cups = (desiredGrams / refG) * catalogCups;
+                return convertUnit(cups, 'cup', displayUnit);
+            }
+            return NaN;
+        }
+
+        if (displayUnit === item.catalogUnit && !item.foodSpecificServing) {
+            if (item.catalogUnit === 'g') {
+                return desiredGrams;
+            }
+            return desiredScale * catalogQty;
+        }
+
+        return NaN;
+    }
+
     function recalculateItem(item) {
         if (!item) return 0;
 
@@ -394,6 +434,7 @@
         defaultLoggedServing,
         catalogServingIncrement,
         buildFeedingItem,
+        quantityForTargetCalories,
         recalculateItem,
     };
 })(typeof window !== 'undefined' ? window : global);
