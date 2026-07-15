@@ -230,7 +230,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Populate the edit form
             document.getElementById('editFoodName').value = recipeName;
-            document.getElementById('editFoodCategory').value = recipeCategory || 'Other';
+            const categorySelect = document.getElementById('editFoodCategory');
+            const category = recipeCategory || 'Other';
+            if (Array.from(categorySelect.options).some(opt => opt.value === category)) {
+                categorySelect.value = category;
+            } else {
+                categorySelect.value = 'Other';
+            }
             document.getElementById('editCalories').value = recipeCalories;
             document.getElementById('editQuantity').value = recipeQuantity;
             setFoodUnitField('edit', recipeUnit);
