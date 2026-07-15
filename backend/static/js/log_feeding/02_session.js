@@ -179,8 +179,29 @@ function applyQuantityChange(index, newQuantity, flash) {
     if (index < 0 || index >= feedingItems.length) return;
     if (isNaN(newQuantity) || newQuantity <= 0) return;
 
-    feedingItems[index].quantity = newQuantity;
+    const item = feedingItems[index];
+    item.quantity = newQuantity;
+    if (!item.manualCalories) {
+        item.caloriesOverride = null;
+    }
     syncRowFromItem(index, flash);
+}
+
+function applyCaloriesChange(index, targetCalories) {
+    if (index < 0 || index >= feedingItems.length) return;
+    if (isNaN(targetCalories) || targetCalories < 0) return;
+
+    const item = feedingItems[index];
+    if (!item.manualCalories) return;
+
+    item.caloriesOverride = targetCalories;
+    if (item.calories > 0) {
+        const newQty = FN.quantityForTargetCalories(item, targetCalories);
+        if (!isNaN(newQty) && newQty > 0) {
+            item.quantity = Math.round(newQty * 1000) / 1000;
+        }
+    }
+    syncRowFromItem(index, false);
 }
 
 function applyQuantityStep(index, delta, stepSize) {
@@ -411,13 +432,8 @@ function initFeedingSummaryListeners() {
         const calInput = e.target.closest('input[data-calories-input]');
         if (calInput) {
             const index = parseInt(calInput.dataset.index, 10);
-            const item = feedingItems[index];
-            if (!item || !item.manualCalories) return;
             const v = parseInt(calInput.value, 10);
-            if (isNaN(v) || v < 0) return;
-            item.caloriesOverride = v;
-            recalculateItemCalories(item);
-            syncRowFromItem(index, false);
+            applyCaloriesChange(index, v);
             return;
         }
         const qtyInput = e.target.closest('input[data-feeding-qty]');
