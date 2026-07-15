@@ -111,6 +111,9 @@ function itemMatchesCategory(item, category) {
     if (category === 'all') {
         return true;
     }
+    if (category === 'favorites') {
+        return item.dataset.favorite === 'true';
+    }
     if (category === 'Enrichment Treats') {
         return itemCategory === 'Enrichment Treats' || itemCategory === 'Dried Fruits';
     }
@@ -206,6 +209,13 @@ function clearFoodSearch() {
 
 // Add event listeners for edit and delete buttons
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.food-favorite-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleManageFoodFavorite(this);
+        });
+    });
+
     // Edit food buttons
     document.querySelectorAll('.edit-food-btn').forEach(button => {
         button.addEventListener('click', function() {
@@ -252,6 +262,64 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function updateManageFavoriteUi(foodItem, isFavorite) {
+    const favoriteValue = isFavorite ? 'true' : 'false';
+    foodItem.dataset.favorite = favoriteValue;
+    const starBtn = foodItem.querySelector('.food-favorite-btn');
+    if (starBtn) {
+        starBtn.dataset.favorite = favoriteValue;
+        starBtn.title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+        starBtn.setAttribute('aria-label', starBtn.title);
+        const icon = starBtn.querySelector('i');
+        if (icon) {
+            icon.className = isFavorite ? 'fas fa-star' : 'fas fa-star-o';
+        }
+    }
+}
+
+function updateManageFavoritesFilterCount() {
+    const favoritesBtn = document.querySelector('.filter-btn[data-category="favorites"] .filter-count');
+    if (!favoritesBtn) {
+        return;
+    }
+    const count = document.querySelectorAll('.food-item[data-favorite="true"]').length;
+    favoritesBtn.textContent = '(' + count + ')';
+}
+
+function toggleManageFoodFavorite(btn) {
+    const recipeId = btn.getAttribute('data-recipe-id');
+    if (!recipeId) {
+        return;
+    }
+    fetch('/api/recipes/' + encodeURIComponent(recipeId) + '/favorite', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json().then(data => ({ ok: response.ok, data })))
+    .then(result => {
+        if (!result.ok || !result.data.success) {
+            showNotification(result.data.message || 'Could not update favorite', 'error');
+            return;
+        }
+        const foodItem = btn.closest('.food-item');
+        if (foodItem) {
+            updateManageFavoriteUi(foodItem, result.data.is_favorite);
+            updateManageFavoritesFilterCount();
+            applyFoodFilters();
+            updateFoodSearchUi();
+        }
+        showNotification(result.data.message, 'success');
+    })
+    .catch(error => {
+        console.error('Error toggling favorite:', error);
+        showNotification('Failed to update favorite', 'error');
+    });
+}
 
 // Show notification function
 function showNotification(message, type) {

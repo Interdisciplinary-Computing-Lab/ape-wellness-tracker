@@ -89,7 +89,9 @@ def log_feeding():
     apes = Apes.query.filter_by(is_archived=False).all()
     
     # Get all available foods from database, grouped by category
-    recipes = Recipe.query.order_by(Recipe.food_category, Recipe.meal_name).all()
+    recipes = Recipe.query.order_by(
+        Recipe.is_favorite.desc(), Recipe.food_category, Recipe.meal_name
+    ).all()
     
     # Get all food categories for filtering
     categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order).all()

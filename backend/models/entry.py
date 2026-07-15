@@ -144,6 +144,7 @@ class Recipe(db.Model):
         protein_g (float): Protein content in grams (default: 2.0).
         fiber_g (float): Fiber content in grams (default: 1.0).
         gram_weight (float): Gram weight of one catalog serving (FDC portion); enables g/oz conversions.
+        is_favorite (bool): Whether staff marked this food as a favorite for quick access.
     """
     __tablename__ = 'recipe'
     id = db.Column(db.Integer, primary_key=True)
@@ -159,6 +160,7 @@ class Recipe(db.Model):
     protein_g = db.Column(db.Float, nullable=True, default=2.0)  # Protein in grams
     fiber_g = db.Column(db.Float, nullable=True, default=1.0)  # Fiber in grams
     gram_weight = db.Column(db.Float, nullable=True)  # FDC portion weight in grams
+    is_favorite = db.Column(db.Boolean, default=False, nullable=False)
 
     # Example constraint: calories must be >=0
     __table_args__ = (

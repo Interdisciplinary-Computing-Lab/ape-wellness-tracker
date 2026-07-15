@@ -1,3 +1,32 @@
+.food-card-wrap {
+    position: relative;
+}
+
+.food-favorite-btn {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    z-index: 110;
+    line-height: 1;
+    color: #ffc107;
+    opacity: 0.85;
+}
+
+.food-favorite-btn:hover,
+.food-favorite-btn:focus {
+    color: #e0a800;
+    opacity: 1;
+    text-decoration: none;
+}
+
+.food-favorite-btn .fa-star-o {
+    color: #adb5bd;
+}
+
+.food-card--favorite {
+    border-color: #ffc107;
+}
+
 .food-card {
     -webkit-transition: all 0.2s ease;
     -moz-transition: all 0.2s ease;
