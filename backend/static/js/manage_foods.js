@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    initFoodUnitFields();
+
     const foodSearchInput = document.getElementById('foodSearch');
     const foodSearchClear = document.getElementById('foodSearchClear');
     if (foodSearchInput) {
@@ -25,6 +27,84 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 let currentFoodCategory = 'all';
+
+const FOOD_UNIT_OPTIONS = [
+    'piece', 'whole', 'cup', 'tbsp', 'tsp', 'g', 'oz', 'slice', 'serving', 'ear', 'stalk', 'nut',
+];
+
+function initFoodUnitFields() {
+    document.querySelectorAll('.food-unit-group').forEach(group => {
+        const select = group.querySelector('.food-unit-select');
+        const custom = group.querySelector('.food-unit-custom');
+        const hidden = group.querySelector('.food-unit-hidden');
+        if (!select || !hidden) return;
+
+        const syncHidden = () => {
+            if (select.value === '__custom__') {
+                hidden.value = custom ? custom.value.trim() : '';
+            } else {
+                hidden.value = select.value;
+            }
+        };
+
+        select.addEventListener('change', () => {
+            if (custom) {
+                custom.classList.toggle('d-none', select.value !== '__custom__');
+            }
+            syncHidden();
+        });
+        if (custom) {
+            custom.addEventListener('input', syncHidden);
+        }
+
+        const form = group.closest('form');
+        if (form) {
+            form.addEventListener('submit', syncHidden);
+        }
+
+        syncHidden();
+    });
+}
+
+function setFoodUnitField(prefix, unitValue) {
+    const select = document.getElementById(prefix + 'UnitSelect');
+    const custom = document.getElementById(prefix + 'UnitCustom');
+    const hidden = document.getElementById(
+        prefix === 'add' ? 'unit_of_measurement' : 'editUnitOfMeasurement'
+    );
+    if (!select || !hidden) return;
+
+    const raw = (unitValue || '').trim();
+    let unitPart = raw;
+    const leading = raw.match(/^(\d+(?:\.\d+)?)\s+(.+)$/);
+    if (leading) {
+        unitPart = leading[2].trim();
+    }
+
+    const normalized = unitPart.toLowerCase();
+    if (FOOD_UNIT_OPTIONS.includes(normalized)) {
+        select.value = normalized;
+        if (custom) {
+            custom.classList.add('d-none');
+            custom.value = '';
+        }
+        hidden.value = normalized;
+    } else if (unitPart) {
+        select.value = '__custom__';
+        if (custom) {
+            custom.classList.remove('d-none');
+            custom.value = unitPart;
+        }
+        hidden.value = unitPart;
+    } else {
+        select.value = 'piece';
+        if (custom) {
+            custom.classList.add('d-none');
+            custom.value = '';
+        }
+        hidden.value = 'piece';
+    }
+}
 
 function itemMatchesCategory(item, category) {
     const itemCategory = item.dataset.category || 'Other';
@@ -143,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editFoodCategory').value = recipeCategory || 'Other';
             document.getElementById('editCalories').value = recipeCalories;
             document.getElementById('editQuantity').value = recipeQuantity;
-            document.getElementById('editUnitOfMeasurement').value = recipeUnit;
+            setFoodUnitField('edit', recipeUnit);
             document.getElementById('editSource').value = recipeSource;
             document.getElementById('editDescription').value = recipeDescription || '';
             
