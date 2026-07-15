@@ -139,6 +139,7 @@ def create_app(*, sync_fdc_catalog: bool = True):
         
         # Ensure food categories (and staff custom names with FDC data when CSVs present)
         ensure_standard_food_data()
+        ensure_kitchen_foods()
         ensure_custom_display_foods()
         if sync_fdc_catalog:
             ensure_fdc_food_catalog()
@@ -265,6 +266,58 @@ def ensure_standard_food_data():
     if created_categories > 0:
         db.session.commit()
         print(f"[SUCCESS] Created {created_categories} comprehensive food categories")
+
+
+KITCHEN_CHEAT_SHEET_SOURCE = "Kitchen cheat sheet"
+
+
+def ensure_kitchen_foods():
+    """Seed kitchen cheat-sheet foods with practical serving sizes (not per-100g)."""
+    from backend.models.entry import FoodCategory, Recipe
+
+    data_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "data", "kitchen_foods.json"
+    )
+    try:
+        with open(data_path, encoding="utf-8") as f:
+            foods = json.load(f)
+    except FileNotFoundError:
+        return
+    except json.JSONDecodeError as e:
+        print(f"[ERROR] Failed to parse kitchen foods data file: {e}. Skipping.")
+        return
+
+    if not foods:
+        return
+
+    categories = {c.name: c for c in FoodCategory.query.filter_by(is_active=True).all()}
+    created_count = 0
+
+    for item in foods:
+        meal_name = item["meal_name"]
+        existing = Recipe.query.filter_by(meal_name=meal_name).first()
+        if existing:
+            continue
+
+        cat_name = item.get("food_category", "Other")
+        cat = categories.get(cat_name)
+        recipe = Recipe(
+            meal_name=meal_name,
+            description=item.get("description", meal_name),
+            calories=int(item["calories"]),
+            quantity=float(item.get("quantity", 1)),
+            unit_of_measurement=item.get("unit_of_measurement"),
+            food_category=cat_name,
+            source=item.get("source", KITCHEN_CHEAT_SHEET_SOURCE),
+            fdc_id=None,
+            category_id=cat.id if cat else None,
+        )
+        db.session.add(recipe)
+        created_count += 1
+
+    if created_count:
+        db.session.commit()
+        print(f"[SUCCESS] Seeded {created_count} kitchen cheat-sheet food(s)")
 
 
 def ensure_fdc_food_catalog():

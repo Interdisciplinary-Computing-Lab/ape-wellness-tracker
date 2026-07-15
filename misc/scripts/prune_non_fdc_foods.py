@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Keep USDA FDC catalog foods and all staff-created recipes (fdc_id is NULL).
+Keep USDA FDC catalog foods and all staff-created recipes (fdc_id is NULL),
+including kitchen cheat-sheet foods and quick-adds.
 Link custom display names in data/fdc/custom_foods.json to Foundation Foods nutrition,
 then remove only duplicate FDC catalog entries and their meal log rows.
 
@@ -26,6 +27,8 @@ from backend.utils.fdc_loader import (
     _normalize_desc,
     load_category_map,
 )
+
+KITCHEN_CHEAT_SHEET_SOURCE = "Kitchen cheat sheet"
 
 CUSTOM_FOODS_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -130,9 +133,9 @@ def link_custom_foods(loader: FdcFoundationLoader, dry_run: bool, *, verbose: bo
 def collect_recipes_to_remove(extra_ids: list[int]) -> list[Recipe]:
     """Return recipes to delete after custom-food linking.
 
-    Staff-created foods (fdc_id is NULL) are always kept — including quick-adds
-    from meal logging and admin-created entries. Only explicit duplicate FDC
-    catalog rows (extra_ids from link_custom_foods) are removed.
+    Staff-created foods (fdc_id is NULL) are always kept — including quick-adds,
+    admin-created entries, and kitchen cheat-sheet foods. Only explicit duplicate
+    FDC catalog rows (extra_ids from link_custom_foods) are removed.
     """
     if not extra_ids:
         return []
@@ -160,9 +163,11 @@ def prune_non_fdc_recipes(*, dry_run: bool = False, verbose: bool = True) -> int
 
         remaining_fdc = Recipe.query.filter(Recipe.fdc_id.isnot(None)).count()
         remaining_staff = Recipe.query.filter(Recipe.fdc_id.is_(None)).count()
+        remaining_kitchen = Recipe.query.filter_by(source=KITCHEN_CHEAT_SHEET_SOURCE).count()
         print(
             f"\nAfter prune: ~{remaining_fdc} USDA foods + "
-            f"{remaining_staff} staff/custom food(s) (fdc_id NULL, kept)"
+            f"{remaining_staff} staff/custom food(s) (fdc_id NULL, kept; "
+            f"{remaining_kitchen} kitchen cheat-sheet)"
         )
 
     if dry_run:
