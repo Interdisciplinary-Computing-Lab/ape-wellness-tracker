@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Keep USDA FDC catalog foods plus any names listed in data/fdc/custom_foods.json.
-Link those two to Foundation Foods nutrition, then remove all other non-FDC recipes
-and their meal log rows.
+Keep USDA FDC catalog foods, kitchen cheat-sheet foods (source Kitchen cheat sheet),
+and any names listed in data/fdc/custom_foods.json. Link custom display names to
+Foundation Foods nutrition, then remove all other non-FDC recipes and their meal logs.
 
 Usage (from project root):
   python misc/scripts/prune_non_fdc_foods.py --dry-run
@@ -26,6 +26,8 @@ from backend.utils.fdc_loader import (
     _normalize_desc,
     load_category_map,
 )
+
+KITCHEN_CHEAT_SHEET_SOURCE = "Kitchen cheat sheet"
 
 CUSTOM_FOODS_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -136,6 +138,8 @@ def collect_recipes_to_remove(keep_names: set[str], extra_ids: list[int]) -> lis
             continue
         if recipe.meal_name in keep_names:
             continue
+        if recipe.source == KITCHEN_CHEAT_SHEET_SOURCE:
+            continue
         if recipe.fdc_id:
             continue
         remove.append(recipe)
@@ -166,9 +170,11 @@ def prune_non_fdc_recipes(*, dry_run: bool = False, verbose: bool = True) -> int
 
         remaining_fdc = Recipe.query.filter(Recipe.fdc_id.isnot(None)).count()
         remaining_custom = Recipe.query.filter(Recipe.meal_name.in_(keep_names)).count()
+        remaining_kitchen = Recipe.query.filter_by(source=KITCHEN_CHEAT_SHEET_SOURCE).count()
         print(
             f"\nAfter prune: ~{remaining_fdc} USDA foods + "
-            f"{remaining_custom} custom display name(s)"
+            f"{remaining_custom} custom display name(s) + "
+            f"{remaining_kitchen} kitchen cheat-sheet food(s)"
         )
 
     if dry_run:
