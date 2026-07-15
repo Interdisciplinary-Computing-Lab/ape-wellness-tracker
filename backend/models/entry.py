@@ -35,7 +35,7 @@ class Apes(db.Model):
         id (int): Primary key.
         ape_name (str): Unique name of the ape.
         birthday (date): Birthday of the ape.
-        weight (float): Current weight in kg.
+        weight (float): Current weight in kg (UI displays lb).
         image_filename (str): Filename of the image (for backward compatibility).
         image_data (bytes): BLOB data of the actual image.
         image_mime_type (str): MIME type of the image (e.g., 'image/jpeg').
@@ -46,7 +46,7 @@ class Apes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ape_name = db.Column(db.String(90), unique=True, nullable=False)
     birthday = db.Column(db.Date, nullable=False)
-    weight = db.Column(db.Float, nullable=True)  # in kg
+    weight = db.Column(db.Float, nullable=True)  # stored in kg; UI uses lb
     mother = db.Column(db.String(90), nullable=True)
     image_filename = db.Column(db.String(255), nullable=True)  # For backward compatibility
     image_data = db.Column(db.LargeBinary, nullable=True)  # BLOB for image data
