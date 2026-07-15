@@ -29,6 +29,12 @@ def dashboard():
     today_meals = meals_for_current_user().filter(func.date(Meals.date) == today).all()
     total_meals_today = len(today_meals)
     total_calories_today = sum(meal_calories(meal) for meal in today_meals)
+
+    ape_calories_today = {}
+    for meal in today_meals:
+        ape_calories_today[meal.ape_id] = (
+            ape_calories_today.get(meal.ape_id, 0) + meal_calories(meal)
+        )
     
     edit_apes = apes
 
@@ -39,5 +45,6 @@ def dashboard():
                          recent_meals=recent_meals,
                          total_meals_today=total_meals_today,
                          total_calories_today=total_calories_today,
+                         ape_calories_today=ape_calories_today,
                          today_date=datetime.now().strftime('%Y-%m-%d'))
 
