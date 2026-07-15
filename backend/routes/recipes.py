@@ -10,6 +10,24 @@ from flask_security import login_required
 from backend.routes import site
 
 
+def _recipe_json(recipe):
+    """Serialize a recipe for API responses."""
+    return {
+        'id': recipe.id,
+        'meal_name': recipe.meal_name,
+        'calories': recipe.calories,
+        'quantity': recipe.quantity,
+        'unit_of_measurement': recipe.unit_of_measurement,
+        'source': recipe.source,
+        'food_category': recipe.food_category,
+        'description': recipe.description,
+        'gram_weight': recipe.gram_weight,
+        'protein_g': recipe.protein_g,
+        'fiber_g': recipe.fiber_g,
+        'is_favorite': bool(recipe.is_favorite),
+    }
+
+
 @site.route('/add_recipe', methods=['POST'])
 @login_required
 def add_recipe():
@@ -96,7 +114,9 @@ def delete_recipe_form(recipe_id):
 def manage_foods():
     """Display food management page"""
     from backend.models.entry import FoodCategory
-    recipes = Recipe.query.all()
+    recipes = Recipe.query.order_by(
+        Recipe.is_favorite.desc(), Recipe.meal_name
+    ).all()
     categories = FoodCategory.query.filter_by(is_active=True).order_by(FoodCategory.sort_order, FoodCategory.name).all()
     
     return render_template('manage_foods.html', recipes=recipes, categories=categories)
@@ -157,10 +177,16 @@ def update_recipe(recipe_id):
             recipe.food_category = data['food_category']
         if data.get('description') is not None:
             recipe.description = data['description']
+        if 'is_favorite' in data:
+            recipe.is_favorite = bool(data['is_favorite'])
         
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Food item updated successfully'})
+        return jsonify({
+            'success': True,
+            'message': 'Food item updated successfully',
+            'recipe': _recipe_json(recipe),
+        })
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
@@ -174,19 +200,7 @@ def get_recipe(recipe_id):
         recipe = Recipe.query.get_or_404(recipe_id)
         return jsonify({
             'success': True,
-            'recipe': {
-                'id': recipe.id,
-                'meal_name': recipe.meal_name,
-                'calories': recipe.calories,
-                'quantity': recipe.quantity,
-                'unit_of_measurement': recipe.unit_of_measurement,
-                'source': recipe.source,
-                'food_category': recipe.food_category,
-                'description': recipe.description,
-                'gram_weight': recipe.gram_weight,
-                'protein_g': recipe.protein_g,
-                'fiber_g': recipe.fiber_g,
-            }
+            'recipe': _recipe_json(recipe),
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
@@ -211,6 +225,26 @@ def test_get_recipe(recipe_id):
             }
         })
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@site.route('/api/recipes/<int:recipe_id>/favorite', methods=['POST'])
+@login_required
+def toggle_recipe_favorite(recipe_id):
+    """Toggle shared staff favorite flag for a recipe."""
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
+        recipe.is_favorite = not recipe.is_favorite
+        db.session.commit()
+        status = 'added to' if recipe.is_favorite else 'removed from'
+        return jsonify({
+            'success': True,
+            'is_favorite': recipe.is_favorite,
+            'message': f'"{recipe.meal_name}" {status} favorites',
+            'recipe': _recipe_json(recipe),
+        })
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
 
 

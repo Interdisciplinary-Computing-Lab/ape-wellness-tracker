@@ -35,7 +35,7 @@ class Apes(db.Model):
         id (int): Primary key.
         ape_name (str): Unique name of the ape.
         birthday (date): Birthday of the ape.
-        weight (float): Current weight in kg.
+        weight (float): Current weight in kg (UI displays lb).
         image_filename (str): Filename of the image (for backward compatibility).
         image_data (bytes): BLOB data of the actual image.
         image_mime_type (str): MIME type of the image (e.g., 'image/jpeg').
@@ -46,7 +46,7 @@ class Apes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ape_name = db.Column(db.String(90), unique=True, nullable=False)
     birthday = db.Column(db.Date, nullable=False)
-    weight = db.Column(db.Float, nullable=True)  # in kg
+    weight = db.Column(db.Float, nullable=True)  # stored in kg; UI uses lb
     mother = db.Column(db.String(90), nullable=True)
     image_filename = db.Column(db.String(255), nullable=True)  # For backward compatibility
     image_data = db.Column(db.LargeBinary, nullable=True)  # BLOB for image data
@@ -144,6 +144,7 @@ class Recipe(db.Model):
         protein_g (float): Protein content in grams (default: 2.0).
         fiber_g (float): Fiber content in grams (default: 1.0).
         gram_weight (float): Gram weight of one catalog serving (FDC portion); enables g/oz conversions.
+        is_favorite (bool): Whether staff marked this food as a favorite for quick access.
     """
     __tablename__ = 'recipe'
     id = db.Column(db.Integer, primary_key=True)
@@ -159,6 +160,7 @@ class Recipe(db.Model):
     protein_g = db.Column(db.Float, nullable=True, default=2.0)  # Protein in grams
     fiber_g = db.Column(db.Float, nullable=True, default=1.0)  # Fiber in grams
     gram_weight = db.Column(db.Float, nullable=True)  # FDC portion weight in grams
+    is_favorite = db.Column(db.Boolean, default=False, nullable=False)
 
     # Example constraint: calories must be >=0
     __table_args__ = (
@@ -180,23 +182,33 @@ class Recipe(db.Model):
         return formatted
 
     def catalog_serving_label(self):
-        """Label for one catalog serving shown on food cards (e.g. '100 g', '1 cup')."""
+        """Label for one catalog serving shown on food cards (e.g. '1 cup', '1 whole', '100 g')."""
         import re
-        unit = (self.unit_of_measurement or '').strip()
-        if not unit:
+        unit_raw = (self.unit_of_measurement or '').strip()
+        if not unit_raw:
             return '1 serving'
-        normalized = unit.lower().replace(' ', '')
-        if normalized in ('100g',):
+
+        qty = self.quantity if self.quantity is not None else 1.0
+        unit_part = unit_raw
+
+        leading = re.match(r'^(\d+(?:\.\d+)?)\s+(.+)$', unit_raw)
+        if leading:
+            embedded = float(leading.group(1))
+            unit_part = leading.group(2).strip()
+            if qty in (None, 1, 1.0):
+                qty = embedded
+
+        normalized = unit_part.lower().replace(' ', '')
+        if normalized in ('100g',) or (
+            normalized in ('g', 'gram', 'grams') and qty >= 100
+        ):
             return '100 g'
-        if re.match(r'^\d', unit):
-            return unit
-        qty = self.format_quantity()
-        try:
-            if float(qty) == 1.0:
-                return unit
-        except (TypeError, ValueError):
-            pass
-        return f'{qty} {unit}'
+
+        if qty == int(qty):
+            qty_str = str(int(qty))
+        else:
+            qty_str = f'{qty:.2f}'.rstrip('0').rstrip('.')
+        return f'{qty_str} {unit_part}'
 
 class Meals(db.Model):
     """

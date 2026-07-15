@@ -114,12 +114,14 @@ def create_app(*, sync_fdc_catalog: bool = True):
     def utility_processor():
         from backend.utils.meal_nutrition import meal_calories, meal_protein_g, meal_fiber_g
         from backend.utils.password_policy import PASSWORD_POLICY_REQUIREMENTS
+        from backend.utils.weight_units import kg_to_lb
         return dict(
             get_time_period_display=get_time_period_display,
             meal_calories=meal_calories,
             meal_protein_g=meal_protein_g,
             meal_fiber_g=meal_fiber_g,
             password_policy_requirements=PASSWORD_POLICY_REQUIREMENTS,
+            kg_to_lb=kg_to_lb,
         )
 
     with app.app_context():
@@ -319,7 +321,7 @@ def ensure_kitchen_foods():
 
 
 def ensure_fdc_food_catalog():
-    """Import bundled USDA Foundation Foods and remove legacy non-FDC catalog entries."""
+    """Import bundled USDA Foundation Foods and remove duplicate FDC catalog entries."""
     from backend.utils.fdc_loader import FdcFoundationLoader, RAW_DIR, load_category_map
 
     if not os.path.isfile(os.path.join(RAW_DIR, "foundation_food.csv")):

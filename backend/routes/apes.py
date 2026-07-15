@@ -6,6 +6,7 @@ from flask import render_template, request, redirect, url_for, flash
 from backend.extensions import db
 from backend.models.entry import Apes, Meals, Recipe
 from backend.helpers import add_to_db
+from backend.utils.weight_units import lb_to_kg
 from backend.utils.file_utils import allowed_file, MAX_FILE_SIZE
 from flask_security import login_required, roles_required, current_user
 from datetime import datetime, timedelta
@@ -51,7 +52,7 @@ def create_ape():
                 new_ape = Apes(
                     ape_name=ape_name, 
                     birthday=birthday,
-                    weight=float(weight) if weight else None,
+                    weight=lb_to_kg(float(weight)) if weight else None,
                 )
                 
                 # Handle image upload if provided
@@ -101,7 +102,7 @@ def edit_ape(ape_id):
         
         try:
             ape.birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
-            ape.weight = float(weight) if weight else None
+            ape.weight = lb_to_kg(float(weight)) if weight else None
             
             # Handle image upload if provided
             if 'image' in request.files:
