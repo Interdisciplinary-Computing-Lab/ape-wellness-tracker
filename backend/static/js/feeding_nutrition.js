@@ -354,10 +354,8 @@
         }
 
         const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
-        const refG = referenceGrams(item);
-        const grams = loggedGrams(item);
-
-        if (refG <= 0 || isNaN(grams) || grams < 0) {
+        const cal = item.calories;
+        if (cal == null || isNaN(cal) || cal < 0) {
             item.caloriesInvalid = true;
             item.totalCalories = null;
             item.totalProtein = null;
@@ -365,9 +363,22 @@
             return 0;
         }
 
-        const scale = grams / refG;
+        const refG = referenceGrams(item);
+        const grams = loggedGrams(item);
+
+        if (refG > 0 && !isNaN(grams) && grams >= 0) {
+            const scale = grams / refG;
+            item.caloriesInvalid = false;
+            item.totalCalories = Math.max(0, Math.round(cal * scale));
+            item.totalProtein = round1((item.proteinPerCatalog || 0) * scale);
+            item.totalFiber = round1((item.fiberPerCatalog || 0) * scale);
+            return item.totalCalories;
+        }
+
+        const loggedQty = item.quantity > 0 ? item.quantity : 1.0;
+        const scale = loggedQty / catalogQty;
         item.caloriesInvalid = false;
-        item.totalCalories = Math.max(0, Math.round(item.calories * scale));
+        item.totalCalories = Math.max(0, Math.round(cal * scale));
         item.totalProtein = round1((item.proteinPerCatalog || 0) * scale);
         item.totalFiber = round1((item.fiberPerCatalog || 0) * scale);
         return item.totalCalories;

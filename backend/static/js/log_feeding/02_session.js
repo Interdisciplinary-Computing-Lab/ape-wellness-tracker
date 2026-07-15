@@ -24,25 +24,29 @@ function addCustomFood() {
     // Normalize unit
     const normalizedUnit = normalizeUnit(unit);
     
-    // For custom foods, the user enters total calories for the quantity they want to log
-    // We'll treat this as: base quantity = 1.0, base calories = calories/quantity
-    // This way, 1.0 unit = (calories/quantity) calories
-    const catalogCalories = calories;
+    // User enters total calories for the quantity they are logging; store that as the catalog
+    // serving (calories + recipeQuantity) so quantity scaling applies without gram_weight.
     const existingIndex = feedingItems.findIndex(function(item) { return item.name === name; });
     if (existingIndex !== -1) {
+        feedingItems[existingIndex].calories = calories;
+        feedingItems[existingIndex].recipeQuantity = quantity;
         feedingItems[existingIndex].quantity = quantity;
         feedingItems[existingIndex].unit = normalizedUnit;
+        feedingItems[existingIndex].catalogUnit = normalizedUnit;
         recalculateItemCalories(feedingItems[existingIndex]);
     } else {
         const item = FN.buildFeedingItem({
             name: name,
-            calories: catalogCalories,
+            calories: calories,
             recipeQuantity: quantity,
             unitRaw: unit,
             source: '',
         });
+        item.calories = calories;
+        item.recipeQuantity = quantity;
         item.quantity = quantity;
         item.unit = normalizedUnit;
+        item.catalogUnit = normalizedUnit;
         recalculateItemCalories(item);
         feedingItems.push(item);
     }

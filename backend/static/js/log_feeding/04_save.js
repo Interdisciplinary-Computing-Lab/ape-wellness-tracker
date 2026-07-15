@@ -96,10 +96,13 @@ function saveFeeding() {
     // So we send: calories=100, quantity=0.5
     const transformedItems = feedingItems.map(function(item) {
         recalculateItemCalories(item);
+        const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
+        const loggedQty = item.quantity > 0 ? item.quantity : 1.0;
         return {
             name: item.name,
-            calories: Math.round(item.totalCalories || 0),
-            quantity: 1.0,
+            calories: Math.round(item.calories || 0),
+            quantity: loggedQty / catalogQty,
+            recipe_quantity: catalogQty,
             unit: item.unit || '',
             source: item.source || ''
         };
