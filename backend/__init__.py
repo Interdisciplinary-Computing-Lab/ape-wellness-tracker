@@ -266,7 +266,7 @@ def ensure_standard_food_data():
 
 
 def ensure_fdc_food_catalog():
-    """Import bundled USDA Foundation Foods and remove legacy non-FDC catalog entries."""
+    """Import bundled USDA Foundation Foods and remove duplicate FDC catalog entries."""
     from backend.utils.fdc_loader import FdcFoundationLoader, RAW_DIR, load_category_map
 
     if not os.path.isfile(os.path.join(RAW_DIR, "foundation_food.csv")):
