@@ -92,6 +92,15 @@
     display: block;
 }
 
+.ape-session-calories {
+    font-size: 0.75rem;
+    margin-top: 0.15rem;
+}
+
+.ape-avatar.selected .ape-session-calories.text-success {
+    color: #155724 !important;
+}
+
 .avatar-circle {
     width: 60px;
     height: 60px;

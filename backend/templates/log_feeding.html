@@ -94,6 +94,7 @@
                         </div>
                         <small class="d-block text-center mt-1 font-weight-bold">{{ ape.ape_name }}</small>
                         <small class="text-muted">{{ ape.age }}y</small>
+                        <small class="d-block ape-session-calories text-muted" data-ape-calories="{{ ape.id }}">—</small>
                     </div>
                 </div>
                 {% endfor %}
@@ -329,6 +330,11 @@
                             <tr>
                                 <td colspan="3" class="font-weight-bold">Total</td>
                                 <td class="font-weight-bold" id="totalCalories">0</td>
+                                <td></td>
+                            </tr>
+                            <tr class="table-light">
+                                <td colspan="3" class="small text-muted">Per selected ape</td>
+                                <td class="font-weight-bold text-success" id="perApeCalories">—</td>
                                 <td></td>
                             </tr>
                         </tfoot>

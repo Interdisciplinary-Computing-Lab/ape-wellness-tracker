@@ -351,6 +351,7 @@ function updateFeedingSummary() {
 
     updateFeedingTotalsInDom();
     initFeedingSummaryListeners();
+    updateStats();
 }
 
 // Backward-compatible aliases (if referenced elsewhere)

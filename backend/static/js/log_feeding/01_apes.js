@@ -47,9 +47,43 @@ function updateSelectedCount() {
     }
 }
 
+function sessionTotalCalories() {
+    let totalCal = 0;
+    feedingItems.forEach(function(itm) {
+        if (!itm.caloriesInvalid && itm.totalCalories != null) {
+            totalCal += itm.totalCalories;
+        }
+    });
+    return totalCal;
+}
+
 function updateStats() {
-    // Stats display removed - function kept for compatibility
-    // This prevents JavaScript errors when stats elements don't exist
+    const totalCal = sessionTotalCalories();
+    const hasFoods = feedingItems.length > 0;
+    const showCalories = hasFoods;
+
+    document.querySelectorAll('[data-ape-calories]').forEach(function(el) {
+        const apeId = parseInt(el.getAttribute('data-ape-calories'), 10);
+        const isSelected = selectedApes.has(apeId);
+        if (isSelected && showCalories) {
+            el.textContent = Math.round(totalCal) + ' cal';
+            el.classList.remove('text-muted');
+            el.classList.add('text-success', 'font-weight-bold');
+        } else {
+            el.textContent = '—';
+            el.classList.remove('text-success', 'font-weight-bold');
+            el.classList.add('text-muted');
+        }
+    });
+
+    const perApeEl = document.getElementById('perApeCalories');
+    if (perApeEl) {
+        if (selectedApes.size > 0 && showCalories) {
+            perApeEl.textContent = Math.round(totalCal);
+        } else {
+            perApeEl.textContent = '—';
+        }
+    }
 }
 
 function updateSaveButton() {
