@@ -125,6 +125,11 @@
 
                                             <h5 class="font-weight-bold mb-2">{{ ape.ape_name }}</h5>
 
+                                            <div class="mb-2">
+                                                <small class="text-muted">Today:</small>
+                                                <span class="font-weight-bold">{{ ape_calories_today.get(ape.id, 0) }} cal</span>
+                                            </div>
+
                                             <div class="row text-center">
                                                 <div class="col-6">
                                                     <small class="text-muted">Age</small>
