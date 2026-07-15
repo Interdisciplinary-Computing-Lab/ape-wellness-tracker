@@ -128,6 +128,12 @@
                 <div class="mb-4 d-flex flex-wrap align-items-start">
                     <ul class="nav nav-pills nav-fill flex-grow-1 mb-0" id="categoryTabs" role="tablist">
                         <li class="nav-item">
+                            <a class="nav-link" id="favorites-tab" data-toggle="pill" href="#favorites"
+                               role="tab" aria-controls="favorites" aria-selected="false" onclick="filterByCategory('favorites', this)">
+                                <i class="fas fa-star text-warning"></i> Favorites ({{ recipes|selectattr('is_favorite')|list|length }})
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" id="all-tab" data-toggle="pill" href="#all" 
                                role="tab" aria-controls="all" aria-selected="false" onclick="filterByCategory('all', this)">
                                 <i class="fas fa-th-list"></i> All ({{ recipes|length }})
@@ -164,11 +170,23 @@
                     <div class="row" id="foodsGrid">
                         {% for recipe in recipes %}
                         <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb-2 food-item" 
+                             data-recipe-id="{{ recipe.id }}"
+                             data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
                              data-category="{{ recipe.food_category or 'Other' }}"
                              data-name="{{ recipe.meal_name|lower }}"
                              data-description="{{ (recipe.description or '')|lower }}"
                              data-calories="{{ recipe.calories }}">
-                            <button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card" 
+                            <div class="food-card-wrap position-relative">
+                                <button type="button"
+                                        class="btn btn-link btn-sm food-favorite-btn p-0"
+                                        data-recipe-id="{{ recipe.id }}"
+                                        data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
+                                        onclick="toggleFoodFavorite(event, this)"
+                                        title="{{ 'Remove from favorites' if recipe.is_favorite else 'Add to favorites' }}"
+                                        aria-label="{{ 'Remove from favorites' if recipe.is_favorite else 'Add to favorites' }}">
+                                    <i class="fas fa-star{{ '' if recipe.is_favorite else '-o' }}"></i>
+                                </button>
+                            <button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card{% if recipe.is_favorite %} food-card--favorite{% endif %}" 
                                     data-food="{{ recipe.meal_name }}" 
                                     data-calories="{{ recipe.calories }}" 
                                     data-quantity="{{ recipe.quantity or 1.0 }}"
@@ -200,6 +218,7 @@
                                     {% endif %}
                                 </div>
                             </button>
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -376,6 +395,7 @@
 <script>
 window.LOG_FEEDING_CONFIG = {
     saveUrl: {{ url_for('site.save_feeding')|tojson }},
+    favoriteUrlTemplate: {{ url_for('site.toggle_recipe_favorite', recipe_id=0)|tojson }},
     defaultFeedingDate: {{ default_feeding_date|tojson }},
     preFilledFood: {{ pre_filled_food|tojson }},
     preFilledCalories: {{ pre_filled_calories|tojson }},

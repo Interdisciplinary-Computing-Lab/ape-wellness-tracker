@@ -76,6 +76,28 @@ def ensure_meals_calories_logged(db_uri, app_instance_path):
         conn.close()
 
 
+def ensure_recipe_is_favorite(db_uri, app_instance_path):
+    """Add recipe.is_favorite for staff-shared favorite foods."""
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('PRAGMA table_info(recipe)')
+        columns = {row[1] for row in cursor.fetchall()}
+        if not columns:
+            return
+        if 'is_favorite' not in columns:
+            cursor.execute(
+                'ALTER TABLE recipe ADD COLUMN is_favorite BOOLEAN NOT NULL DEFAULT 0'
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_recipe_gram_weight(db_uri, app_instance_path):
     """Add recipe.gram_weight for FDC portion-based unit conversions."""
     db_path = _sqlite_db_path(db_uri, app_instance_path)
@@ -198,6 +220,7 @@ def ensure_schema_updates(db_uri, app_instance_path):
     ensure_recipe_columns(db_uri, app_instance_path)
     ensure_recipe_fdc_id(db_uri, app_instance_path)
     ensure_recipe_gram_weight(db_uri, app_instance_path)
+    ensure_recipe_is_favorite(db_uri, app_instance_path)
     ensure_meals_calories_logged(db_uri, app_instance_path)
     ensure_meals_logged_at(db_uri, app_instance_path)
     ensure_meals_logged_at_save_order(db_uri, app_instance_path)
