@@ -180,23 +180,33 @@ class Recipe(db.Model):
         return formatted
 
     def catalog_serving_label(self):
-        """Label for one catalog serving shown on food cards (e.g. '100 g', '1 cup')."""
+        """Label for one catalog serving shown on food cards (e.g. '1 cup', '1 whole', '100 g')."""
         import re
-        unit = (self.unit_of_measurement or '').strip()
-        if not unit:
+        unit_raw = (self.unit_of_measurement or '').strip()
+        if not unit_raw:
             return '1 serving'
-        normalized = unit.lower().replace(' ', '')
-        if normalized in ('100g',):
+
+        qty = self.quantity if self.quantity is not None else 1.0
+        unit_part = unit_raw
+
+        leading = re.match(r'^(\d+(?:\.\d+)?)\s+(.+)$', unit_raw)
+        if leading:
+            embedded = float(leading.group(1))
+            unit_part = leading.group(2).strip()
+            if qty in (None, 1, 1.0):
+                qty = embedded
+
+        normalized = unit_part.lower().replace(' ', '')
+        if normalized in ('100g',) or (
+            normalized in ('g', 'gram', 'grams') and qty >= 100
+        ):
             return '100 g'
-        if re.match(r'^\d', unit):
-            return unit
-        qty = self.format_quantity()
-        try:
-            if float(qty) == 1.0:
-                return unit
-        except (TypeError, ValueError):
-            pass
-        return f'{qty} {unit}'
+
+        if qty == int(qty):
+            qty_str = str(int(qty))
+        else:
+            qty_str = f'{qty:.2f}'.rstrip('0').rstrip('.')
+        return f'{qty_str} {unit_part}'
 
 class Meals(db.Model):
     """

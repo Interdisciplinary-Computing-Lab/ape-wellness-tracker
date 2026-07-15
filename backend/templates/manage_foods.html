@@ -200,12 +200,29 @@
                     <div class="form-group">
                         <label for="quantity">Quantity *</label>
                         <input type="number" class="form-control" id="quantity" name="quantity" step="0.01" min="0" value="1.0" required>
-                        <small class="form-text text-muted">Base quantity for which calories are calculated (e.g., 1.0, 0.5, 100)</small>
+                        <small class="form-text text-muted">How much is one serving? (e.g., 1, 0.5, 100)</small>
                     </div>
-                    <div class="form-group">
-                        <label for="unit_of_measurement">Unit of Measurement</label>
-                        <input type="text" class="form-control" id="unit_of_measurement" name="unit_of_measurement" placeholder="e.g., 1 cup, 1 piece, 100g">
-                        <small class="form-text text-muted">What does quantity=1 mean? (e.g., "1 cup", "1 piece", "100g")</small>
+                    <div class="form-group food-unit-group" data-unit-prefix="add">
+                        <label for="addUnitSelect">Unit</label>
+                        <select class="form-control food-unit-select" id="addUnitSelect">
+                            <option value="piece" selected>piece</option>
+                            <option value="whole">whole</option>
+                            <option value="cup">cup</option>
+                            <option value="tbsp">tbsp</option>
+                            <option value="tsp">tsp</option>
+                            <option value="g">g</option>
+                            <option value="oz">oz</option>
+                            <option value="slice">slice</option>
+                            <option value="serving">serving</option>
+                            <option value="ear">ear</option>
+                            <option value="stalk">stalk</option>
+                            <option value="nut">nut</option>
+                            <option value="__custom__">Other (custom)…</option>
+                        </select>
+                        <input type="text" class="form-control mt-2 food-unit-custom d-none" id="addUnitCustom"
+                               placeholder="Enter custom unit">
+                        <input type="hidden" class="food-unit-hidden" name="unit_of_measurement" id="unit_of_measurement" value="piece">
+                        <small class="form-text text-muted">Calories are for one serving of this amount/unit</small>
                     </div>
                     <div class="form-group">
                         <label for="source">Data Source</label>
@@ -262,12 +279,29 @@
                     <div class="form-group">
                         <label for="editQuantity">Quantity *</label>
                         <input type="number" class="form-control" id="editQuantity" name="quantity" step="0.01" min="0" required>
-                        <small class="form-text text-muted">Base quantity for which calories are calculated (e.g., 1.0, 0.5, 100)</small>
+                        <small class="form-text text-muted">How much is one serving? (e.g., 1, 0.5, 100)</small>
                     </div>
-                    <div class="form-group">
-                        <label for="editUnitOfMeasurement">Unit of Measurement</label>
-                        <input type="text" class="form-control" id="editUnitOfMeasurement" name="unit_of_measurement" placeholder="e.g., 1 cup, 1 piece, 100g">
-                        <small class="form-text text-muted">What does quantity=1 mean? (e.g., "1 cup", "1 piece", "100g")</small>
+                    <div class="form-group food-unit-group" data-unit-prefix="edit">
+                        <label for="editUnitSelect">Unit</label>
+                        <select class="form-control food-unit-select" id="editUnitSelect">
+                            <option value="piece">piece</option>
+                            <option value="whole">whole</option>
+                            <option value="cup">cup</option>
+                            <option value="tbsp">tbsp</option>
+                            <option value="tsp">tsp</option>
+                            <option value="g">g</option>
+                            <option value="oz">oz</option>
+                            <option value="slice">slice</option>
+                            <option value="serving">serving</option>
+                            <option value="ear">ear</option>
+                            <option value="stalk">stalk</option>
+                            <option value="nut">nut</option>
+                            <option value="__custom__">Other (custom)…</option>
+                        </select>
+                        <input type="text" class="form-control mt-2 food-unit-custom d-none" id="editUnitCustom"
+                               placeholder="Enter custom unit">
+                        <input type="hidden" class="food-unit-hidden" name="unit_of_measurement" id="editUnitOfMeasurement" value="">
+                        <small class="form-text text-muted">Calories are for one serving of this amount/unit</small>
                     </div>
                     <div class="form-group">
                         <label for="editSource">Data Source</label>

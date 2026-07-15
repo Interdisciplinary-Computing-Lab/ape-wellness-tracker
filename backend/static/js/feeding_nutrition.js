@@ -6,7 +6,7 @@
 
     const VOLUME_TO_CUP = { cup: 1, tbsp: 0.0625, tsp: 0.0208333 };
     const WEIGHT_TO_G = { g: 1, oz: 28.3495, lb: 453.592 };
-    const COUNT_UNITS = ['piece', 'slice', 'serving'];
+    const COUNT_UNITS = ['piece', 'whole', 'slice', 'serving'];
     const WEIGHT_UNITS = ['g', 'oz', 'lb'];
     const VOLUME_UNITS = ['cup', 'tbsp', 'tsp'];
 
@@ -17,7 +17,7 @@
         g: ['g', 'gram', 'grams', 'gm'],
         oz: ['oz', 'ounce', 'ounces'],
         lb: ['lb', 'lbs', 'pound', 'pounds'],
-        piece: ['piece', 'pieces', 'pc'],
+        piece: ['piece', 'pieces', 'pc', 'whole', 'wholes'],
         slice: ['slice', 'slices'],
         serving: ['serving', 'servings'],
     };
@@ -286,7 +286,7 @@
             return ['serving', 'cup', 'tbsp', 'tsp', 'g', 'oz', 'lb'];
         }
         if (item.foodSpecificServing) {
-            return ['serving', 'piece', 'slice', 'g', 'oz', 'lb'];
+            return ['serving', 'piece', 'whole', 'slice', 'g', 'oz', 'lb'];
         }
         if (item.catalogUnit === 'g') {
             return WEIGHT_UNITS.slice();
@@ -294,7 +294,7 @@
         if (VOLUME_UNITS.includes(item.catalogUnit)) {
             return VOLUME_UNITS.concat(WEIGHT_UNITS);
         }
-        return ['piece', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'];
+        return ['piece', 'whole', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'];
     }
 
     function buildFeedingItem(opts) {
@@ -378,7 +378,7 @@
     }
 
     global.FeedingNutrition = {
-        ALL_FEEDING_UNITS: ['piece', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'],
+        ALL_FEEDING_UNITS: ['piece', 'whole', 'serving', 'cup', 'g', 'oz', 'tbsp', 'tsp', 'slice', 'lb'],
         WEIGHT_UNITS,
         VOLUME_UNITS,
         formatQuantity,
