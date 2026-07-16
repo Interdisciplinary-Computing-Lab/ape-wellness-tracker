@@ -8,9 +8,15 @@ from datetime import datetime
 from flask import send_file
 
 
-def generate_csv_report(filename_date_range, apes, ape_stats, category_data, daily_data, 
-                       total_calories, total_meals, avg_calories_per_meal, start_date, end_date):
+def generate_csv_report(filename_date_range, apes, ape_stats, category_data, daily_data,
+                       total_calories, total_meals, avg_calories_per_meal, start_date, end_date,
+                       meal_type_totals=None):
     """Generate CSV report"""
+    meal_type_totals = meal_type_totals or {
+        'Breakfast': 0,
+        'Lunch': 0,
+        'Dinner': 0,
+    }
     output = io.StringIO()
     writer = csv.writer(output)
     
@@ -27,19 +33,41 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     writer.writerow(['Average Calories per Meal', f"{avg_calories_per_meal:.1f}"])
     writer.writerow(['Active Apes', len(apes)])
     writer.writerow([])
+
+    # Facility-wide meal type calorie breakdown
+    writer.writerow(['MEAL TYPE CALORIE BREAKDOWN'])
+    writer.writerow(['Meal Type', 'Calories', '% of Total'])
+    for meal_type in ('Breakfast', 'Lunch', 'Dinner'):
+        cals = meal_type_totals.get(meal_type, 0)
+        pct = (cals / total_calories * 100) if total_calories > 0 else 0
+        writer.writerow([meal_type, cals, f"{pct:.1f}%"])
+    writer.writerow([])
     
     # Per-ape statistics
     writer.writerow(['PER-APE STATISTICS'])
-    writer.writerow(['Ape Name', 'Total Calories', 'Total Meals', 'Avg Calories/Meal', 'Total Protein (g)', 'Total Fiber (g)'])
+    writer.writerow([
+        'Ape Name',
+        'Total Calories',
+        'Breakfast Calories',
+        'Lunch Calories',
+        'Dinner Calories',
+        'Total Meals',
+        'Avg Calories/Meal',
+        'Total Protein (g)',
+        'Total Fiber (g)',
+    ])
     for ape in apes:
         stats = ape_stats[ape.id]
         writer.writerow([
             stats['name'],
             stats['calories'],
+            stats.get('breakfast_calories', 0),
+            stats.get('lunch_calories', 0),
+            stats.get('dinner_calories', 0),
             stats['meal_count'],
             f"{stats['avg_calories']:.1f}",
             stats.get('protein_g', 0.0),
-            stats.get('fiber_g', 0.0)
+            stats.get('fiber_g', 0.0),
         ])
     writer.writerow([])
     
@@ -57,9 +85,23 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     
     # Daily breakdown
     writer.writerow(['DAILY BREAKDOWN'])
-    writer.writerow(['Date', 'Total Calories', 'Total Meals'])
+    writer.writerow([
+        'Date',
+        'Total Calories',
+        'Breakfast Calories',
+        'Lunch Calories',
+        'Dinner Calories',
+        'Total Meals',
+    ])
     for day in daily_data:
-        writer.writerow([day['date'], day['calories'], day['meals']])
+        writer.writerow([
+            day['date'],
+            day['calories'],
+            day.get('breakfast_calories', 0),
+            day.get('lunch_calories', 0),
+            day.get('dinner_calories', 0),
+            day['meals'],
+        ])
     
     # Prepare response with UTF-8 BOM for Excel compatibility
     output.seek(0)
@@ -85,4 +127,3 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     response.headers['Expires'] = '0'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
-

@@ -64,6 +64,7 @@ def reports():
         ape_stats,
         category_data,
         daily_data,
+        meal_type_totals,
     ) = build_report_aggregates(meals_in_range, apes)
 
     return render_template(
@@ -75,6 +76,7 @@ def reports():
         avg_calories_per_meal=avg_calories_per_meal,
         category_data=category_data,
         daily_data=daily_data,
+        meal_type_totals=meal_type_totals,
         date_range=date_range,
         start_date=start_date,
         end_date=end_date,
@@ -98,6 +100,7 @@ def download_reports(format):
         ape_stats,
         category_data,
         daily_data,
+        meal_type_totals,
     ) = build_report_aggregates(meals_in_range, apes, for_download=True)
 
     filename_date_range = f"{start_date.strftime('%Y%m%d')}-{end_date.strftime('%Y%m%d')}"
@@ -114,6 +117,7 @@ def download_reports(format):
             avg_calories_per_meal,
             start_date,
             end_date,
+            meal_type_totals,
         )
 
     flash('Invalid download format. Please choose CSV.', 'error')
