@@ -115,40 +115,74 @@ function catalogServingHint(item) {
     return formatQuantity(item.recipeQuantity) + ' ' + (item.catalogUnit || 'serving');
 }
 
-function toggleManualCalories(index) {
+function enterCalorieEditMode(index) {
+    const item = feedingItems[index];
+    if (!item || item.caloriesInvalid) return;
+    if (!item.manualCalories) {
+        item.quantityBeforeCalorieEdit = item.quantity > 0 ? item.quantity : 1;
+        item.manualCalories = true;
+        item.caloriesOverride = item.totalCalories != null ? item.totalCalories : item.calories;
+        syncRowFromItem(index, false);
+    }
+    const tbody = document.getElementById('feedingSummaryBody');
+    const row = tbody && tbody.querySelectorAll('tr')[index];
+    const calInput = row && row.querySelector('input[data-calories-input]');
+    if (calInput) {
+        calInput.focus();
+        calInput.select();
+    }
+}
+
+function resetCalorieEdit(index) {
     const item = feedingItems[index];
     if (!item) return;
-    item.manualCalories = !item.manualCalories;
-    if (item.manualCalories) {
-        item.caloriesOverride = item.totalCalories != null ? item.totalCalories : item.calories;
-    } else {
-        item.caloriesOverride = null;
+    if (item.quantityBeforeCalorieEdit != null && item.quantityBeforeCalorieEdit > 0) {
+        item.quantity = item.quantityBeforeCalorieEdit;
     }
-    updateFeedingSummary();
+    item.quantityBeforeCalorieEdit = null;
+    item.manualCalories = false;
+    item.caloriesOverride = null;
+    syncRowFromItem(index, true);
 }
 
 function syncCaloriesCellFromItem(calCell, item, flash) {
     if (!calCell || !item) return;
     const calInput = calCell.querySelector('input[data-calories-input]');
-    const lockBtn = calCell.querySelector('button[data-calories-lock]');
+    const wandBtn = calCell.querySelector('button[data-calories-wand]');
+    const resetBtn = calCell.querySelector('button[data-calories-reset]');
     if (!calInput) return;
 
     if (item.caloriesInvalid) {
         calInput.value = '';
         calInput.disabled = true;
         calCell.classList.add('calories-invalid');
+        if (wandBtn) wandBtn.disabled = true;
+        if (resetBtn) {
+            resetBtn.disabled = true;
+            resetBtn.classList.add('d-none');
+        }
         calCell.title = 'Cannot convert ' + (item.unit || '') + ' for this food (USDA basis: ' + catalogServingHint(item) + '). Try a weight unit (g, oz, lb) or the catalog serving.';
         return;
     }
 
     calCell.classList.remove('calories-invalid');
-    calInput.disabled = !item.manualCalories;
-    calInput.value = Math.round(item.totalCalories || 0);
-    if (lockBtn) {
-        lockBtn.className = 'btn btn-sm ' + (item.manualCalories ? 'btn-warning' : 'btn-outline-secondary');
-        lockBtn.title = item.manualCalories ? 'Manual override (click for auto)' : 'Override calories';
+    calInput.disabled = false;
+    if (document.activeElement !== calInput) {
+        calInput.value = Math.round(item.totalCalories || 0);
     }
-    let hint = 'Auto from USDA catalog: ' + catalogServingHint(item);
+    if (wandBtn) {
+        wandBtn.disabled = false;
+        wandBtn.className = 'btn btn-sm ml-1 ' + (item.manualCalories ? 'btn-warning' : 'btn-outline-secondary');
+        wandBtn.title = item.manualCalories ? 'Editing calories (quantity auto-adjusts)' : 'Edit calories';
+        wandBtn.innerHTML = '<i class="fas fa-magic"></i>';
+    }
+    if (resetBtn) {
+        resetBtn.disabled = !item.manualCalories;
+        resetBtn.className = 'btn btn-sm ml-1 btn-warning' + (item.manualCalories ? '' : ' d-none');
+        resetBtn.title = 'Reset quantity and calories';
+        resetBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+    }
+    let hint = 'Edit calories to auto-adjust quantity. Catalog serving: ' + catalogServingHint(item);
     if (item.approximateCalories) hint += ' (estimated conversion)';
     calCell.title = hint;
 
@@ -172,7 +206,7 @@ function syncRowFromItem(index, flash) {
     syncCaloriesCellFromItem(row.querySelector('td.calories-cell'), item, flash);
 
     const qtyInput = row.querySelector('input[data-feeding-qty]');
-    if (qtyInput) {
+    if (qtyInput && document.activeElement !== qtyInput) {
         qtyInput.value = formatQuantity(item.quantity);
     }
     const unitSelect = row.querySelector('select[data-feeding-unit]');
@@ -191,9 +225,9 @@ function applyQuantityChange(index, newQuantity, flash) {
 
     const item = feedingItems[index];
     item.quantity = newQuantity;
-    if (!item.manualCalories) {
-        item.caloriesOverride = null;
-    }
+    item.manualCalories = false;
+    item.caloriesOverride = null;
+    item.quantityBeforeCalorieEdit = null;
     syncRowFromItem(index, flash);
 }
 
@@ -202,11 +236,17 @@ function applyCaloriesChange(index, targetCalories) {
     if (isNaN(targetCalories) || targetCalories < 0) return;
 
     const item = feedingItems[index];
-    if (!item.manualCalories) return;
-
+    if (!item.manualCalories) {
+        item.quantityBeforeCalorieEdit = item.quantity > 0 ? item.quantity : 1;
+    }
+    item.manualCalories = true;
     item.caloriesOverride = targetCalories;
     if (item.calories > 0) {
-        const newQty = FN.quantityForTargetCalories(item, targetCalories);
+        let newQty = FN.quantityForTargetCalories(item, targetCalories);
+        if (isNaN(newQty) || newQty <= 0) {
+            const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
+            newQty = (targetCalories / item.calories) * catalogQty;
+        }
         if (!isNaN(newQty) && newQty > 0) {
             item.quantity = Math.round(newQty * 1000) / 1000;
         }
@@ -286,9 +326,9 @@ function applyUnitChange(index, newUnit) {
 
     const item = feedingItems[index];
     item.unit = normalizeUnit(newUnit);
-    if (!item.manualCalories) {
-        item.caloriesOverride = null;
-    }
+    item.manualCalories = false;
+    item.caloriesOverride = null;
+    item.quantityBeforeCalorieEdit = null;
     syncRowFromItem(index, true);
 }
 
@@ -351,17 +391,25 @@ function updateFeedingSummary() {
         calInput.min = '0';
         calInput.dataset.index = index;
         calInput.setAttribute('data-calories-input', '1');
-        calInput.disabled = !item.manualCalories;
+        calInput.disabled = false;
         calInput.value = item.caloriesInvalid ? '' : Math.round(item.totalCalories || 0);
-        const lockBtn = document.createElement('button');
-        lockBtn.type = 'button';
-        lockBtn.className = 'btn btn-sm ml-1 ' + (item.manualCalories ? 'btn-warning' : 'btn-outline-secondary');
-        lockBtn.setAttribute('data-calories-lock', '1');
-        lockBtn.title = item.manualCalories ? 'Manual override' : 'Auto-calculate';
-        lockBtn.innerHTML = '<i class="fas fa-' + (item.manualCalories ? 'pen' : 'magic') + '"></i>';
-        lockBtn.addEventListener('click', function() { toggleManualCalories(index); });
+        const wandBtn = document.createElement('button');
+        wandBtn.type = 'button';
+        wandBtn.className = 'btn btn-sm ml-1 ' + (item.manualCalories ? 'btn-warning' : 'btn-outline-secondary');
+        wandBtn.setAttribute('data-calories-wand', '1');
+        wandBtn.title = item.manualCalories ? 'Editing calories (quantity auto-adjusts)' : 'Edit calories';
+        wandBtn.innerHTML = '<i class="fas fa-magic"></i>';
+        wandBtn.addEventListener('click', function() { enterCalorieEditMode(index); });
+        const resetBtn = document.createElement('button');
+        resetBtn.type = 'button';
+        resetBtn.className = 'btn btn-sm ml-1 btn-warning' + (item.manualCalories ? '' : ' d-none');
+        resetBtn.setAttribute('data-calories-reset', '1');
+        resetBtn.title = 'Reset quantity and calories';
+        resetBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        resetBtn.addEventListener('click', function() { resetCalorieEdit(index); });
         calWrap.appendChild(calInput);
-        calWrap.appendChild(lockBtn);
+        calWrap.appendChild(wandBtn);
+        calWrap.appendChild(resetBtn);
         calCell.appendChild(calWrap);
         syncCaloriesCellFromItem(calCell, item, false);
 
@@ -456,6 +504,29 @@ function initFeedingSummaryListeners() {
         }
     });
 
+    feedingSummaryBody.addEventListener('focusin', function(e) {
+        const calInput = e.target.closest('input[data-calories-input]');
+        if (!calInput) return;
+        const index = parseInt(calInput.dataset.index, 10);
+        if (isNaN(index) || index < 0 || index >= feedingItems.length) return;
+        const item = feedingItems[index];
+        if (!item || item.caloriesInvalid || item.manualCalories) return;
+        item.quantityBeforeCalorieEdit = item.quantity > 0 ? item.quantity : 1;
+        item.manualCalories = true;
+        item.caloriesOverride = item.totalCalories != null ? item.totalCalories : item.calories;
+        const wandBtn = calInput.closest('td') && calInput.closest('td').querySelector('button[data-calories-wand]');
+        const resetBtn = calInput.closest('td') && calInput.closest('td').querySelector('button[data-calories-reset]');
+        if (wandBtn) {
+            wandBtn.className = 'btn btn-sm ml-1 btn-warning';
+            wandBtn.title = 'Editing calories (quantity auto-adjusts)';
+        }
+        if (resetBtn) {
+            resetBtn.disabled = false;
+            resetBtn.classList.remove('d-none');
+            resetBtn.className = 'btn btn-sm ml-1 btn-warning';
+        }
+    });
+
     feedingSummaryBody.addEventListener('click', function(e) {
         const stepBtn = e.target.closest('button[data-qty-step]');
         if (!stepBtn) return;
@@ -469,6 +540,17 @@ function initFeedingSummaryListeners() {
     });
 
     feedingSummaryBody.addEventListener('change', function(e) {
+        const calInput = e.target.closest('input[data-calories-input]');
+        if (calInput) {
+            const index = parseInt(calInput.dataset.index, 10);
+            const v = parseInt(calInput.value, 10);
+            if (!isNaN(v) && v >= 0) {
+                applyCaloriesChange(index, v);
+            } else if (index >= 0 && index < feedingItems.length) {
+                calInput.value = Math.round(feedingItems[index].totalCalories || 0);
+            }
+            return;
+        }
         const unitSelect = e.target.closest('select[data-feeding-unit]');
         if (unitSelect) {
             const index = parseInt(unitSelect.dataset.index, 10);
