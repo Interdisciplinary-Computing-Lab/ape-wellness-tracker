@@ -24,6 +24,9 @@ function setSelectedMealType(mealType) {
     if (hidden) hidden.value = mealType;
     if (labelEl) labelEl.textContent = mealType;
     if (selectEl) selectEl.value = mealType;
+    if (typeof updateStats === 'function') {
+        updateStats();
+    }
 }
 
 function updateMealTypeLabel() {
@@ -101,6 +104,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const feedingDateEl = document.getElementById('feedingDate');
     if (feedingDateEl && cfg.defaultFeedingDate && !feedingDateEl.value) {
         feedingDateEl.value = cfg.defaultFeedingDate;
+    }
+    if (feedingDateEl) {
+        feedingDateEl.addEventListener('change', function() {
+            if (typeof updateStats === 'function') {
+                updateStats();
+            }
+        });
     }
     
     if (cfg.preFilledFood) {
@@ -237,6 +247,7 @@ function setDateToYesterday() {
     const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
     if (feedingDateEl) feedingDateEl.value = dateStr;
     if (feedingDateSummaryEl) feedingDateSummaryEl.value = dateStr;
+    if (typeof updateStats === 'function') updateStats();
 }
 
 function setDateToToday() {
@@ -246,6 +257,7 @@ function setDateToToday() {
     const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
     if (feedingDateEl) feedingDateEl.value = todayStr;
     if (feedingDateSummaryEl) feedingDateSummaryEl.value = todayStr;
+    if (typeof updateStats === 'function') updateStats();
 }
 
 function formatLocalDate(d) {
@@ -264,6 +276,7 @@ function setDateToTomorrow() {
     const feedingDateSummaryEl = document.getElementById('feedingDateSummary');
     if (feedingDateEl) feedingDateEl.value = dateStr;
     if (feedingDateSummaryEl) feedingDateSummaryEl.value = dateStr;
+    if (typeof updateStats === 'function') updateStats();
 }
 
 window.clearFeedingList = clearFeedingList;

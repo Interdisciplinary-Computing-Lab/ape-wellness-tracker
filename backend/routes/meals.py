@@ -7,9 +7,37 @@ from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory
 from flask_security import login_required, current_user
 from datetime import datetime
+from sqlalchemy import func
 import re
 from backend.routes import site
 from backend.utils.meal_queries import get_user_meal_or_404
+from backend.utils.meal_nutrition import meal_calories
+
+
+MEAL_TYPE_LABELS = (
+    ('Breakfast', 'Breakfast'),
+    ('Lunch', 'Lunch'),
+    ('Dinner', 'Dinner'),
+)
+
+
+def _facility_meal_calories_for_date(day):
+    """Per-ape total + Breakfast/Lunch/Dinner calories for a calendar day (all staff)."""
+    facility_meals = Meals.query.filter(func.date(Meals.date) == day).all()
+    ape_calories = {}
+    ape_meal_calories = {}
+    for meal in facility_meals:
+        cal = meal_calories(meal)
+        ape_calories[meal.ape_id] = ape_calories.get(meal.ape_id, 0) + cal
+        meal_label = meal.resolved_meal_type
+        if meal_label not in ('Breakfast', 'Lunch', 'Dinner'):
+            meal_label = 'Breakfast'
+        by_meal = ape_meal_calories.setdefault(
+            meal.ape_id,
+            {'Breakfast': 0, 'Lunch': 0, 'Dinner': 0},
+        )
+        by_meal[meal_label] += cal
+    return ape_calories, ape_meal_calories
 
 
 def _recipe_unit_label(unit, recipe_quantity):
@@ -120,16 +148,24 @@ def log_feeding():
         if category not in foods_by_category:
             foods_by_category[category] = []
         foods_by_category[category].append(recipe)
-    
-    return render_template('log_feeding.html', 
-                         apes=apes,
-                         recipes=recipes,
-                         foods_by_category=foods_by_category,
-                         categories=categories,
-                         pre_filled_food=pre_filled_food,
-                         pre_filled_calories=pre_filled_calories,
-                         pre_filled_ape=pre_filled_ape,
-                         default_feeding_date=datetime.now().strftime('%Y-%m-%d'))
+
+    today = datetime.now().date()
+    ape_calories_today, ape_meal_calories_today = _facility_meal_calories_for_date(today)
+
+    return render_template(
+        'log_feeding.html',
+        apes=apes,
+        recipes=recipes,
+        foods_by_category=foods_by_category,
+        categories=categories,
+        pre_filled_food=pre_filled_food,
+        pre_filled_calories=pre_filled_calories,
+        pre_filled_ape=pre_filled_ape,
+        default_feeding_date=datetime.now().strftime('%Y-%m-%d'),
+        ape_calories_today=ape_calories_today,
+        ape_meal_calories_today=ape_meal_calories_today,
+        feeding_period_meal_labels=MEAL_TYPE_LABELS,
+    )
 
 
 @site.route('/save_feeding', methods=['POST'])

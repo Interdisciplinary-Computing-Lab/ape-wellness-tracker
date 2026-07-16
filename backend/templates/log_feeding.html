@@ -106,7 +106,7 @@
         <div class="ape-selection-container">
             <div class="row">
                 {% for ape in apes %}
-                <div class="col-md-2 col-sm-4 col-6 mb-3">
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
                     <div class="ape-avatar text-center" data-ape-id="{{ ape.id }}" onclick="toggleApeSelection(this, '{{ ape.id }}')">
                         <div class="position-relative">
                             <img src="{{ ape.get_image_url() }}" 
@@ -117,7 +117,27 @@
                         </div>
                         <small class="d-block text-center mt-1 font-weight-bold">{{ ape.ape_name }}</small>
                         <small class="text-muted">{{ ape.age }}y</small>
-                        <small class="d-block ape-session-calories text-muted" data-ape-calories="{{ ape.id }}">—</small>
+                        {% set ape_cals_map = ape_calories_today|default({}) %}
+                        {% set ape_meal_map = ape_meal_calories_today|default({}) %}
+                        {% set meal_labels = feeding_period_meal_labels|default([('Breakfast', 'Breakfast'), ('Lunch', 'Lunch'), ('Dinner', 'Dinner')]) %}
+                        {% set meal_breakdown = ape_meal_map.get(ape.id, {}) %}
+                        <div class="ape-today-calories ape-log-calories mt-2"
+                             data-ape-calories-block="{{ ape.id }}">
+                            <div class="ape-session-calories font-weight-bold"
+                                 data-ape-calories="{{ ape.id }}">
+                                {{ ape_cals_map.get(ape.id, 0) }}
+                                <span class="text-muted font-weight-normal">cal</span>
+                            </div>
+                            <div class="ape-meal-breakdown mt-1" data-ape-meal-breakdown="{{ ape.id }}">
+                                {% for period_key, meal_label in meal_labels %}
+                                <div class="d-flex justify-content-between ape-meal-breakdown-row">
+                                    <span class="text-muted">{{ meal_label }}</span>
+                                    <span class="font-weight-bold"
+                                          data-meal-type="{{ period_key }}">{{ meal_breakdown.get(period_key, 0) }} <span class="text-muted font-weight-normal">cal</span></span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -535,7 +555,10 @@ window.LOG_FEEDING_CONFIG = {
     defaultFeedingDate: {{ default_feeding_date|tojson }},
     preFilledFood: {{ pre_filled_food|tojson }},
     preFilledCalories: {{ pre_filled_calories|tojson }},
-    preFilledApe: {{ pre_filled_ape|tojson }}
+    preFilledApe: {{ pre_filled_ape|tojson }},
+    apeCaloriesToday: {{ ape_calories_today|default({})|tojson }},
+    apeMealCaloriesToday: {{ ape_meal_calories_today|default({})|tojson }},
+    mealTypeLabels: ["Breakfast", "Lunch", "Dinner"]
 };
 </script>
 <script src="{{ url_for('static', filename='js/log_feeding/00_state.js') }}"></script>

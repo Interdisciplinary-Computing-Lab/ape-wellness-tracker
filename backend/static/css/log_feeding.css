@@ -168,12 +168,37 @@
 }
 
 .ape-session-calories {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     margin-top: 0.15rem;
+    line-height: 1.2;
+}
+
+.ape-log-calories {
+    text-align: left;
+    padding: 0.35rem 0.4rem;
+    border-radius: 0.35rem;
+    background: rgba(0, 123, 255, 0.06);
+    border: 1px solid rgba(0, 123, 255, 0.12);
+}
+
+.ape-log-calories .ape-meal-breakdown {
+    font-size: 0.68rem;
+    border-top: 1px solid rgba(0, 123, 255, 0.12);
+    padding-top: 0.25rem;
+}
+
+.ape-log-calories .ape-meal-breakdown-row {
+    line-height: 1.35;
+    gap: 0.35rem;
 }
 
 .ape-avatar.selected .ape-session-calories.text-success {
     color: #155724 !important;
+}
+
+.ape-avatar.selected .ape-log-calories {
+    background: rgba(40, 167, 69, 0.08);
+    border-color: rgba(40, 167, 69, 0.25);
 }
 
 .avatar-circle {

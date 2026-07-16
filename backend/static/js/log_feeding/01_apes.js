@@ -57,29 +57,92 @@ function sessionTotalCalories() {
     return totalCal;
 }
 
-function updateStats() {
-    const totalCal = sessionTotalCalories();
-    const hasFoods = feedingItems.length > 0;
-    const showCalories = hasFoods;
+function getSavedApeCalories(apeId) {
+    var cfg = window.LOG_FEEDING_CONFIG || {};
+    var map = cfg.apeCaloriesToday || {};
+    return Math.round(map[apeId] || map[String(apeId)] || 0);
+}
 
-    document.querySelectorAll('[data-ape-calories]').forEach(function(el) {
-        const apeId = parseInt(el.getAttribute('data-ape-calories'), 10);
-        const isSelected = selectedApes.has(apeId);
-        if (isSelected && showCalories) {
-            el.textContent = Math.round(totalCal) + ' cal';
-            el.classList.remove('text-muted');
-            el.classList.add('text-success', 'font-weight-bold');
-        } else {
-            el.textContent = '—';
-            el.classList.remove('text-success', 'font-weight-bold');
-            el.classList.add('text-muted');
+function getSavedMealBreakdown(apeId) {
+    var cfg = window.LOG_FEEDING_CONFIG || {};
+    var map = cfg.apeMealCaloriesToday || {};
+    var raw = map[apeId] || map[String(apeId)] || {};
+    return {
+        Breakfast: Math.round(raw.Breakfast || 0),
+        Lunch: Math.round(raw.Lunch || 0),
+        Dinner: Math.round(raw.Dinner || 0)
+    };
+}
+
+function isLoggingForToday() {
+    var cfg = window.LOG_FEEDING_CONFIG || {};
+    var dateEl = document.getElementById('feedingDate');
+    var selected = dateEl && dateEl.value ? dateEl.value : (cfg.defaultFeedingDate || '');
+    return selected && selected === cfg.defaultFeedingDate;
+}
+
+function formatCalorieLabel(value) {
+    return Math.round(value) + ' <span class="text-muted font-weight-normal">cal</span>';
+}
+
+function updateStats() {
+    var sessionCal = sessionTotalCalories();
+    var hasFoods = feedingItems.length > 0;
+    var includeSession = hasFoods && isLoggingForToday();
+    var mealType = (typeof getSelectedMealType === 'function')
+        ? getSelectedMealType()
+        : 'Breakfast';
+    if (mealType !== 'Breakfast' && mealType !== 'Lunch' && mealType !== 'Dinner') {
+        mealType = 'Breakfast';
+    }
+    var labels = (window.LOG_FEEDING_CONFIG && window.LOG_FEEDING_CONFIG.mealTypeLabels)
+        || ['Breakfast', 'Lunch', 'Dinner'];
+
+    document.querySelectorAll('[data-ape-calories-block]').forEach(function(block) {
+        var apeId = parseInt(block.getAttribute('data-ape-calories-block'), 10);
+        var isSelected = selectedApes.has(apeId);
+        var savedTotal = getSavedApeCalories(apeId);
+        var breakdown = getSavedMealBreakdown(apeId);
+        var displayTotal = savedTotal;
+        var displayBreakdown = {
+            Breakfast: breakdown.Breakfast,
+            Lunch: breakdown.Lunch,
+            Dinner: breakdown.Dinner
+        };
+
+        if (includeSession && isSelected) {
+            displayTotal += sessionCal;
+            displayBreakdown[mealType] += sessionCal;
         }
+
+        var totalEl = block.querySelector('[data-ape-calories]');
+        if (totalEl) {
+            totalEl.innerHTML = formatCalorieLabel(displayTotal);
+            if (includeSession && isSelected && sessionCal > 0) {
+                totalEl.classList.add('text-success');
+                totalEl.classList.remove('text-muted');
+            } else {
+                totalEl.classList.remove('text-success');
+            }
+        }
+
+        labels.forEach(function(label) {
+            var cell = block.querySelector('[data-meal-type="' + label + '"]');
+            if (cell) {
+                cell.innerHTML = formatCalorieLabel(displayBreakdown[label] || 0);
+                if (includeSession && isSelected && sessionCal > 0 && label === mealType) {
+                    cell.classList.add('text-success');
+                } else {
+                    cell.classList.remove('text-success');
+                }
+            }
+        });
     });
 
-    const perApeEl = document.getElementById('perApeCalories');
+    var perApeEl = document.getElementById('perApeCalories');
     if (perApeEl) {
-        if (selectedApes.size > 0 && showCalories) {
-            perApeEl.textContent = Math.round(totalCal);
+        if (selectedApes.size > 0 && hasFoods) {
+            perApeEl.textContent = Math.round(sessionCal);
         } else {
             perApeEl.textContent = '—';
         }
