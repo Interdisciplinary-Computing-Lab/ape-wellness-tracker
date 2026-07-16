@@ -30,8 +30,10 @@ def dashboard():
     total_meals_today = len(today_meals)
     total_calories_today = sum(meal_calories(meal) for meal in today_meals)
 
+    # Per-ape daily totals include all staff logs (shared care view for the kitchen)
+    facility_today_meals = Meals.query.filter(func.date(Meals.date) == today).all()
     ape_calories_today = {}
-    for meal in today_meals:
+    for meal in facility_today_meals:
         ape_calories_today[meal.ape_id] = (
             ape_calories_today.get(meal.ape_id, 0) + meal_calories(meal)
         )
