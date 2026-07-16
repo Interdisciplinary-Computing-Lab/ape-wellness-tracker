@@ -74,9 +74,11 @@
         calInput.classList.remove('text-danger');
         if (hint) hint.classList.remove('text-danger');
         const total = editItem.totalCalories != null ? editItem.totalCalories : 0;
-        calInput.value = Math.round(total);
+        if (document.activeElement !== calInput) {
+            calInput.value = Math.round(total);
+        }
         if (hint) {
-            hint.textContent = editItem.name + ' · catalog base ' + (editItem.calories || 0) + ' cal';
+            hint.textContent = editItem.name + ' · catalog base ' + (editItem.calories || 0) + ' cal · qty auto-adjusts when you edit calories';
         }
     }
 
@@ -86,11 +88,15 @@
         editItem.caloriesOverride = targetCalories;
         editItem.manualCalories = true;
         if (editItem.calories > 0) {
-            const newQty = FN.quantityForTargetCalories(editItem, targetCalories);
+            let newQty = FN.quantityForTargetCalories(editItem, targetCalories);
+            if (isNaN(newQty) || newQty <= 0) {
+                const catalogQty = editItem.recipeQuantity > 0 ? editItem.recipeQuantity : 1.0;
+                newQty = (targetCalories / editItem.calories) * catalogQty;
+            }
             if (!isNaN(newQty) && newQty > 0) {
                 editItem.quantity = Math.round(newQty * 1000) / 1000;
                 const qtyInput = document.getElementById('mealEditQuantity');
-                if (qtyInput) {
+                if (qtyInput && document.activeElement !== qtyInput) {
                     qtyInput.value = FN.formatQuantity(editItem.quantity);
                 }
             }

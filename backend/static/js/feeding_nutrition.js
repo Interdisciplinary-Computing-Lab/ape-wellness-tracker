@@ -342,18 +342,25 @@
     function quantityForTargetCalories(item, targetCalories) {
         if (!item || targetCalories < 0 || item.calories <= 0) return NaN;
 
-        const refG = referenceGrams(item);
-        if (refG <= 0) return NaN;
-
         const desiredScale = targetCalories / item.calories;
-        const desiredGrams = desiredScale * refG;
-        const displayUnit = normalizeUnit(item.unit || item.catalogUnit);
         const catalogQty = item.recipeQuantity > 0 ? item.recipeQuantity : 1.0;
+        const displayUnit = normalizeUnit(item.unit || item.catalogUnit);
 
+        // Count / catalog servings scale by calories alone (no gram weight required).
         if (COUNT_UNITS.includes(displayUnit)) {
             return desiredScale * catalogQty;
         }
+        if (displayUnit === item.catalogUnit || item.foodSpecificServing) {
+            return desiredScale * catalogQty;
+        }
 
+        const refG = referenceGrams(item);
+        if (refG <= 0) {
+            // Fallback when we cannot convert units by weight/volume.
+            return desiredScale * catalogQty;
+        }
+
+        const desiredGrams = desiredScale * refG;
         const cat = getUnitCategory(displayUnit);
         if (cat === 'weight') {
             return convertUnit(desiredGrams, 'g', displayUnit);
@@ -365,17 +372,10 @@
                 const cups = (desiredGrams / refG) * catalogCups;
                 return convertUnit(cups, 'cup', displayUnit);
             }
-            return NaN;
-        }
-
-        if (displayUnit === item.catalogUnit && !item.foodSpecificServing) {
-            if (item.catalogUnit === 'g') {
-                return desiredGrams;
-            }
             return desiredScale * catalogQty;
         }
 
-        return NaN;
+        return desiredScale * catalogQty;
     }
 
     function recalculateItem(item) {
