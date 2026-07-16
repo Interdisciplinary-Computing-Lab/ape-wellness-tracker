@@ -11,7 +11,6 @@ FEEDING_PERIODS_DEFAULT = {
     'morning': 'Morning (6 AM - 12 PM)',
     'afternoon': 'Afternoon (12 PM - 6 PM)', 
     'evening': 'Evening (6 PM - 12 AM)',
-    'night': 'Night (12 AM - 6 AM)'
 }
 
 def get_feeding_periods():
@@ -230,7 +229,8 @@ class Meals(db.Model):
         recipe_id (int): Foreign key to Recipe.
         date (datetime): Date and time of the meal (feeding date / period).
         logged_at (datetime): When this entry was saved in the app.
-        feeding_period (str): Time period when feeding occurred (Morning, Afternoon, Evening, Night).
+        feeding_period (str): Time period when feeding occurred (morning, afternoon, evening).
+        meal_type (str): Kitchen meal label (Breakfast, Lunch, Dinner); defaults from period.
         calories_logged (int): Actual calories for this feeding (scaled portion); null uses recipe.calories.
         user_id (int): Foreign key to User - tracks who entered the data.
     Relationships:
@@ -244,7 +244,8 @@ class Meals(db.Model):
     recipe_id = db.Column(db.Integer, sa.ForeignKey('recipe.id'), nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=sa.func.now())
     logged_at = db.Column(db.DateTime, nullable=False, default=sa.func.now())
-    feeding_period = db.Column(db.String(20), nullable=True)  # Morning, Afternoon, Evening, Night
+    feeding_period = db.Column(db.String(20), nullable=True)  # morning, afternoon, evening
+    meal_type = db.Column(db.String(20), nullable=True)  # Breakfast, Lunch, Dinner
     calories_logged = db.Column(db.Integer, nullable=True)
     user_id = db.Column(db.Integer, sa.ForeignKey('user.id'), nullable=False)
 
@@ -252,15 +253,33 @@ class Meals(db.Model):
     ape = db.relationship('Apes', backref='meals')
     recipe = db.relationship('Recipe', backref='meals')
     user = db.relationship('User', backref='meals')
+
+    @property
+    def resolved_meal_type(self):
+        """Breakfast / Lunch / Dinner for this meal (stored or derived from period)."""
+        stored = (self.meal_type or '').strip()
+        if stored in ('Breakfast', 'Lunch', 'Dinner'):
+            return stored
+        period = self.feeding_period or ''
+        if period == 'night':
+            period = 'evening'
+        try:
+            from backend.utils.config_loader import get_meal_type_for_period
+            return get_meal_type_for_period(period)
+        except Exception:
+            return 'Breakfast'
     
     @property
     def feeding_period_display(self):
-        """Get the display name for the feeding period"""
-        if self.feeding_period:
-            # Reload periods in case config changed (though this is rare)
-            periods = get_feeding_periods()
-            return periods.get(self.feeding_period, self.feeding_period)
-        return "Not specified"
+        """Get the display name for the feeding period (with meal type)."""
+        period = self.feeding_period or ''
+        if period == 'night':
+            period = 'evening'
+        if not period:
+            return "Not specified"
+        periods = get_feeding_periods()
+        time_label = periods.get(period, period)
+        return f"{self.resolved_meal_type} — {time_label}"
 
 
 roles_users = db.Table(

@@ -47,7 +47,7 @@ def get_time_period(dt):
         dt: datetime object
         
     Returns:
-        str: Time period ('morning', 'afternoon', 'evening', 'night')
+        str: Time period ('morning', 'afternoon', or 'evening')
     """
     if isinstance(dt, str):
         dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
@@ -60,8 +60,8 @@ def get_time_period(dt):
         return 'afternoon'
     elif 18 <= hour < 24:
         return 'evening'
-    else:  # 0 <= hour < 6
-        return 'night'
+    else:  # 0 <= hour < 6 — overnight maps to morning/breakfast
+        return 'morning'
 
 def get_time_period_display(dt):
     """
@@ -75,12 +75,13 @@ def get_time_period_display(dt):
         str: Formatted string (e.g., '10/15/2025 - Morning')
     """
     period = get_time_period(dt)
+    if period == 'night':
+        period = 'evening'
     
     period_display = {
         'morning': 'Morning',
         'afternoon': 'Afternoon',
         'evening': 'Evening',
-        'night': 'Night'
     }
     
     period_name = period_display.get(period, 'Unknown')

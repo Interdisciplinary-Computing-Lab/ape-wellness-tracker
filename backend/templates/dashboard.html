@@ -131,6 +131,15 @@
                                                     {{ ape_calories_today.get(ape.id, 0) }}
                                                     <span class="text-muted font-weight-normal" style="font-size: 0.85rem;">cal</span>
                                                 </div>
+                                                {% set meal_breakdown = ape_meal_calories_today.get(ape.id, {}) %}
+                                                <div class="ape-meal-breakdown mt-2">
+                                                    {% for period_key, meal_label in feeding_period_meal_labels %}
+                                                    <div class="d-flex justify-content-between ape-meal-breakdown-row">
+                                                        <span class="text-muted">{{ meal_label }}</span>
+                                                        <span class="font-weight-bold">{{ meal_breakdown.get(period_key, 0) }} <span class="text-muted font-weight-normal">cal</span></span>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
                                             </div>
 
                                             <div class="row text-center">
@@ -278,6 +287,16 @@ function resetHelpAlerts() {
 .ape-today-calories {
     background: rgba(0, 123, 255, 0.06);
     border: 1px solid rgba(0, 123, 255, 0.15);
+}
+
+.ape-meal-breakdown {
+    font-size: 0.78rem;
+    border-top: 1px solid rgba(0, 123, 255, 0.12);
+    padding-top: 0.4rem;
+}
+
+.ape-meal-breakdown-row {
+    line-height: 1.45;
 }
 
 /* Category badge colors matching manage foods page */

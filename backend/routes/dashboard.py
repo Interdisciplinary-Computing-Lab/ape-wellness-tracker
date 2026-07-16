@@ -11,6 +11,13 @@ from datetime import datetime
 from sqlalchemy import func
 from backend.routes import site
 
+# Kitchen meal labels shown on the dashboard calorie breakdown
+MEAL_TYPE_LABELS = (
+    ('Breakfast', 'Breakfast'),
+    ('Lunch', 'Lunch'),
+    ('Dinner', 'Dinner'),
+)
+
 
 @site.route('/')
 @site.route('/dashboard')
@@ -33,10 +40,18 @@ def dashboard():
     # Per-ape daily totals include all staff logs (shared care view for the kitchen)
     facility_today_meals = Meals.query.filter(func.date(Meals.date) == today).all()
     ape_calories_today = {}
+    ape_meal_calories_today = {}
     for meal in facility_today_meals:
-        ape_calories_today[meal.ape_id] = (
-            ape_calories_today.get(meal.ape_id, 0) + meal_calories(meal)
+        cal = meal_calories(meal)
+        ape_calories_today[meal.ape_id] = ape_calories_today.get(meal.ape_id, 0) + cal
+        meal_label = meal.resolved_meal_type
+        if meal_label not in ('Breakfast', 'Lunch', 'Dinner'):
+            meal_label = 'Breakfast'
+        by_meal = ape_meal_calories_today.setdefault(
+            meal.ape_id,
+            {'Breakfast': 0, 'Lunch': 0, 'Dinner': 0},
         )
+        by_meal[meal_label] += cal
     
     edit_apes = apes
 
@@ -48,5 +63,6 @@ def dashboard():
                          total_meals_today=total_meals_today,
                          total_calories_today=total_calories_today,
                          ape_calories_today=ape_calories_today,
+                         ape_meal_calories_today=ape_meal_calories_today,
+                         feeding_period_meal_labels=MEAL_TYPE_LABELS,
                          today_date=datetime.now().strftime('%Y-%m-%d'))
-

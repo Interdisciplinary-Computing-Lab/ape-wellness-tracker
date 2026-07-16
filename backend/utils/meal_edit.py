@@ -30,6 +30,7 @@ def meal_to_edit_dict(meal) -> dict:
             'food_name': '',
             'date': meal.date.strftime('%Y-%m-%d') if meal.date else '',
             'feeding_period': meal.feeding_period or 'morning',
+            'meal_type': getattr(meal, 'resolved_meal_type', None) or 'Breakfast',
             'calories_logged': meal_calories(meal),
             'catalog_calories': 0,
             'quantity': 1.0,
@@ -53,6 +54,7 @@ def meal_to_edit_dict(meal) -> dict:
         'food_name': recipe.meal_name,
         'date': meal.date.strftime('%Y-%m-%d') if meal.date else '',
         'feeding_period': meal.feeding_period or 'morning',
+        'meal_type': meal.resolved_meal_type,
         'calories_logged': meal_calories(meal),
         'catalog_calories': recipe.calories or 0,
         'quantity': round(logged_qty, 2) if logged_qty != int(logged_qty) else int(logged_qty),
@@ -128,9 +130,16 @@ def apply_meal_edit(meal, data: dict) -> None:
 
     date_str = data.get('date')
     feeding_period = data.get('feeding_period') or meal.feeding_period or 'morning'
+    if feeding_period == 'night':
+        feeding_period = 'evening'
+    meal_type = (data.get('meal_type') or '').strip()
+    if meal_type not in ('Breakfast', 'Lunch', 'Dinner'):
+        from backend.utils.config_loader import get_meal_type_for_period
+        meal_type = get_meal_type_for_period(feeding_period)
     if date_str:
         meal.date = feeding_datetime_from_parts(date_str, feeding_period)
     meal.feeding_period = feeding_period
+    meal.meal_type = meal_type
     meal.logged_at = datetime.now()
 
     source = (data.get('source') or '').strip()

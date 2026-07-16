@@ -2,19 +2,18 @@
     "feeding_periods": {
         "morning": {
             "display_name": "Morning (6 AM - 12 PM)",
-            "default_hour": 9
+            "default_hour": 9,
+            "meal_type": "Breakfast"
         },
         "afternoon": {
             "display_name": "Afternoon (12 PM - 6 PM)",
-            "default_hour": 15
+            "default_hour": 15,
+            "meal_type": "Lunch"
         },
         "evening": {
             "display_name": "Evening (6 PM - 12 AM)",
-            "default_hour": 21
-        },
-        "night": {
-            "display_name": "Night (12 AM - 6 AM)",
-            "default_hour": 3
+            "default_hour": 21,
+            "meal_type": "Dinner"
         }
     },
     "nutrition_defaults": {
@@ -26,4 +25,3 @@
         "allowed_extensions": ["png", "jpg", "jpeg", "gif", "webp"]
     }
 }
-

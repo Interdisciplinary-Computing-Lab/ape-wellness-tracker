@@ -155,7 +155,16 @@
         }
         document.getElementById('mealEditApe').value = String(meal.ape_id);
         document.getElementById('mealEditDate').value = meal.date;
-        document.getElementById('mealEditPeriod').value = meal.feeding_period || 'morning';
+        var period = meal.feeding_period || 'morning';
+        if (period === 'night') {
+            period = 'evening';
+        }
+        document.getElementById('mealEditPeriod').value = period;
+        var mealTypeEl = document.getElementById('mealEditMealType');
+        if (mealTypeEl) {
+            var mt = meal.meal_type || MEAL_TYPE_BY_PERIOD[period] || 'Breakfast';
+            mealTypeEl.value = mt;
+        }
         document.getElementById('mealEditId').value = meal.id;
     }
 
@@ -252,6 +261,7 @@
             food_name: editItem.name,
             date: document.getElementById('mealEditDate').value,
             feeding_period: document.getElementById('mealEditPeriod').value,
+            meal_type: (document.getElementById('mealEditMealType') || {}).value || 'Breakfast',
             calories: Math.round(editItem.totalCalories || 0),
             quantity: 1.0,
             unit: editItem.unit || '',
@@ -344,6 +354,24 @@
             });
     }
 
+    var MEAL_TYPE_BY_PERIOD = {
+        morning: 'Breakfast',
+        afternoon: 'Lunch',
+        evening: 'Dinner'
+    };
+
+    function updateMealEditMealTypeLabel() {
+        var periodEl = document.getElementById('mealEditPeriod');
+        var mealTypeEl = document.getElementById('mealEditMealType');
+        if (!periodEl || !mealTypeEl) return;
+        var period = periodEl.value || 'morning';
+        if (period === 'night') {
+            period = 'evening';
+            periodEl.value = 'evening';
+        }
+        mealTypeEl.value = MEAL_TYPE_BY_PERIOD[period] || 'Breakfast';
+    }
+
     function bindControls() {
         const foodInput = document.getElementById('mealEditFoodSearch');
         const qtyInput = document.getElementById('mealEditQuantity');
@@ -351,6 +379,7 @@
         const calInput = document.getElementById('mealEditCalories');
         const saveBtn = document.getElementById('mealEditSaveBtn');
         const deleteBtn = document.getElementById('mealEditDeleteBtn');
+        const periodEl = document.getElementById('mealEditPeriod');
 
         if (foodInput) {
             foodInput.addEventListener('change', onFoodChange);
@@ -361,6 +390,7 @@
         if (calInput) calInput.addEventListener('input', onCaloriesChange);
         if (saveBtn) saveBtn.addEventListener('click', saveMealEdit);
         if (deleteBtn) deleteBtn.addEventListener('click', deleteMealEdit);
+        if (periodEl) periodEl.addEventListener('change', updateMealEditMealTypeLabel);
 
         document.addEventListener('click', function(e) {
             const btn = e.target.closest('[data-meal-edit]');
@@ -378,4 +408,5 @@
     }
 
     global.openMealEditor = openMealEditor;
+    global.updateMealEditMealTypeLabel = updateMealEditMealTypeLabel;
 })(window);

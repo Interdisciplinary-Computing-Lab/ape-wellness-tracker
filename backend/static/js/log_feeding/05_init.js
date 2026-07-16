@@ -1,8 +1,82 @@
 /** @file DOM ready, keyboard shortcuts, dates, global exports. */
+var MEAL_TYPE_BY_PERIOD = {
+    morning: 'Breakfast',
+    afternoon: 'Lunch',
+    evening: 'Dinner'
+};
+
+function getSelectedMealType() {
+    var hidden = document.getElementById('mealType');
+    var value = hidden && hidden.value ? hidden.value : 'Breakfast';
+    if (value !== 'Breakfast' && value !== 'Lunch' && value !== 'Dinner') {
+        return 'Breakfast';
+    }
+    return value;
+}
+
+function setSelectedMealType(mealType) {
+    if (mealType !== 'Breakfast' && mealType !== 'Lunch' && mealType !== 'Dinner') {
+        mealType = 'Breakfast';
+    }
+    var hidden = document.getElementById('mealType');
+    var labelEl = document.getElementById('mealTypeLabel');
+    var selectEl = document.getElementById('mealTypeSelect');
+    if (hidden) hidden.value = mealType;
+    if (labelEl) labelEl.textContent = mealType;
+    if (selectEl) selectEl.value = mealType;
+}
+
+function updateMealTypeLabel() {
+    var periodEl = document.getElementById('feedingPeriod');
+    if (!periodEl) {
+        return;
+    }
+    var period = periodEl.value || 'morning';
+    if (period === 'night') {
+        period = 'evening';
+        periodEl.value = 'evening';
+    }
+    setSelectedMealType(MEAL_TYPE_BY_PERIOD[period] || 'Breakfast');
+}
+
+function onFeedingPeriodChange() {
+    updateMealTypeLabel();
+    hideMealTypeEdit();
+}
+
+function hideMealTypeEdit() {
+    var selectEl = document.getElementById('mealTypeSelect');
+    var badge = document.getElementById('mealTypeBadge');
+    var btn = document.getElementById('editMealTypeBtn');
+    if (selectEl) selectEl.classList.add('d-none');
+    if (badge) badge.classList.remove('d-none');
+    if (btn) btn.classList.remove('d-none');
+}
+
+function toggleMealTypeEdit() {
+    var selectEl = document.getElementById('mealTypeSelect');
+    var badge = document.getElementById('mealTypeBadge');
+    var btn = document.getElementById('editMealTypeBtn');
+    if (!selectEl) return;
+    selectEl.value = getSelectedMealType();
+    selectEl.classList.remove('d-none');
+    if (badge) badge.classList.add('d-none');
+    if (btn) btn.classList.add('d-none');
+    selectEl.focus();
+}
+
+function onMealTypeSelectChange() {
+    var selectEl = document.getElementById('mealTypeSelect');
+    if (!selectEl) return;
+    setSelectedMealType(selectEl.value);
+    hideMealTypeEdit();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
     updateStats();
     updateSaveButton();
+    updateMealTypeLabel();
     
     // Shared facility catalog: every account sees the same foods — show all by default
     filterByCategory('all', document.getElementById('all-tab'));
@@ -194,3 +268,8 @@ function setDateToTomorrow() {
 
 window.clearFeedingList = clearFeedingList;
 window.saveFeeding = saveFeeding;
+window.updateMealTypeLabel = updateMealTypeLabel;
+window.onFeedingPeriodChange = onFeedingPeriodChange;
+window.toggleMealTypeEdit = toggleMealTypeEdit;
+window.onMealTypeSelectChange = onMealTypeSelectChange;
+window.getSelectedMealType = getSelectedMealType;

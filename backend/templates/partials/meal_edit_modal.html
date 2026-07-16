@@ -15,7 +15,7 @@
                 <form id="mealEditForm" autocomplete="off" onsubmit="return false;">
                     <input type="hidden" id="mealEditId" value="">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="mealEditApe">Ape</label>
                                 <select class="form-control" id="mealEditApe" required>
@@ -34,11 +34,20 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="mealEditPeriod">Period</label>
-                                <select class="form-control" id="mealEditPeriod">
-                                    <option value="morning">Morning</option>
-                                    <option value="afternoon">Afternoon</option>
-                                    <option value="evening">Evening</option>
-                                    <option value="night">Night</option>
+                                <select class="form-control" id="mealEditPeriod" onchange="updateMealEditMealTypeLabel && updateMealEditMealTypeLabel()">
+                                    <option value="morning">Morning (6 AM - 12 PM)</option>
+                                    <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
+                                    <option value="evening">Evening (6 PM - 12 AM)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="mealEditMealType">Meal type</label>
+                                <select class="form-control" id="mealEditMealType">
+                                    <option value="Breakfast">Breakfast</option>
+                                    <option value="Lunch">Lunch</option>
+                                    <option value="Dinner">Dinner</option>
                                 </select>
                             </div>
                         </div>

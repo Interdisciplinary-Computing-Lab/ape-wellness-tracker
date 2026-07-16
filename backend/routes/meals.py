@@ -148,6 +148,12 @@ def save_feeding():
         feeding_items = data.get('feeding_items', [])
         feeding_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
         feeding_period = data.get('feeding_period', 'morning')  # Default to morning
+        if feeding_period == 'night':
+            feeding_period = 'evening'
+        from backend.utils.config_loader import get_meal_type_for_period
+        meal_type = (data.get('meal_type') or '').strip()
+        if meal_type not in ('Breakfast', 'Lunch', 'Dinner'):
+            meal_type = get_meal_type_for_period(feeding_period)
         
         if not ape_ids:
             return jsonify({'success': False, 'error': 'No apes selected'}), 400
@@ -234,6 +240,7 @@ def save_feeding():
                         date=feeding_datetime,
                         logged_at=logged_at,
                         feeding_period=feeding_period,
+                        meal_type=meal_type,
                         calories_logged=logged_calories,
                         user_id=current_user.id,
                     )

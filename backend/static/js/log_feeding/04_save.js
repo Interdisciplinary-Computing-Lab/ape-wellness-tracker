@@ -125,11 +125,15 @@ function saveFeeding() {
                     String(today.getMonth() + 1).padStart(2, '0') + '-' + 
                     String(today.getDate()).padStart(2, '0');
     }
+    const mealType = (typeof getSelectedMealType === 'function')
+        ? getSelectedMealType()
+        : 'Breakfast';
     const feedingData = {
         ape_ids: Array.from(selectedApes),
         feeding_items: transformedItems,
         date: dateValue,
-        feeding_period: periodEl ? periodEl.value : 'morning'
+        feeding_period: periodEl ? periodEl.value : 'morning',
+        meal_type: mealType
     };
     
     // Send data to server

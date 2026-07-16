@@ -2,11 +2,6 @@
 {% block title %}Log Meals - Ape Meal Tracker{% endblock %}
 {% block page_title %}Log Meals{% endblock %}
 {% block body %}
-<div class="alert alert-info mb-3 feeding-save-tip" role="note">
-    <i class="fas fa-lightbulb mr-2" aria-hidden="true"></i>
-    <strong>Tip:</strong> Click Save Meals to store this session. Each save writes meals for the selected date.
-</div>
-
 <!-- Date Selection Header -->
 <div class="row mb-3">
     <div class="col-12">
@@ -50,12 +45,35 @@
                                     <label for="feedingPeriod" class="form-label font-weight-bold">
                                         <i class="fas fa-clock mr-1"></i>Time Period:
                                     </label>
-                                    <select class="form-control" id="feedingPeriod">
-                                        <option value="morning">Morning (6 AM - 12 PM)</option>
-                                        <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
-                                        <option value="evening">Evening (6 PM - 12 AM)</option>
-                                        <option value="night">Night (12 AM - 6 AM)</option>
-                                    </select>
+                                    <div class="d-flex align-items-center flex-wrap" style="gap: 0.5rem;">
+                                        <select class="form-control" id="feedingPeriod" style="max-width: 22rem;"
+                                                onchange="onFeedingPeriodChange()">
+                                            <option value="morning">Morning (6 AM - 12 PM)</option>
+                                            <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
+                                            <option value="evening">Evening (6 PM - 12 AM)</option>
+                                        </select>
+                                        <span class="d-inline-flex align-items-center" style="gap: 0.35rem;">
+                                            <span class="badge badge-primary badge-lg px-3 py-2" id="mealTypeBadge"
+                                                  title="Meal type for this log">
+                                                Meal type: <strong id="mealTypeLabel">Breakfast</strong>
+                                            </span>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                    id="editMealTypeBtn" onclick="toggleMealTypeEdit()"
+                                                    title="Change meal type">
+                                                <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+                                                <span class="sr-only">Change meal type</span>
+                                            </button>
+                                            <select class="form-control form-control-sm d-none" id="mealTypeSelect"
+                                                    style="width: auto; min-width: 8rem;"
+                                                    onchange="onMealTypeSelectChange()"
+                                                    title="Meal type">
+                                                <option value="Breakfast">Breakfast</option>
+                                                <option value="Lunch">Lunch</option>
+                                                <option value="Dinner">Dinner</option>
+                                            </select>
+                                        </span>
+                                        <input type="hidden" id="mealType" value="Breakfast">
+                                    </div>
                                 </div>
                             </div>
                         </div>

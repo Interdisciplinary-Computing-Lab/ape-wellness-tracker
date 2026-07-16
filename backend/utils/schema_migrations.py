@@ -215,6 +215,26 @@ def ensure_meals_logged_at_save_order(db_uri, app_instance_path):
         conn.close()
 
 
+def ensure_meals_meal_type(db_uri, app_instance_path):
+    """Add meals.meal_type for Breakfast/Lunch/Dinner overrides."""
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('PRAGMA table_info(meals)')
+        columns = {row[1] for row in cursor.fetchall()}
+        if not columns:
+            return
+        if 'meal_type' not in columns:
+            cursor.execute('ALTER TABLE meals ADD COLUMN meal_type VARCHAR(20)')
+            conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_schema_updates(db_uri, app_instance_path):
     """Run all lightweight migrations before ORM queries."""
     ensure_recipe_columns(db_uri, app_instance_path)
@@ -224,4 +244,5 @@ def ensure_schema_updates(db_uri, app_instance_path):
     ensure_meals_calories_logged(db_uri, app_instance_path)
     ensure_meals_logged_at(db_uri, app_instance_path)
     ensure_meals_logged_at_save_order(db_uri, app_instance_path)
+    ensure_meals_meal_type(db_uri, app_instance_path)
     ensure_apes_archive_columns(db_uri, app_instance_path)
