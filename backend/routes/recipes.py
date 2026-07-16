@@ -150,9 +150,31 @@ def create_recipe():
         db.session.add(new_recipe)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Food item created successfully'})
+        return jsonify({
+            'success': True,
+            'message': 'Food item created successfully',
+            'recipe': {
+                **_recipe_json(new_recipe),
+                'catalog_serving_label': new_recipe.catalog_serving_label(),
+                'is_custom_food': new_recipe.is_custom_food,
+            },
+        })
     except Exception as e:
         db.session.rollback()
+        # If unique name conflict, return existing recipe so UI can refresh
+        meal_name = (request.get_json() or {}).get('meal_name')
+        if meal_name:
+            existing = Recipe.query.filter_by(meal_name=meal_name).first()
+            if existing:
+                return jsonify({
+                    'success': True,
+                    'message': 'Food already exists',
+                    'recipe': {
+                        **_recipe_json(existing),
+                        'catalog_serving_label': existing.catalog_serving_label(),
+                        'is_custom_food': existing.is_custom_food,
+                    },
+                })
         return jsonify({'success': False, 'message': str(e)})
 
 

@@ -3,7 +3,7 @@ services:
     name: ape-wellness-tracker
     runtime: python
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: python misc/scripts/import_fdc_foundation.py --import-all && python misc/scripts/prune_non_fdc_foods.py
+    preDeployCommand: python -c "from backend import create_app; create_app()"
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 run:app
     envVars:
       - key: PYTHON_VERSION

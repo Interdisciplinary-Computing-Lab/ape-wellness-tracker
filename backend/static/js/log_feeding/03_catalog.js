@@ -71,6 +71,9 @@ function foodItemMatchesCategory(item, category) {
     if (category === 'favorites') {
         return item.getAttribute('data-favorite') === 'true';
     }
+    if (category === 'custom') {
+        return item.getAttribute('data-custom') === 'true';
+    }
     return item.getAttribute('data-category') === category;
 }
 
@@ -162,6 +165,20 @@ function toggleFoodFavorite(event, btn) {
             if (currentCategory) {
                 applyFoodFilters();
             }
+        }
+        // Sync favorite stars in the Custom Foods table (and any other matching buttons)
+        document.querySelectorAll('.food-favorite-btn[data-recipe-id="' + recipeId + '"]').forEach(function(starBtn) {
+            const favoriteValue = result.data.is_favorite ? 'true' : 'false';
+            starBtn.setAttribute('data-favorite', favoriteValue);
+            starBtn.title = result.data.is_favorite ? 'Remove from favorites' : 'Favorite this food';
+            const icon = starBtn.querySelector('i');
+            if (icon) {
+                icon.className = result.data.is_favorite ? 'fas fa-star' : 'fas fa-star-o';
+            }
+        });
+        const customRow = document.querySelector('#customFoodsBody tr[data-recipe-id="' + recipeId + '"]');
+        if (customRow) {
+            // already updated via button query above
         }
     })
     .catch(function(error) {

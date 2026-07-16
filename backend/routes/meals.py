@@ -201,23 +201,28 @@ def save_feeding():
 
                 recipe = Recipe.query.filter_by(meal_name=food_name).first()
                 if not recipe:
-                    default_category = FoodCategory.query.filter_by(is_active=True).first()
-                    food_category = default_category.name if default_category else 'Other'
+                    from backend.helpers import sync_recipe_category
+                    food_category = (item.get('food_category') or '').strip() or 'Other'
                     recipe = Recipe(
                         meal_name=food_name,
                         description=f"Quick added: {food_name}",
                         calories=catalog_calories,
                         quantity=catalog_quantity,
                         unit_of_measurement=catalog_unit,
-                        source=source,
-                        food_category=food_category,
+                        source=source or 'Custom',
                         protein_g=nutrition_defaults['protein_g'],
                         fiber_g=nutrition_defaults['fiber_g'],
                     )
+                    sync_recipe_category(recipe, food_category)
                     db.session.add(recipe)
                     db.session.flush()
-                elif source and not recipe.source:
-                    recipe.source = source
+                else:
+                    if source and not recipe.source:
+                        recipe.source = source
+                    food_category = (item.get('food_category') or '').strip()
+                    if food_category and recipe.is_custom_food:
+                        from backend.helpers import sync_recipe_category
+                        sync_recipe_category(recipe, food_category)
 
                 if not recipe.id:
                     raise ValueError(f"Could not resolve recipe for {food_name}")

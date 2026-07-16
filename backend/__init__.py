@@ -38,7 +38,7 @@ def _load_or_create_instance_secret(instance_path, filename, env_var, nbytes=32)
     return value
 
 
-def create_app(*, sync_fdc_catalog: bool = True):
+def create_app(*, sync_fdc_catalog: bool = False):
     template_folder = os.path.join(os.path.dirname(__file__), 'templates')
     static_folder = os.path.join(os.path.dirname(__file__), 'static')
 
@@ -137,12 +137,17 @@ def create_app(*, sync_fdc_catalog: bool = True):
         # Ensure standard apes exist when app starts
         ensure_standard_apes()
         
-        # Ensure food categories (and staff custom names with FDC data when CSVs present)
+        # Kitchen cheat sheet is the food catalog (USDA FDC foods are removed)
         ensure_standard_food_data()
         ensure_kitchen_foods()
-        ensure_custom_display_foods()
+        remove_fdc_foods()
+        # Do not import USDA FDC catalog — cheat sheet only
         if sync_fdc_catalog:
-            ensure_fdc_food_catalog()
+            warnings.warn(
+                "sync_fdc_catalog=True is ignored; food catalog is kitchen cheat sheet only.",
+                UserWarning,
+                stacklevel=2,
+            )
 
     return app
 
@@ -271,79 +276,115 @@ def ensure_standard_food_data():
 KITCHEN_CHEAT_SHEET_SOURCE = "Kitchen cheat sheet"
 
 
-def ensure_kitchen_foods():
-    """Seed kitchen cheat-sheet foods with practical serving sizes (not per-100g)."""
-    from backend.models.entry import FoodCategory, Recipe
-
+def _load_kitchen_foods_json():
     data_path = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "data", "kitchen_foods.json"
     )
     try:
         with open(data_path, encoding="utf-8") as f:
-            foods = json.load(f)
+            return json.load(f)
     except FileNotFoundError:
-        return
+        return []
     except json.JSONDecodeError as e:
         print(f"[ERROR] Failed to parse kitchen foods data file: {e}. Skipping.")
-        return
+        return []
 
+
+def ensure_kitchen_foods():
+    """Seed/update kitchen cheat-sheet foods with practical serving sizes (not per-100g)."""
+    from backend.models.entry import FoodCategory, Recipe
+    from backend.helpers import sync_recipe_category
+
+    foods = _load_kitchen_foods_json()
     if not foods:
         return
 
     categories = {c.name: c for c in FoodCategory.query.filter_by(is_active=True).all()}
     created_count = 0
+    updated_count = 0
 
     for item in foods:
         meal_name = item["meal_name"]
-        existing = Recipe.query.filter_by(meal_name=meal_name).first()
-        if existing:
-            continue
-
         cat_name = item.get("food_category", "Other")
         cat = categories.get(cat_name)
+        calories = int(round(float(item["calories"])))
+        quantity = float(item.get("quantity", 1))
+        unit = item.get("unit_of_measurement") or "serving"
+        description = item.get("description", meal_name)
+        source = item.get("source", KITCHEN_CHEAT_SHEET_SOURCE)
+
+        existing = Recipe.query.filter_by(meal_name=meal_name).first()
+        if existing:
+            # Replace FDC / legacy rows with cheat-sheet values; keep staff customs untouched
+            # only when name collides with a non-kitchen non-FDC custom? Prefer cheat sheet.
+            existing.calories = calories
+            existing.quantity = quantity
+            existing.unit_of_measurement = unit
+            existing.description = description
+            existing.food_category = cat_name
+            existing.source = source
+            existing.fdc_id = None
+            existing.gram_weight = None
+            existing.category_id = cat.id if cat else None
+            if hasattr(existing, "is_favorite") and existing.is_favorite is None:
+                existing.is_favorite = False
+            sync_recipe_category(existing, cat_name)
+            updated_count += 1
+            continue
+
         recipe = Recipe(
             meal_name=meal_name,
-            description=item.get("description", meal_name),
-            calories=int(item["calories"]),
-            quantity=float(item.get("quantity", 1)),
-            unit_of_measurement=item.get("unit_of_measurement"),
+            description=description,
+            calories=calories,
+            quantity=quantity,
+            unit_of_measurement=unit,
             food_category=cat_name,
-            source=item.get("source", KITCHEN_CHEAT_SHEET_SOURCE),
+            source=source,
             fdc_id=None,
+            gram_weight=None,
             category_id=cat.id if cat else None,
         )
         db.session.add(recipe)
         created_count += 1
 
-    if created_count:
+    if created_count or updated_count:
         db.session.commit()
-        print(f"[SUCCESS] Seeded {created_count} kitchen cheat-sheet food(s)")
+        print(
+            f"[SUCCESS] Kitchen cheat sheet: {created_count} created, "
+            f"{updated_count} updated"
+        )
+
+
+def remove_fdc_foods():
+    """Delete all USDA FDC catalog foods (and their meal log rows)."""
+    from backend.models.entry import Meals, Recipe
+    from sqlalchemy import or_
+
+    fdc_recipes = Recipe.query.filter(
+        or_(
+            Recipe.fdc_id.isnot(None),
+            Recipe.source.like("USDA Foundation Foods%"),
+        )
+    ).all()
+
+    if not fdc_recipes:
+        return 0
+
+    removed = 0
+    for recipe in fdc_recipes:
+        Meals.query.filter_by(recipe_id=recipe.id).delete(synchronize_session=False)
+        db.session.delete(recipe)
+        removed += 1
+
+    db.session.commit()
+    print(f"[SUCCESS] Removed {removed} USDA FDC food(s); catalog is kitchen cheat sheet only")
+    return removed
 
 
 def ensure_fdc_food_catalog():
-    """Import bundled USDA Foundation Foods and remove duplicate FDC catalog entries."""
-    from backend.utils.fdc_loader import FdcFoundationLoader, RAW_DIR, load_category_map
+    """Deprecated: USDA FDC import disabled — kitchen cheat sheet is the catalog."""
+    remove_fdc_foods()
 
-    if not os.path.isfile(os.path.join(RAW_DIR, "foundation_food.csv")):
-        return
-
-    from misc.scripts.import_fdc_foundation import import_all_fdc_foods
-    from misc.scripts.prune_non_fdc_foods import prune_non_fdc_recipes
-
-    loader = FdcFoundationLoader()
-    category_map = load_category_map()
-    created, updated, _skipped = import_all_fdc_foods(
-        loader, category_map, dry_run=False, include_excluded=False, verbose=False
-    )
-    if created or updated:
-        db.session.commit()
-
-    removed = prune_non_fdc_recipes(dry_run=False, verbose=False)
-    if created or updated or removed:
-        print(
-            f"[SUCCESS] FDC catalog sync: {created} created, {updated} updated, "
-            f"{removed} legacy food(s) removed"
-        )
 
 
 _RETIRED_STAFF_FOODS = {

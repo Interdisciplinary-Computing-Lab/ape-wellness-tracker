@@ -107,7 +107,8 @@ function saveFeeding() {
             quantity: loggedQty / catalogQty,
             recipe_quantity: catalogQty,
             unit: item.unit || '',
-            source: item.source || ''
+            source: item.source || '',
+            food_category: item.foodCategory || ''
         };
     });
     

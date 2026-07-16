@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
 let currentFoodCategory = 'all';
 
 const FOOD_UNIT_OPTIONS = [
-    'piece', 'whole', 'cup', 'tbsp', 'tsp', 'g', 'oz', 'slice', 'serving', 'ear', 'stalk', 'nut',
+    'piece', 'whole', 'cup', 'tbsp', 'tsp', 'g', 'oz', 'slice', 'serving',
 ];
 
 function initFoodUnitFields() {
@@ -113,6 +113,9 @@ function itemMatchesCategory(item, category) {
     }
     if (category === 'favorites') {
         return item.dataset.favorite === 'true';
+    }
+    if (category === 'custom') {
+        return item.dataset.custom === 'true';
     }
     if (category === 'Enrichment Treats') {
         return itemCategory === 'Enrichment Treats' || itemCategory === 'Dried Fruits';
@@ -225,7 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const recipeCalories = this.getAttribute('data-calories');
             const recipeQuantity = this.getAttribute('data-quantity') || '1.0';
             const recipeUnit = this.getAttribute('data-unit') || '';
-            const recipeSource = this.getAttribute('data-source') || '';
             const recipeDescription = this.getAttribute('data-description');
             
             // Populate the edit form
@@ -240,7 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editCalories').value = recipeCalories;
             document.getElementById('editQuantity').value = recipeQuantity;
             setFoodUnitField('edit', recipeUnit);
-            document.getElementById('editSource').value = recipeSource;
             document.getElementById('editDescription').value = recipeDescription || '';
             
             // Set the form action
@@ -272,16 +273,20 @@ document.addEventListener('DOMContentLoaded', function() {
 function updateManageFavoriteUi(foodItem, isFavorite) {
     const favoriteValue = isFavorite ? 'true' : 'false';
     foodItem.dataset.favorite = favoriteValue;
-    const starBtn = foodItem.querySelector('.food-favorite-btn');
-    if (starBtn) {
+    foodItem.querySelectorAll('.food-favorite-btn').forEach(function(starBtn) {
         starBtn.dataset.favorite = favoriteValue;
-        starBtn.title = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+        starBtn.setAttribute('data-favorite', favoriteValue);
+        starBtn.title = isFavorite ? 'Remove from favorites' : 'Favorite this food';
         starBtn.setAttribute('aria-label', starBtn.title);
         const icon = starBtn.querySelector('i');
         if (icon) {
             icon.className = isFavorite ? 'fas fa-star' : 'fas fa-star-o';
         }
-    }
+        const label = starBtn.querySelector('.favorite-btn-label');
+        if (label) {
+            label.textContent = isFavorite ? 'Favorited' : 'Favorite';
+        }
+    });
 }
 
 function updateManageFavoritesFilterCount() {

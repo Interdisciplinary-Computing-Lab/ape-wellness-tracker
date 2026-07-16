@@ -57,6 +57,11 @@
                 <span class="filter-text">Favorites</span>
                 <span class="filter-count">({{ recipes|selectattr('is_favorite')|list|length }})</span>
             </button>
+            <button type="button" class="filter-btn" data-category="custom">
+                <i class="fas fa-pen"></i>
+                <span class="filter-text">Custom</span>
+                <span class="filter-count">({{ recipes|selectattr('is_custom_food')|list|length }})</span>
+            </button>
             <button type="button" class="filter-btn active" data-category="all">
                 <i class="fas fa-th-list"></i>
                 <span class="filter-text">All</span>
@@ -113,6 +118,7 @@
     <div class="col-lg-4 col-md-6 mb-3 food-item"
          data-recipe-id="{{ recipe.id }}"
          data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
+         data-custom="{{ 'true' if recipe.is_custom_food else 'false' }}"
          data-category="{{ recipe.food_category or 'Other' }}"
          data-name="{{ recipe.meal_name|lower }}"
          data-description="{{ (recipe.description or '')|lower }}"
@@ -136,13 +142,16 @@
                                 class="btn btn-link btn-sm p-0 mr-2 food-favorite-btn"
                                 data-recipe-id="{{ recipe.id }}"
                                 data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
-                                title="{{ 'Remove from favorites' if recipe.is_favorite else 'Add to favorites' }}"
-                                aria-label="{{ 'Remove from favorites' if recipe.is_favorite else 'Add to favorites' }}">
+                                title="{{ 'Remove from favorites' if recipe.is_favorite else 'Favorite this food' }}"
+                                aria-label="{{ 'Remove from favorites' if recipe.is_favorite else 'Favorite this food' }}">
                             <i class="fas fa-star{{ '' if recipe.is_favorite else '-o' }}"></i>
                         </button>
                         <span class="badge badge-success">{{ recipe.calories }} cal</span>
                     </div>
                 </div>
+                {% if recipe.is_custom_food %}
+                <span class="badge badge-secondary mb-2">Custom</span>
+                {% endif %}
                 {% if recipe.description %}
                 <p class="text-muted small mb-2">{{ recipe.description }}</p>
                 {% endif %}
@@ -152,6 +161,15 @@
                         {{ recipe.food_category or 'Other' }}
                     </span>
                     <div class="btn-group btn-group-sm">
+                        <button type="button"
+                                class="btn btn-outline-warning food-favorite-btn"
+                                data-recipe-id="{{ recipe.id }}"
+                                data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
+                                title="{{ 'Remove from favorites' if recipe.is_favorite else 'Favorite this food' }}"
+                                aria-label="{{ 'Remove from favorites' if recipe.is_favorite else 'Favorite this food' }}">
+                            <i class="fas fa-star{{ '' if recipe.is_favorite else '-o' }}"></i>
+                            <span class="favorite-btn-label d-none d-sm-inline">{{ 'Favorited' if recipe.is_favorite else 'Favorite' }}</span>
+                        </button>
                         <button type="button" class="btn btn-outline-primary edit-food-btn" 
                                 data-id="{{ recipe.id }}" 
                                 data-name="{{ recipe.meal_name }}" 
@@ -231,20 +249,12 @@
                             <option value="oz">oz</option>
                             <option value="slice">slice</option>
                             <option value="serving">serving</option>
-                            <option value="ear">ear</option>
-                            <option value="stalk">stalk</option>
-                            <option value="nut">nut</option>
                             <option value="__custom__">Other (custom)…</option>
                         </select>
                         <input type="text" class="form-control mt-2 food-unit-custom d-none" id="addUnitCustom"
                                placeholder="Enter custom unit">
                         <input type="hidden" class="food-unit-hidden" name="unit_of_measurement" id="unit_of_measurement" value="piece">
                         <small class="form-text text-muted">Calories are for one serving of this amount/unit</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="source">Data Source</label>
-                        <input type="text" class="form-control" id="source" name="source" placeholder="e.g., USDA Foundation Foods">
-                        <small class="form-text text-muted">Source of nutritional data (e.g., "USDA Foundation Foods")</small>
                     </div>
                     <div class="form-group">
                         <label for="description">Description</label>
@@ -310,20 +320,12 @@
                             <option value="oz">oz</option>
                             <option value="slice">slice</option>
                             <option value="serving">serving</option>
-                            <option value="ear">ear</option>
-                            <option value="stalk">stalk</option>
-                            <option value="nut">nut</option>
                             <option value="__custom__">Other (custom)…</option>
                         </select>
                         <input type="text" class="form-control mt-2 food-unit-custom d-none" id="editUnitCustom"
                                placeholder="Enter custom unit">
                         <input type="hidden" class="food-unit-hidden" name="unit_of_measurement" id="editUnitOfMeasurement" value="">
                         <small class="form-text text-muted">Calories are for one serving of this amount/unit</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="editSource">Data Source</label>
-                        <input type="text" class="form-control" id="editSource" name="source" placeholder="e.g., USDA Foundation Foods">
-                        <small class="form-text text-muted">Source of nutritional data (e.g., "USDA Foundation Foods")</small>
                     </div>
                     <div class="form-group">
                         <label for="editDescription">Description</label>

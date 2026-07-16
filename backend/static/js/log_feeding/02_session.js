@@ -9,21 +9,23 @@ function addCustomFood() {
     const quantity = parseFloat(document.getElementById('customQuantity').value) || 1.0;
     const unitSelect = document.getElementById('customUnit');
     const unit = unitSelect.options[unitSelect.selectedIndex].value.trim();
-    const calories = parseInt(document.getElementById('customCalories').value);
-    
+    const calories = parseInt(document.getElementById('customCalories').value, 10);
+    const categoryEl = document.getElementById('customCategory');
+    const foodCategory = categoryEl ? categoryEl.value.trim() : 'Other';
+
     if (!name || !calories) {
         alert('Please enter food name and calories');
         return;
     }
-    
+
     if (isNaN(quantity) || quantity <= 0) {
         alert('Please enter a valid quantity (must be greater than 0)');
         return;
     }
-    
+
     // Normalize unit
     const normalizedUnit = normalizeUnit(unit);
-    
+
     // User enters total calories for the quantity they are logging; store that as the catalog
     // serving (calories + recipeQuantity) so quantity scaling applies without gram_weight.
     const existingIndex = feedingItems.findIndex(function(item) { return item.name === name; });
@@ -33,6 +35,8 @@ function addCustomFood() {
         feedingItems[existingIndex].quantity = quantity;
         feedingItems[existingIndex].unit = normalizedUnit;
         feedingItems[existingIndex].catalogUnit = normalizedUnit;
+        feedingItems[existingIndex].source = 'Custom';
+        feedingItems[existingIndex].foodCategory = foodCategory;
         recalculateItemCalories(feedingItems[existingIndex]);
     } else {
         const item = FN.buildFeedingItem({
@@ -40,23 +44,29 @@ function addCustomFood() {
             calories: calories,
             recipeQuantity: quantity,
             unitRaw: unit,
-            source: '',
+            source: 'Custom',
         });
         item.calories = calories;
         item.recipeQuantity = quantity;
         item.quantity = quantity;
         item.unit = normalizedUnit;
         item.catalogUnit = normalizedUnit;
+        item.foodCategory = foodCategory;
         recalculateItemCalories(item);
         feedingItems.push(item);
     }
-    
+
+    saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory);
+
     // Clear form
     document.getElementById('customFoodName').value = '';
     document.getElementById('customQuantity').value = '1';
     document.getElementById('customUnit').selectedIndex = 0; // Reset to "piece"
     document.getElementById('customCalories').value = '';
-    
+    if (categoryEl) {
+        categoryEl.selectedIndex = 0;
+    }
+
     updateFeedingSummary();
     updateSaveButton();
     updateStats();
@@ -481,3 +491,395 @@ function initFeedingSummaryListeners() {
         }
     });
 }
+
+function saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory) {
+    const cfg = window.LOG_FEEDING_CONFIG || {};
+    const url = cfg.createRecipeUrl || '/api/recipes';
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            meal_name: name,
+            calories: calories,
+            quantity: quantity,
+            unit_of_measurement: unit,
+            food_category: foodCategory || 'Other',
+            source: 'Custom',
+            description: 'Quick added: ' + name
+        })
+    })
+        .then(function(response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, data: data };
+            });
+        })
+        .then(function(result) {
+            if (result.data && result.data.recipe) {
+                upsertCustomFoodInUi(result.data.recipe);
+            }
+        })
+        .catch(function(error) {
+            console.warn('Could not save custom food to catalog immediately:', error);
+        });
+}
+
+function catalogServingLabelFromRecipe(recipe) {
+    if (recipe.catalog_serving_label) {
+        return recipe.catalog_serving_label;
+    }
+    const qty = recipe.quantity != null ? recipe.quantity : 1;
+    const unit = recipe.unit_of_measurement || 'serving';
+    if (qty === 1 || qty === 1.0) {
+        return '1 ' + unit;
+    }
+    return qty + ' ' + unit;
+}
+
+function upsertCustomFoodInUi(recipe) {
+    if (!recipe || !recipe.meal_name) {
+        return;
+    }
+    const name = recipe.meal_name;
+    const calories = recipe.calories;
+    const quantity = recipe.quantity != null ? recipe.quantity : 1;
+    const unit = recipe.unit_of_measurement || '';
+    const category = recipe.food_category || 'Other';
+    const recipeId = recipe.id;
+    const isFavorite = !!recipe.is_favorite;
+    const servingLabel = catalogServingLabelFromRecipe(recipe);
+
+    const grid = document.getElementById('foodsGrid');
+    if (grid && recipeId) {
+        let foodItem = grid.querySelector('.food-item[data-recipe-id="' + recipeId + '"]');
+        if (!foodItem) {
+            foodItem = Array.from(grid.querySelectorAll('.food-item')).find(function(el) {
+                return (el.getAttribute('data-name') || '') === name.toLowerCase();
+            }) || null;
+        }
+        if (!foodItem) {
+            foodItem = document.createElement('div');
+            foodItem.className = 'col-lg-3 col-md-4 col-sm-6 col-6 mb-2 food-item';
+            foodItem.innerHTML =
+                '<div class="food-card-wrap position-relative">' +
+                '<button type="button" class="btn btn-link btn-sm food-favorite-btn p-0"' +
+                ' data-recipe-id="" data-favorite="false" onclick="toggleFoodFavorite(event, this)"' +
+                ' title="Favorite this food"><i class="fas fa-star-o"></i></button>' +
+                '<span class="badge badge-secondary food-custom-badge">Custom</span>' +
+                '<button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card"' +
+                ' data-food="" data-calories="" data-quantity="" data-unit="" data-source="Custom"' +
+                ' data-grams="0" data-name="" data-category=""' +
+                ' onclick="addFoodFromButton(this); return false;">' +
+                '<div class="text-center">' +
+                '<i class="fas fa-tag mb-1 text-secondary"></i>' +
+                '<div class="d-block small font-weight-bold food-card-name"></div>' +
+                '<small class="text-muted d-block food-card-serving"></small>' +
+                '<small class="text-muted font-weight-bold food-card-cal"></small>' +
+                '<small class="d-block text-secondary food-card-category"></small>' +
+                '</div></button></div>';
+            grid.appendChild(foodItem);
+        }
+        foodItem.setAttribute('data-recipe-id', String(recipeId));
+        foodItem.setAttribute('data-favorite', isFavorite ? 'true' : 'false');
+        foodItem.setAttribute('data-custom', 'true');
+        foodItem.setAttribute('data-category', category);
+        foodItem.setAttribute('data-name', name.toLowerCase());
+        foodItem.setAttribute('data-description', ('quick added: ' + name).toLowerCase());
+        foodItem.setAttribute('data-calories', String(calories));
+
+        const starBtn = foodItem.querySelector('.food-favorite-btn');
+        if (starBtn) {
+            starBtn.setAttribute('data-recipe-id', String(recipeId));
+            starBtn.setAttribute('data-favorite', isFavorite ? 'true' : 'false');
+        }
+        const cardBtn = foodItem.querySelector('.quick-food-btn');
+        if (cardBtn) {
+            cardBtn.setAttribute('data-food', name);
+            cardBtn.setAttribute('data-name', name);
+            cardBtn.setAttribute('data-calories', String(calories));
+            cardBtn.setAttribute('data-quantity', String(quantity));
+            cardBtn.setAttribute('data-unit', unit);
+            cardBtn.setAttribute('data-source', 'Custom');
+            cardBtn.setAttribute('data-category', category);
+        }
+        const nameEl = foodItem.querySelector('.food-card-name');
+        if (nameEl) nameEl.textContent = name;
+        const servingEl = foodItem.querySelector('.food-card-serving');
+        if (servingEl) servingEl.textContent = 'per ' + servingLabel;
+        const calEl = foodItem.querySelector('.food-card-cal');
+        if (calEl) calEl.textContent = calories + ' cal';
+        const catEl = foodItem.querySelector('.food-card-category');
+        if (catEl) catEl.textContent = category;
+    }
+
+    const body = document.getElementById('customFoodsBody');
+    if (body) {
+        const empty = document.getElementById('customFoodsEmptyRow');
+        if (empty) empty.remove();
+        let row = recipeId ? body.querySelector('tr[data-recipe-id="' + recipeId + '"]') : null;
+        if (!row) {
+            row = Array.from(body.querySelectorAll('tr[data-custom-row]')).find(function(tr) {
+                const nameCell = tr.children[1];
+                return nameCell && nameCell.textContent.trim() === name;
+            }) || null;
+        }
+        if (!row) {
+            row = document.createElement('tr');
+            row.setAttribute('data-custom-row', 'true');
+            row.innerHTML =
+                '<td><button type="button" class="btn btn-link btn-sm food-favorite-btn food-favorite-btn--inline p-0"' +
+                ' data-recipe-id="" data-favorite="false" onclick="toggleFoodFavorite(event, this)"' +
+                ' title="Favorite this food"><i class="fas fa-star-o"></i></button></td>' +
+                '<td class="font-weight-bold"></td>' +
+                '<td><span class="badge badge-light"></span></td>' +
+                '<td class="text-muted"></td>' +
+                '<td class="font-weight-bold text-primary"></td>' +
+                '<td><button type="button" class="btn btn-outline-primary btn-sm"' +
+                ' data-food="" data-calories="" data-quantity="" data-unit="" data-source="Custom"' +
+                ' data-grams="0" data-name="" data-category=""' +
+                ' onclick="addFoodFromButton(this); return false;">Add</button></td>';
+            body.appendChild(row);
+        }
+        if (recipeId) row.setAttribute('data-recipe-id', String(recipeId));
+        const star = row.querySelector('.food-favorite-btn');
+        if (star && recipeId) {
+            star.setAttribute('data-recipe-id', String(recipeId));
+            star.setAttribute('data-favorite', isFavorite ? 'true' : 'false');
+            const icon = star.querySelector('i');
+            if (icon) icon.className = isFavorite ? 'fas fa-star' : 'fas fa-star-o';
+        }
+        if (row.children[1]) row.children[1].textContent = name;
+        const badge = row.children[2] && row.children[2].querySelector('.badge');
+        if (badge) badge.textContent = category;
+        if (row.children[3]) row.children[3].textContent = servingLabel;
+        if (row.children[4]) row.children[4].textContent = calories + ' cal';
+        const addBtn = row.querySelector('button.btn-outline-primary');
+        if (addBtn) {
+            addBtn.setAttribute('data-food', name);
+            addBtn.setAttribute('data-name', name);
+            addBtn.setAttribute('data-calories', String(calories));
+            addBtn.setAttribute('data-quantity', String(quantity));
+            addBtn.setAttribute('data-unit', unit);
+            addBtn.setAttribute('data-category', category);
+            addBtn.setAttribute('data-source', 'Custom');
+        }
+    }
+
+    const countEl = document.getElementById('customFoodsCount');
+    if (countEl) {
+        countEl.textContent = String(document.querySelectorAll('#customFoodsBody tr[data-custom-row]').length);
+    }
+    const customTab = document.getElementById('custom-tab');
+    if (customTab) {
+        const n = document.querySelectorAll('.food-item[data-custom="true"]').length;
+        customTab.innerHTML = '<i class="fas fa-pen"></i> Custom (' + n + ')';
+    }
+    if (typeof updateFavoritesTabCount === 'function') {
+        updateFavoritesTabCount();
+    }
+}
+
+function saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory) {
+    const cfg = window.LOG_FEEDING_CONFIG || {};
+    const url = cfg.createRecipeUrl || '/api/recipes';
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            meal_name: name,
+            calories: calories,
+            quantity: quantity,
+            unit_of_measurement: unit,
+            food_category: foodCategory || 'Other',
+            source: 'Custom',
+            description: 'Quick added: ' + name
+        })
+    })
+        .then(function(response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, data: data };
+            });
+        })
+        .then(function(result) {
+            if (result.ok && result.data.success && result.data.recipe) {
+                upsertCustomFoodInUi(result.data.recipe);
+                return;
+            }
+            upsertCustomFoodInUi({
+                id: result.data && result.data.recipe && result.data.recipe.id,
+                meal_name: name,
+                calories: calories,
+                quantity: quantity,
+                unit_of_measurement: unit,
+                food_category: foodCategory,
+                source: 'Custom',
+                is_favorite: false
+            });
+        })
+        .catch(function(error) {
+            console.warn('Could not save custom food to catalog immediately:', error);
+        });
+}
+
+function catalogServingLabelFromRecipe(recipe) {
+    if (recipe.catalog_serving_label) {
+        return recipe.catalog_serving_label;
+    }
+    const qty = recipe.quantity != null ? recipe.quantity : 1;
+    const unit = recipe.unit_of_measurement || 'serving';
+    if (qty === 1 || qty === 1.0) {
+        return '1 ' + unit;
+    }
+    return qty + ' ' + unit;
+}
+
+function upsertCustomFoodInUi(recipe) {
+    if (!recipe || !recipe.meal_name) {
+        return;
+    }
+    const name = recipe.meal_name;
+    const calories = recipe.calories;
+    const quantity = recipe.quantity != null ? recipe.quantity : 1;
+    const unit = recipe.unit_of_measurement || '';
+    const category = recipe.food_category || 'Other';
+    const recipeId = recipe.id;
+    const isFavorite = !!recipe.is_favorite;
+    const servingLabel = catalogServingLabelFromRecipe(recipe);
+
+    const grid = document.getElementById('foodsGrid');
+    if (grid && recipeId) {
+        let foodItem = grid.querySelector('.food-item[data-recipe-id="' + recipeId + '"]');
+        if (!foodItem) {
+            foodItem = Array.from(grid.querySelectorAll('.food-item')).find(function(el) {
+                return (el.getAttribute('data-name') || '') === name.toLowerCase();
+            }) || null;
+        }
+        if (!foodItem) {
+            foodItem = document.createElement('div');
+            foodItem.className = 'col-lg-3 col-md-4 col-sm-6 col-6 mb-2 food-item';
+            foodItem.innerHTML =
+                '<div class="food-card-wrap position-relative">' +
+                '<button type="button" class="btn btn-link btn-sm food-favorite-btn p-0"' +
+                ' data-recipe-id="" data-favorite="false" onclick="toggleFoodFavorite(event, this)"' +
+                ' title="Favorite this food"><i class="fas fa-star-o"></i></button>' +
+                '<span class="badge badge-secondary food-custom-badge">Custom</span>' +
+                '<button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card"' +
+                ' data-food="" data-calories="" data-quantity="" data-unit="" data-source="Custom"' +
+                ' data-grams="0" data-name="" data-category=""' +
+                ' onclick="addFoodFromButton(this); return false;">' +
+                '<div class="text-center">' +
+                '<i class="fas fa-tag mb-1 text-secondary"></i>' +
+                '<div class="d-block small font-weight-bold food-card-name"></div>' +
+                '<small class="text-muted d-block food-card-serving"></small>' +
+                '<small class="text-muted font-weight-bold food-card-cal"></small>' +
+                '<small class="d-block text-secondary food-card-category"></small>' +
+                '</div></button></div>';
+            grid.appendChild(foodItem);
+        }
+        foodItem.setAttribute('data-recipe-id', recipeId || '');
+        foodItem.setAttribute('data-favorite', isFavorite ? 'true' : 'false');
+        foodItem.setAttribute('data-custom', 'true');
+        foodItem.setAttribute('data-category', category);
+        foodItem.setAttribute('data-name', name.toLowerCase());
+        foodItem.setAttribute('data-description', ('quick added: ' + name).toLowerCase());
+        foodItem.setAttribute('data-calories', String(calories));
+
+        const starBtn = foodItem.querySelector('.food-favorite-btn');
+        if (starBtn) {
+            starBtn.setAttribute('data-recipe-id', recipeId || '');
+            starBtn.setAttribute('data-favorite', isFavorite ? 'true' : 'false');
+        }
+        const cardBtn = foodItem.querySelector('.quick-food-btn');
+        if (cardBtn) {
+            cardBtn.setAttribute('data-food', name);
+            cardBtn.setAttribute('data-name', name);
+            cardBtn.setAttribute('data-calories', String(calories));
+            cardBtn.setAttribute('data-quantity', String(quantity));
+            cardBtn.setAttribute('data-unit', unit);
+            cardBtn.setAttribute('data-source', 'Custom');
+            cardBtn.setAttribute('data-category', category);
+        }
+        const nameEl = foodItem.querySelector('.food-card-name');
+        if (nameEl) nameEl.textContent = name;
+        const servingEl = foodItem.querySelector('.food-card-serving');
+        if (servingEl) servingEl.textContent = 'per ' + servingLabel;
+        const calEl = foodItem.querySelector('.food-card-cal');
+        if (calEl) calEl.textContent = calories + ' cal';
+        const catEl = foodItem.querySelector('.food-card-category');
+        if (catEl) catEl.textContent = category;
+    }
+
+    const body = document.getElementById('customFoodsBody');
+    if (body) {
+        const empty = document.getElementById('customFoodsEmptyRow');
+        if (empty) empty.remove();
+        let row = recipeId ? body.querySelector('tr[data-recipe-id="' + recipeId + '"]') : null;
+        if (!row) {
+            row = Array.from(body.querySelectorAll('tr[data-custom-row]')).find(function(tr) {
+                const nameCell = tr.children[1];
+                return nameCell && nameCell.textContent.trim() === name;
+            }) || null;
+        }
+        if (!row) {
+            row = document.createElement('tr');
+            row.setAttribute('data-custom-row', 'true');
+            row.innerHTML =
+                '<td><button type="button" class="btn btn-link btn-sm food-favorite-btn food-favorite-btn--inline p-0"' +
+                ' data-recipe-id="" data-favorite="false" onclick="toggleFoodFavorite(event, this)"' +
+                ' title="Favorite this food"><i class="fas fa-star-o"></i></button></td>' +
+                '<td class="font-weight-bold"></td>' +
+                '<td><span class="badge badge-light"></span></td>' +
+                '<td class="text-muted"></td>' +
+                '<td class="font-weight-bold text-primary"></td>' +
+                '<td><button type="button" class="btn btn-outline-primary btn-sm"' +
+                ' data-food="" data-calories="" data-quantity="" data-unit="" data-source="Custom"' +
+                ' data-grams="0" data-name="" data-category=""' +
+                ' onclick="addFoodFromButton(this); return false;">Add</button></td>';
+            body.appendChild(row);
+        }
+        if (recipeId) row.setAttribute('data-recipe-id', String(recipeId));
+        const star = row.querySelector('.food-favorite-btn');
+        if (star && recipeId) {
+            star.setAttribute('data-recipe-id', String(recipeId));
+            star.setAttribute('data-favorite', isFavorite ? 'true' : 'false');
+            const icon = star.querySelector('i');
+            if (icon) icon.className = isFavorite ? 'fas fa-star' : 'fas fa-star-o';
+        }
+        if (row.children[1]) row.children[1].textContent = name;
+        const badge = row.children[2] && row.children[2].querySelector('.badge');
+        if (badge) badge.textContent = category;
+        if (row.children[3]) row.children[3].textContent = servingLabel;
+        if (row.children[4]) row.children[4].textContent = calories + ' cal';
+        const addBtn = row.querySelector('button.btn-outline-primary');
+        if (addBtn) {
+            addBtn.setAttribute('data-food', name);
+            addBtn.setAttribute('data-name', name);
+            addBtn.setAttribute('data-calories', String(calories));
+            addBtn.setAttribute('data-quantity', String(quantity));
+            addBtn.setAttribute('data-unit', unit);
+            addBtn.setAttribute('data-category', category);
+            addBtn.setAttribute('data-source', 'Custom');
+        }
+    }
+
+    const countEl = document.getElementById('customFoodsCount');
+    if (countEl) {
+        countEl.textContent = String(document.querySelectorAll('#customFoodsBody tr[data-custom-row]').length);
+    }
+    const customTab = document.getElementById('custom-tab');
+    if (customTab) {
+        const n = document.querySelectorAll('.food-item[data-custom="true"]').length;
+        customTab.innerHTML = '<i class="fas fa-pen"></i> Custom (' + n + ')';
+    }
+    if (typeof updateFavoritesTabCount === 'function') {
+        updateFavoritesTabCount();
+    }
+}
+

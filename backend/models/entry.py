@@ -166,6 +166,17 @@ class Recipe(db.Model):
     __table_args__ = (
         sa.CheckConstraint('calories >= 0', name='check_calories_non_negative'),
     )
+
+    @property
+    def is_custom_food(self):
+        """True for staff custom/quick-add foods (not kitchen cheat sheet or USDA)."""
+        if self.fdc_id:
+            return False
+        source = (self.source or '').strip()
+        if source == 'Kitchen cheat sheet':
+            return False
+        return True
+
     
     def format_quantity(self):
         """

@@ -140,6 +140,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" id="custom-tab" data-toggle="pill" href="#custom"
+                               role="tab" aria-controls="custom" aria-selected="false" onclick="filterByCategory('custom', this)">
+                                <i class="fas fa-pen"></i> Custom ({{ recipes|selectattr('is_custom_food')|list|length }})
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" id="all-tab" data-toggle="pill" href="#all" 
                                role="tab" aria-controls="all" aria-selected="false" onclick="filterByCategory('all', this)">
                                 <i class="fas fa-th-list"></i> All ({{ recipes|length }})
@@ -178,6 +184,7 @@
                         <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb-2 food-item" 
                              data-recipe-id="{{ recipe.id }}"
                              data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
+                             data-custom="{{ 'true' if recipe.is_custom_food else 'false' }}"
                              data-category="{{ recipe.food_category or 'Other' }}"
                              data-name="{{ recipe.meal_name|lower }}"
                              data-description="{{ (recipe.description or '')|lower }}"
@@ -188,10 +195,13 @@
                                         data-recipe-id="{{ recipe.id }}"
                                         data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
                                         onclick="toggleFoodFavorite(event, this)"
-                                        title="{{ 'Remove from favorites' if recipe.is_favorite else 'Add to favorites' }}"
-                                        aria-label="{{ 'Remove from favorites' if recipe.is_favorite else 'Add to favorites' }}">
+                                        title="{{ 'Remove from favorites' if recipe.is_favorite else 'Favorite this food' }}"
+                                        aria-label="{{ 'Remove from favorites' if recipe.is_favorite else 'Favorite this food' }}">
                                     <i class="fas fa-star{{ '' if recipe.is_favorite else '-o' }}"></i>
                                 </button>
+                                {% if recipe.is_custom_food %}
+                                <span class="badge badge-secondary food-custom-badge">Custom</span>
+                                {% endif %}
                             <button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card{% if recipe.is_favorite %} food-card--favorite{% endif %}" 
                                     data-food="{{ recipe.meal_name }}" 
                                     data-calories="{{ recipe.calories }}" 
@@ -217,7 +227,10 @@
                                     <div class="d-block small font-weight-bold">{{ recipe.meal_name }}</div>
                                     <small class="text-muted d-block">per {{ recipe.catalog_serving_label() }}</small>
                                     <small class="text-muted font-weight-bold">{{ recipe.calories }} cal</small>
-                                    {% if recipe.description %}
+                                    {% if recipe.is_custom_food %}
+                                    <small class="d-block text-secondary">{{ recipe.food_category or 'Other' }}</small>
+                                    {% endif %}
+                                    {% if recipe.description and not recipe.is_custom_food %}
                                     <div class="small text-muted mt-1" style="font-size: 0.7rem; opacity: 0.8;">
                                         {{ recipe.description[:30] }}{% if recipe.description|length > 30 %}...{% endif %}
                                     </div>
@@ -254,6 +267,16 @@
                         <label for="customFoodName" class="small text-muted mb-1">Food name</label>
                         <input type="text" class="form-control" id="customFoodName"
                                placeholder="e.g. enrichment mix" value="{{ pre_filled_food }}">
+                    </div>
+                    <div class="form-group custom-food-field custom-food-field-category">
+                        <label for="customCategory" class="small text-muted mb-1">Category</label>
+                        <select class="form-control" id="customCategory">
+                            {% for category in categories %}
+                            <option value="{{ category.name }}"{% if loop.first %} selected{% endif %}>{{ category.name }}</option>
+                            {% else %}
+                            <option value="Other" selected>Other</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="form-group custom-food-field custom-food-field-qty">
                         <label for="customQuantity" class="small text-muted mb-1">Qty</label>
@@ -324,6 +347,82 @@
                         </button>
                     </div>
                 </form>
+                <p class="small text-muted mb-0 mt-2">
+                    Saved to the catalog under your chosen category. Star
+                    (<i class="fas fa-star text-warning"></i> any food to favorite it.
+                </p>
+            </div>
+        </div>
+
+        <div class="card card-outline card-info mt-3" id="customFoodsSection">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-pen mr-2"></i>Custom Foods
+                    <span class="badge badge-info ml-1" id="customFoodsCount">{{ recipes|selectattr('is_custom_food')|list|length }}</span>
+                </h3>
+                <button type="button" class="btn btn-sm btn-outline-info mt-1"
+                        onclick="filterByCategory('custom', document.getElementById('custom-tab'))">
+                    Show in grid
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0" id="customFoodsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 2.5rem;"></th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Serving</th>
+                                <th>Calories</th>
+                                <th style="width: 5rem;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="customFoodsBody">
+                            {% set custom_recipes = recipes|selectattr('is_custom_food')|list %}
+                            {% if custom_recipes %}
+                                {% for recipe in custom_recipes|sort(attribute='meal_name') %}
+                                <tr data-recipe-id="{{ recipe.id }}" data-custom-row="true">
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-link btn-sm food-favorite-btn food-favorite-btn--inline p-0"
+                                                data-recipe-id="{{ recipe.id }}"
+                                                data-favorite="{{ 'true' if recipe.is_favorite else 'false' }}"
+                                                onclick="toggleFoodFavorite(event, this)"
+                                                title="{{ 'Remove from favorites' if recipe.is_favorite else 'Favorite this food' }}">
+                                            <i class="fas fa-star{{ '' if recipe.is_favorite else '-o' }}"></i>
+                                        </button>
+                                    </td>
+                                    <td class="font-weight-bold">{{ recipe.meal_name }}</td>
+                                    <td><span class="badge badge-light">{{ recipe.food_category or 'Other' }}</span></td>
+                                    <td class="text-muted">{{ recipe.catalog_serving_label() }}</td>
+                                    <td class="font-weight-bold text-primary">{{ recipe.calories }} cal</td>
+                                    <td>
+                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                data-food="{{ recipe.meal_name }}"
+                                                data-calories="{{ recipe.calories }}"
+                                                data-quantity="{{ recipe.quantity or 1.0 }}"
+                                                data-unit="{{ recipe.unit_of_measurement or '' }}"
+                                                data-source="Custom"
+                                                data-grams="0"
+                                                data-name="{{ recipe.meal_name }}"
+                                                data-category="{{ recipe.food_category or 'Other' }}"
+                                                onclick="addFoodFromButton(this); return false;">
+                                            Add
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr id="customFoodsEmptyRow">
+                                    <td colspan="6" class="text-center text-muted py-3">
+                                        No custom foods yet. Use Quick Add above to save one.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -412,6 +511,7 @@
 <script>
 window.LOG_FEEDING_CONFIG = {
     saveUrl: {{ url_for('site.save_feeding')|tojson }},
+    createRecipeUrl: {{ url_for('site.create_recipe')|tojson }},
     dashboardUrl: {{ url_for('site.dashboard')|tojson }},
     favoriteUrlTemplate: {{ url_for('site.toggle_recipe_favorite', recipe_id=0)|tojson }},
     defaultFeedingDate: {{ default_feeding_date|tojson }},
