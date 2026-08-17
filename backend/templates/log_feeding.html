@@ -54,25 +54,26 @@
                                         </select>
                                         <span class="d-inline-flex align-items-center" style="gap: 0.35rem;">
                                             <span class="badge badge-primary badge-lg px-3 py-2" id="mealTypeBadge"
-                                                  title="Meal type for this log">
-                                                Meal type: <strong id="mealTypeLabel">Breakfast</strong>
+                                                  title="Feeding purpose for this log">
+                                                Purpose: <strong id="mealTypeLabel">Forage</strong>
                                             </span>
                                             <button type="button" class="btn btn-sm btn-outline-secondary"
                                                     id="editMealTypeBtn" onclick="toggleMealTypeEdit()"
-                                                    title="Change meal type">
+                                                    title="Change feeding purpose">
                                                 <i class="fas fa-pencil-alt" aria-hidden="true"></i>
-                                                <span class="sr-only">Change meal type</span>
+                                                <span class="sr-only">Change feeding purpose</span>
                                             </button>
                                             <select class="form-control form-control-sm d-none" id="mealTypeSelect"
                                                     style="width: auto; min-width: 8rem;"
                                                     onchange="onMealTypeSelectChange()"
-                                                    title="Meal type">
-                                                <option value="Breakfast">Breakfast</option>
-                                                <option value="Lunch">Lunch</option>
-                                                <option value="Dinner">Dinner</option>
+                                                    title="Feeding purpose">
+                                                <option value="Forage">Forage</option>
+                                                <option value="Enrichment">Enrichment</option>
+                                                <option value="Reward">Reward</option>
+                                                <option value="Other">Other</option>
                                             </select>
                                         </span>
-                                        <input type="hidden" id="mealType" value="Breakfast">
+                                        <input type="hidden" id="mealType" value="Forage">
                                     </div>
                                 </div>
                             </div>
@@ -119,7 +120,7 @@
                         <small class="text-muted">{{ ape.age }}y</small>
                         {% set ape_cals_map = ape_calories_today|default({}) %}
                         {% set ape_meal_map = ape_meal_calories_today|default({}) %}
-                        {% set meal_labels = feeding_period_meal_labels|default([('Breakfast', 'Breakfast'), ('Lunch', 'Lunch'), ('Dinner', 'Dinner')]) %}
+                        {% set meal_labels = feeding_period_meal_labels|default([('Forage', 'Forage'), ('Enrichment', 'Enrichment'), ('Reward', 'Reward'), ('Other', 'Other')]) %}
                         {% set meal_breakdown = ape_meal_map.get(ape.id, {}) %}
                         <div class="ape-today-calories ape-log-calories mt-2"
                              data-ape-calories-block="{{ ape.id }}">
@@ -558,7 +559,7 @@ window.LOG_FEEDING_CONFIG = {
     preFilledApe: {{ pre_filled_ape|tojson }},
     apeCaloriesToday: {{ ape_calories_today|default({})|tojson }},
     apeMealCaloriesToday: {{ ape_meal_calories_today|default({})|tojson }},
-    mealTypeLabels: ["Breakfast", "Lunch", "Dinner"]
+    mealTypeLabels: ["Forage", "Enrichment", "Reward", "Other"]
 };
 </script>
 <script src="{{ url_for('static', filename='js/log_feeding/00_state.js') }}"></script>

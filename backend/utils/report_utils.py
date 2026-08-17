@@ -4,6 +4,7 @@ Report generation utilities for the Ape Wellness Tracker application.
 
 import io
 import csv
+from backend.utils.feeding_purposes import FEEDING_PURPOSES
 from datetime import datetime
 from flask import send_file
 
@@ -13,9 +14,7 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
                        meal_type_totals=None):
     """Generate CSV report"""
     meal_type_totals = meal_type_totals or {
-        'Breakfast': 0,
-        'Lunch': 0,
-        'Dinner': 0,
+        purpose: 0 for purpose in FEEDING_PURPOSES
     }
     output = io.StringIO()
     writer = csv.writer(output)
@@ -34,10 +33,10 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     writer.writerow(['Active Apes', len(apes)])
     writer.writerow([])
 
-    # Facility-wide meal type calorie breakdown
-    writer.writerow(['MEAL TYPE CALORIE BREAKDOWN'])
-    writer.writerow(['Meal Type', 'Calories', '% of Total'])
-    for meal_type in ('Breakfast', 'Lunch', 'Dinner'):
+    # Facility-wide feeding-purpose calorie breakdown
+    writer.writerow(['FEEDING PURPOSE CALORIE BREAKDOWN'])
+    writer.writerow(['Feeding Purpose', 'Calories', '% of Total'])
+    for meal_type in FEEDING_PURPOSES:
         cals = meal_type_totals.get(meal_type, 0)
         pct = (cals / total_calories * 100) if total_calories > 0 else 0
         writer.writerow([meal_type, cals, f"{pct:.1f}%"])
@@ -48,9 +47,10 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     writer.writerow([
         'Ape Name',
         'Total Calories',
-        'Breakfast Calories',
-        'Lunch Calories',
-        'Dinner Calories',
+        'Forage Calories',
+        'Enrichment Calories',
+        'Reward Calories',
+        'Other Calories',
         'Total Meals',
         'Avg Calories/Meal',
         'Total Protein (g)',
@@ -61,9 +61,10 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
         writer.writerow([
             stats['name'],
             stats['calories'],
-            stats.get('breakfast_calories', 0),
-            stats.get('lunch_calories', 0),
-            stats.get('dinner_calories', 0),
+            stats.get('forage_calories', 0),
+            stats.get('enrichment_calories', 0),
+            stats.get('reward_calories', 0),
+            stats.get('other_calories', 0),
             stats['meal_count'],
             f"{stats['avg_calories']:.1f}",
             stats.get('protein_g', 0.0),
@@ -88,18 +89,20 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     writer.writerow([
         'Date',
         'Total Calories',
-        'Breakfast Calories',
-        'Lunch Calories',
-        'Dinner Calories',
+        'Forage Calories',
+        'Enrichment Calories',
+        'Reward Calories',
+        'Other Calories',
         'Total Meals',
     ])
     for day in daily_data:
         writer.writerow([
             day['date'],
             day['calories'],
-            day.get('breakfast_calories', 0),
-            day.get('lunch_calories', 0),
-            day.get('dinner_calories', 0),
+            day.get('forage_calories', 0),
+            day.get('enrichment_calories', 0),
+            day.get('reward_calories', 0),
+            day.get('other_calories', 0),
             day['meals'],
         ])
     

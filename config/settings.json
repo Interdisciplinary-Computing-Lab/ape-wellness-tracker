@@ -3,17 +3,17 @@
         "morning": {
             "display_name": "Morning (6 AM - 12 PM)",
             "default_hour": 9,
-            "meal_type": "Breakfast"
+            "meal_type": "Forage"
         },
         "afternoon": {
             "display_name": "Afternoon (12 PM - 6 PM)",
             "default_hour": 15,
-            "meal_type": "Lunch"
+            "meal_type": "Enrichment"
         },
         "evening": {
             "display_name": "Evening (6 PM - 12 AM)",
             "default_hour": 21,
-            "meal_type": "Dinner"
+            "meal_type": "Reward"
         }
     },
     "nutrition_defaults": {

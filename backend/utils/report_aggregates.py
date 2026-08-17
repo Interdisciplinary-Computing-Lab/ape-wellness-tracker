@@ -2,16 +2,17 @@
 
 from collections import defaultdict
 
+from backend.utils.feeding_purposes import DEFAULT_FEEDING_PURPOSE, FEEDING_PURPOSES
 from backend.utils.meal_nutrition import meal_calories, meal_fiber_g, meal_protein_g
 
-MEAL_TYPES = ('Breakfast', 'Lunch', 'Dinner')
+MEAL_TYPES = FEEDING_PURPOSES
 
 
 def _resolved_meal_type(meal):
     label = getattr(meal, 'resolved_meal_type', None)
     if label in MEAL_TYPES:
         return label
-    return 'Breakfast'
+    return DEFAULT_FEEDING_PURPOSE
 
 
 def build_report_aggregates(meals_in_range, apes, *, for_download=False):
@@ -49,9 +50,10 @@ def build_report_aggregates(meals_in_range, apes, *, for_download=False):
             'avg_calories': ape_avg_calories,
             'protein_g': round(ape_protein, 1),
             'fiber_g': round(ape_fiber, 1),
-            'breakfast_calories': by_meal_type['Breakfast'],
-            'lunch_calories': by_meal_type['Lunch'],
-            'dinner_calories': by_meal_type['Dinner'],
+            'forage_calories': by_meal_type['Forage'],
+            'enrichment_calories': by_meal_type['Enrichment'],
+            'reward_calories': by_meal_type['Reward'],
+            'other_calories': by_meal_type['Other'],
         }
 
     category_stats = defaultdict(lambda: {'count': 0, 'calories': 0})
@@ -79,9 +81,10 @@ def build_report_aggregates(meals_in_range, apes, *, for_download=False):
         lambda: {
             'calories': 0,
             'meals': 0,
-            'breakfast_calories': 0,
-            'lunch_calories': 0,
-            'dinner_calories': 0,
+            'forage_calories': 0,
+            'enrichment_calories': 0,
+            'reward_calories': 0,
+            'other_calories': 0,
         }
     )
     for meal in meals_in_range:
@@ -90,12 +93,7 @@ def build_report_aggregates(meals_in_range, apes, *, for_download=False):
         daily_stats[meal_date]['calories'] += cal
         daily_stats[meal_date]['meals'] += 1
         meal_type = _resolved_meal_type(meal)
-        if meal_type == 'Breakfast':
-            daily_stats[meal_date]['breakfast_calories'] += cal
-        elif meal_type == 'Lunch':
-            daily_stats[meal_date]['lunch_calories'] += cal
-        else:
-            daily_stats[meal_date]['dinner_calories'] += cal
+        daily_stats[meal_date][f'{meal_type.lower()}_calories'] += cal
 
     if for_download:
         daily_data = [
@@ -103,9 +101,10 @@ def build_report_aggregates(meals_in_range, apes, *, for_download=False):
                 'date': d.strftime('%Y-%m-%d'),
                 'calories': stats['calories'],
                 'meals': stats['meals'],
-                'breakfast_calories': stats['breakfast_calories'],
-                'lunch_calories': stats['lunch_calories'],
-                'dinner_calories': stats['dinner_calories'],
+                'forage_calories': stats['forage_calories'],
+                'enrichment_calories': stats['enrichment_calories'],
+                'reward_calories': stats['reward_calories'],
+                'other_calories': stats['other_calories'],
             }
             for d, stats in sorted(daily_stats.items())
         ]
@@ -115,9 +114,10 @@ def build_report_aggregates(meals_in_range, apes, *, for_download=False):
                 'date': d,
                 'calories': stats['calories'],
                 'meals': stats['meals'],
-                'breakfast_calories': stats['breakfast_calories'],
-                'lunch_calories': stats['lunch_calories'],
-                'dinner_calories': stats['dinner_calories'],
+                'forage_calories': stats['forage_calories'],
+                'enrichment_calories': stats['enrichment_calories'],
+                'reward_calories': stats['reward_calories'],
+                'other_calories': stats['other_calories'],
             }
             for d, stats in daily_stats.items()
         ]

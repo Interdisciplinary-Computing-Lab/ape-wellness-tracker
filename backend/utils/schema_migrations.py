@@ -216,7 +216,7 @@ def ensure_meals_logged_at_save_order(db_uri, app_instance_path):
 
 
 def ensure_meals_meal_type(db_uri, app_instance_path):
-    """Add meals.meal_type for Breakfast/Lunch/Dinner overrides."""
+    """Add meals.meal_type for feeding-purpose overrides."""
     db_path = _sqlite_db_path(db_uri, app_instance_path)
     if not db_path:
         return

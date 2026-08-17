@@ -60,7 +60,7 @@ def get_time_period(dt):
         return 'afternoon'
     elif 18 <= hour < 24:
         return 'evening'
-    else:  # 0 <= hour < 6 — overnight maps to morning/breakfast
+    else:  # 0 <= hour < 6 — overnight maps to the morning period
         return 'morning'
 
 def get_time_period_display(dt):

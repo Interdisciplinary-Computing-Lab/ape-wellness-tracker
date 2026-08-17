@@ -9,6 +9,7 @@ from typing import Optional
 
 from backend.models.entry import FoodCategory, Recipe
 from backend.utils.config_loader import get_feeding_period_hour, get_nutrition_defaults
+from backend.utils.feeding_purposes import DEFAULT_FEEDING_PURPOSE, FEEDING_PURPOSES
 from backend.utils.meal_nutrition import meal_calories, meal_serving_scale
 
 
@@ -30,7 +31,7 @@ def meal_to_edit_dict(meal) -> dict:
             'food_name': '',
             'date': meal.date.strftime('%Y-%m-%d') if meal.date else '',
             'feeding_period': meal.feeding_period or 'morning',
-            'meal_type': getattr(meal, 'resolved_meal_type', None) or 'Breakfast',
+            'meal_type': getattr(meal, 'resolved_meal_type', None) or DEFAULT_FEEDING_PURPOSE,
             'calories_logged': meal_calories(meal),
             'catalog_calories': 0,
             'quantity': 1.0,
@@ -133,7 +134,7 @@ def apply_meal_edit(meal, data: dict) -> None:
     if feeding_period == 'night':
         feeding_period = 'evening'
     meal_type = (data.get('meal_type') or '').strip()
-    if meal_type not in ('Breakfast', 'Lunch', 'Dinner'):
+    if meal_type not in FEEDING_PURPOSES:
         from backend.utils.config_loader import get_meal_type_for_period
         meal_type = get_meal_type_for_period(feeding_period)
     if date_str:
