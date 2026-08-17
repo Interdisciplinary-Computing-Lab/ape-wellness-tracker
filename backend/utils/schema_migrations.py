@@ -48,6 +48,47 @@ def ensure_recipe_columns(db_uri, app_instance_path):
         conn.close()
 
 
+def apply_catalog_data_migrations(db_uri, app_instance_path):
+    """Apply versioned catalog corrections once without undoing later staff edits."""
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS app_data_migrations (
+                name VARCHAR(100) PRIMARY KEY,
+                applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        migration_name = 'correct_cheerios_calories_to_93'
+        already_applied = cursor.execute(
+            'SELECT 1 FROM app_data_migrations WHERE name = ?',
+            (migration_name,),
+        ).fetchone()
+        if not already_applied:
+            cursor.execute(
+                """
+                UPDATE recipe
+                SET calories = 93
+                WHERE meal_name = 'Cheerios'
+                  AND calories = 100
+                  AND source = 'Kitchen cheat sheet'
+                """
+            )
+            cursor.execute(
+                'INSERT INTO app_data_migrations (name) VALUES (?)',
+                (migration_name,),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_meals_calories_logged(db_uri, app_instance_path):
     """
     Add meals.calories_logged if missing and backfill from recipe.calories.
@@ -238,6 +279,7 @@ def ensure_meals_meal_type(db_uri, app_instance_path):
 def ensure_schema_updates(db_uri, app_instance_path):
     """Run all lightweight migrations before ORM queries."""
     ensure_recipe_columns(db_uri, app_instance_path)
+    apply_catalog_data_migrations(db_uri, app_instance_path)
     ensure_recipe_fdc_id(db_uri, app_instance_path)
     ensure_recipe_gram_weight(db_uri, app_instance_path)
     ensure_recipe_is_favorite(db_uri, app_instance_path)
