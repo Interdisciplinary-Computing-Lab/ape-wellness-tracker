@@ -82,7 +82,7 @@
 
         if (std) {
             if (VOLUME_UNITS.includes(std)) {
-                catalogVolumeCups = catalogQuantity;
+                catalogVolumeCups = catalogQuantity * VOLUME_TO_CUP[std];
             }
             return {
                 catalogQuantity,
@@ -225,7 +225,7 @@
             return { quantity: parsed.catalogQuantity, unit: 'g' };
         }
         if (parsed.catalogVolumeCups != null) {
-            return { quantity: parsed.catalogQuantity, unit: 'cup' };
+            return { quantity: parsed.catalogQuantity, unit: parsed.catalogUnit };
         }
         if (parsed.foodSpecificServing) {
             return { quantity: 1.0, unit: 'serving' };
