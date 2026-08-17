@@ -10,6 +10,9 @@ function addCustomFood() {
     const unitSelect = document.getElementById('customUnit');
     const unit = unitSelect.options[unitSelect.selectedIndex].value.trim();
     const calories = parseInt(document.getElementById('customCalories').value, 10);
+    const proteinG = parseFloat(document.getElementById('customProtein').value) || 0;
+    const fiberG = parseFloat(document.getElementById('customFiber').value) || 0;
+    const notes = document.getElementById('customNotes').value.trim();
     const categoryEl = document.getElementById('customCategory');
     const foodCategory = categoryEl ? categoryEl.value.trim() : 'Other';
 
@@ -37,6 +40,9 @@ function addCustomFood() {
         feedingItems[existingIndex].catalogUnit = normalizedUnit;
         feedingItems[existingIndex].source = 'Custom';
         feedingItems[existingIndex].foodCategory = foodCategory;
+        feedingItems[existingIndex].proteinPerCatalog = proteinG;
+        feedingItems[existingIndex].fiberPerCatalog = fiberG;
+        feedingItems[existingIndex].description = notes;
         recalculateItemCalories(feedingItems[existingIndex]);
     } else {
         const item = FN.buildFeedingItem({
@@ -45,6 +51,8 @@ function addCustomFood() {
             recipeQuantity: quantity,
             unitRaw: unit,
             source: 'Custom',
+            proteinG: proteinG,
+            fiberG: fiberG,
         });
         item.calories = calories;
         item.recipeQuantity = quantity;
@@ -52,17 +60,23 @@ function addCustomFood() {
         item.unit = normalizedUnit;
         item.catalogUnit = normalizedUnit;
         item.foodCategory = foodCategory;
+        item.description = notes;
         recalculateItemCalories(item);
         feedingItems.push(item);
     }
 
-    saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory);
+    saveCustomFoodToCatalog(
+        name, calories, quantity, unit, foodCategory, proteinG, fiberG, notes
+    );
 
     // Clear form
     document.getElementById('customFoodName').value = '';
     document.getElementById('customQuantity').value = '1';
     document.getElementById('customUnit').selectedIndex = 0; // Reset to "piece"
     document.getElementById('customCalories').value = '';
+    document.getElementById('customProtein').value = '';
+    document.getElementById('customFiber').value = '';
+    document.getElementById('customNotes').value = '';
     if (categoryEl) {
         categoryEl.selectedIndex = 0;
     }
@@ -72,7 +86,9 @@ function addCustomFood() {
     updateStats();
 }
 
-function addFoodItem(name, calories, recipeQuantity, unitRaw, source, gramsPerServing) {
+function addFoodItem(
+    name, calories, recipeQuantity, unitRaw, source, gramsPerServing, proteinG, fiberG
+) {
     recipeQuantity = recipeQuantity || 1.0;
     const existingIndex = feedingItems.findIndex(function(item) { return item.name === name; });
     if (existingIndex !== -1) {
@@ -86,6 +102,8 @@ function addFoodItem(name, calories, recipeQuantity, unitRaw, source, gramsPerSe
             unitRaw: unitRaw || '',
             source: source || '',
             gramsPerServing: gramsPerServing || 0,
+            proteinG: proteinG || 0,
+            fiberG: fiberG || 0,
         });
         recalculateItemCalories(item);
         feedingItems.push(item);
@@ -574,7 +592,9 @@ function initFeedingSummaryListeners() {
     });
 }
 
-function saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory) {
+function saveCustomFoodToCatalog(
+    name, calories, quantity, unit, foodCategory, proteinG, fiberG, notes
+) {
     const cfg = window.LOG_FEEDING_CONFIG || {};
     const url = cfg.createRecipeUrl || '/api/recipes';
     return fetch(url, {
@@ -591,7 +611,9 @@ function saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory) {
             unit_of_measurement: unit,
             food_category: foodCategory || 'Other',
             source: 'Custom',
-            description: 'Quick added: ' + name
+            description: notes || '',
+            protein_g: proteinG || 0,
+            fiber_g: fiberG || 0
         })
     })
         .then(function(response) {
@@ -632,6 +654,8 @@ function upsertCustomFoodInUi(recipe) {
     const category = recipe.food_category || 'Other';
     const recipeId = recipe.id;
     const isFavorite = !!recipe.is_favorite;
+    const proteinG = recipe.protein_g || 0;
+    const fiberG = recipe.fiber_g || 0;
     const servingLabel = catalogServingLabelFromRecipe(recipe);
 
     const grid = document.getElementById('foodsGrid');
@@ -653,7 +677,7 @@ function upsertCustomFoodInUi(recipe) {
                 '<span class="badge badge-secondary food-custom-badge">Custom</span>' +
                 '<button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card"' +
                 ' data-food="" data-calories="" data-quantity="" data-unit="" data-source="Custom"' +
-                ' data-grams="0" data-name="" data-category=""' +
+                ' data-grams="0" data-protein="0" data-fiber="0" data-name="" data-category=""' +
                 ' onclick="addFoodFromButton(this); return false;">' +
                 '<div class="text-center">' +
                 '<i class="fas fa-tag mb-1 text-secondary"></i>' +
@@ -669,7 +693,7 @@ function upsertCustomFoodInUi(recipe) {
         foodItem.setAttribute('data-custom', 'true');
         foodItem.setAttribute('data-category', category);
         foodItem.setAttribute('data-name', name.toLowerCase());
-        foodItem.setAttribute('data-description', ('quick added: ' + name).toLowerCase());
+        foodItem.setAttribute('data-description', (recipe.description || '').toLowerCase());
         foodItem.setAttribute('data-calories', String(calories));
 
         const starBtn = foodItem.querySelector('.food-favorite-btn');
@@ -686,6 +710,8 @@ function upsertCustomFoodInUi(recipe) {
             cardBtn.setAttribute('data-unit', unit);
             cardBtn.setAttribute('data-source', 'Custom');
             cardBtn.setAttribute('data-category', category);
+            cardBtn.setAttribute('data-protein', String(proteinG));
+            cardBtn.setAttribute('data-fiber', String(fiberG));
         }
         const nameEl = foodItem.querySelector('.food-card-name');
         if (nameEl) nameEl.textContent = name;
@@ -721,7 +747,7 @@ function upsertCustomFoodInUi(recipe) {
                 '<td class="font-weight-bold text-primary"></td>' +
                 '<td><button type="button" class="btn btn-outline-primary btn-sm"' +
                 ' data-food="" data-calories="" data-quantity="" data-unit="" data-source="Custom"' +
-                ' data-grams="0" data-name="" data-category=""' +
+                ' data-grams="0" data-protein="0" data-fiber="0" data-name="" data-category=""' +
                 ' onclick="addFoodFromButton(this); return false;">Add</button></td>';
             body.appendChild(row);
         }
@@ -747,6 +773,8 @@ function upsertCustomFoodInUi(recipe) {
             addBtn.setAttribute('data-unit', unit);
             addBtn.setAttribute('data-category', category);
             addBtn.setAttribute('data-source', 'Custom');
+            addBtn.setAttribute('data-protein', String(proteinG));
+            addBtn.setAttribute('data-fiber', String(fiberG));
         }
     }
 
@@ -764,7 +792,9 @@ function upsertCustomFoodInUi(recipe) {
     }
 }
 
-function saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory) {
+function saveCustomFoodToCatalog(
+    name, calories, quantity, unit, foodCategory, proteinG, fiberG, notes
+) {
     const cfg = window.LOG_FEEDING_CONFIG || {};
     const url = cfg.createRecipeUrl || '/api/recipes';
     return fetch(url, {
@@ -781,7 +811,9 @@ function saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory) {
             unit_of_measurement: unit,
             food_category: foodCategory || 'Other',
             source: 'Custom',
-            description: 'Quick added: ' + name
+            description: notes || '',
+            protein_g: proteinG || 0,
+            fiber_g: fiberG || 0
         })
     })
         .then(function(response) {
@@ -802,6 +834,9 @@ function saveCustomFoodToCatalog(name, calories, quantity, unit, foodCategory) {
                 unit_of_measurement: unit,
                 food_category: foodCategory,
                 source: 'Custom',
+                description: notes || '',
+                protein_g: proteinG || 0,
+                fiber_g: fiberG || 0,
                 is_favorite: false
             });
         })
@@ -833,6 +868,8 @@ function upsertCustomFoodInUi(recipe) {
     const category = recipe.food_category || 'Other';
     const recipeId = recipe.id;
     const isFavorite = !!recipe.is_favorite;
+    const proteinG = recipe.protein_g || 0;
+    const fiberG = recipe.fiber_g || 0;
     const servingLabel = catalogServingLabelFromRecipe(recipe);
 
     const grid = document.getElementById('foodsGrid');
@@ -854,7 +891,7 @@ function upsertCustomFoodInUi(recipe) {
                 '<span class="badge badge-secondary food-custom-badge">Custom</span>' +
                 '<button type="button" class="btn btn-outline-primary w-100 h-100 py-2 quick-food-btn food-card"' +
                 ' data-food="" data-calories="" data-quantity="" data-unit="" data-source="Custom"' +
-                ' data-grams="0" data-name="" data-category=""' +
+                ' data-grams="0" data-protein="0" data-fiber="0" data-name="" data-category=""' +
                 ' onclick="addFoodFromButton(this); return false;">' +
                 '<div class="text-center">' +
                 '<i class="fas fa-tag mb-1 text-secondary"></i>' +
@@ -870,7 +907,7 @@ function upsertCustomFoodInUi(recipe) {
         foodItem.setAttribute('data-custom', 'true');
         foodItem.setAttribute('data-category', category);
         foodItem.setAttribute('data-name', name.toLowerCase());
-        foodItem.setAttribute('data-description', ('quick added: ' + name).toLowerCase());
+        foodItem.setAttribute('data-description', (recipe.description || '').toLowerCase());
         foodItem.setAttribute('data-calories', String(calories));
 
         const starBtn = foodItem.querySelector('.food-favorite-btn');
@@ -887,6 +924,8 @@ function upsertCustomFoodInUi(recipe) {
             cardBtn.setAttribute('data-unit', unit);
             cardBtn.setAttribute('data-source', 'Custom');
             cardBtn.setAttribute('data-category', category);
+            cardBtn.setAttribute('data-protein', String(proteinG));
+            cardBtn.setAttribute('data-fiber', String(fiberG));
         }
         const nameEl = foodItem.querySelector('.food-card-name');
         if (nameEl) nameEl.textContent = name;
@@ -922,7 +961,7 @@ function upsertCustomFoodInUi(recipe) {
                 '<td class="font-weight-bold text-primary"></td>' +
                 '<td><button type="button" class="btn btn-outline-primary btn-sm"' +
                 ' data-food="" data-calories="" data-quantity="" data-unit="" data-source="Custom"' +
-                ' data-grams="0" data-name="" data-category=""' +
+                ' data-grams="0" data-protein="0" data-fiber="0" data-name="" data-category=""' +
                 ' onclick="addFoodFromButton(this); return false;">Add</button></td>';
             body.appendChild(row);
         }
@@ -948,6 +987,8 @@ function upsertCustomFoodInUi(recipe) {
             addBtn.setAttribute('data-unit', unit);
             addBtn.setAttribute('data-category', category);
             addBtn.setAttribute('data-source', 'Custom');
+            addBtn.setAttribute('data-protein', String(proteinG));
+            addBtn.setAttribute('data-fiber', String(fiberG));
         }
     }
 

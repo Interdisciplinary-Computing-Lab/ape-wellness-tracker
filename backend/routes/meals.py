@@ -247,13 +247,19 @@ def save_feeding():
                     food_category = (item.get('food_category') or '').strip() or 'Other'
                     recipe = Recipe(
                         meal_name=food_name,
-                        description=f"Quick added: {food_name}",
+                        description=(item.get('description') or '').strip(),
                         calories=catalog_calories,
                         quantity=catalog_quantity,
                         unit_of_measurement=catalog_unit,
                         source=source or 'Custom',
-                        protein_g=nutrition_defaults['protein_g'],
-                        fiber_g=nutrition_defaults['fiber_g'],
+                        protein_g=max(
+                            0.0,
+                            float(item.get('protein_g', nutrition_defaults['protein_g']) or 0),
+                        ),
+                        fiber_g=max(
+                            0.0,
+                            float(item.get('fiber_g', nutrition_defaults['fiber_g']) or 0),
+                        ),
                     )
                     sync_recipe_category(recipe, food_category)
                     db.session.add(recipe)

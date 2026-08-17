@@ -229,6 +229,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const recipeQuantity = this.getAttribute('data-quantity') || '1.0';
             const recipeUnit = this.getAttribute('data-unit') || '';
             const recipeDescription = this.getAttribute('data-description');
+            const recipeProtein = this.getAttribute('data-protein') || '0';
+            const recipeFiber = this.getAttribute('data-fiber') || '0';
             
             // Populate the edit form
             document.getElementById('editFoodName').value = recipeName;
@@ -242,6 +244,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editCalories').value = recipeCalories;
             document.getElementById('editQuantity').value = recipeQuantity;
             setFoodUnitField('edit', recipeUnit);
+            document.getElementById('editProtein').value = recipeProtein;
+            document.getElementById('editFiber').value = recipeFiber;
             document.getElementById('editDescription').value = recipeDescription || '';
             
             // Set the form action
