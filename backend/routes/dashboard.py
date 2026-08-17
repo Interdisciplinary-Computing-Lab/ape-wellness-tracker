@@ -6,17 +6,15 @@ from flask import render_template
 from backend.models.entry import Apes, Recipe, Meals
 from backend.utils.meal_nutrition import meal_calories
 from backend.utils.meal_queries import meals_for_current_user, recent_meals_for_current_user
-from backend.utils.feeding_purposes import (
-    DEFAULT_FEEDING_PURPOSE,
-    FEEDING_PURPOSES,
-    FEEDING_PURPOSE_LABELS,
+from backend.utils.meal_types import (
+    DEFAULT_MEAL_TYPE,
+    MEAL_TYPES,
+    MEAL_TYPE_LABELS,
 )
 from flask_security import login_required
 from datetime import datetime
 from sqlalchemy import func
 from backend.routes import site
-
-MEAL_TYPE_LABELS = FEEDING_PURPOSE_LABELS
 
 
 @site.route('/')
@@ -45,11 +43,11 @@ def dashboard():
         cal = meal_calories(meal)
         ape_calories_today[meal.ape_id] = ape_calories_today.get(meal.ape_id, 0) + cal
         meal_label = meal.resolved_meal_type
-        if meal_label not in FEEDING_PURPOSES:
-            meal_label = DEFAULT_FEEDING_PURPOSE
+        if meal_label not in MEAL_TYPES:
+            meal_label = DEFAULT_MEAL_TYPE
         by_meal = ape_meal_calories_today.setdefault(
             meal.ape_id,
-            {label: 0 for label in FEEDING_PURPOSES},
+            {label: 0 for label in MEAL_TYPES},
         )
         by_meal[meal_label] += cal
     

@@ -2,17 +2,15 @@
 
 from collections import defaultdict
 
-from backend.utils.feeding_purposes import DEFAULT_FEEDING_PURPOSE, FEEDING_PURPOSES
 from backend.utils.meal_nutrition import meal_calories, meal_fiber_g, meal_protein_g
-
-MEAL_TYPES = FEEDING_PURPOSES
+from backend.utils.meal_types import DEFAULT_MEAL_TYPE, MEAL_TYPES
 
 
 def _resolved_meal_type(meal):
     label = getattr(meal, 'resolved_meal_type', None)
     if label in MEAL_TYPES:
         return label
-    return DEFAULT_FEEDING_PURPOSE
+    return DEFAULT_MEAL_TYPE
 
 
 def build_report_aggregates(meals_in_range, apes, *, for_download=False):

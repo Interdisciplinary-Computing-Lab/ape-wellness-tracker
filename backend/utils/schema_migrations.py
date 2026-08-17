@@ -216,7 +216,7 @@ def ensure_meals_logged_at_save_order(db_uri, app_instance_path):
 
 
 def ensure_meals_meal_type(db_uri, app_instance_path):
-    """Add meals.meal_type for feeding-purpose overrides."""
+    """Add meals.meal_type for per-meal type overrides."""
     db_path = _sqlite_db_path(db_uri, app_instance_path)
     if not db_path:
         return
@@ -235,6 +235,34 @@ def ensure_meals_meal_type(db_uri, app_instance_path):
         conn.close()
 
 
+def ensure_meals_meal_type_values(db_uri, app_instance_path):
+    """Rewrite retired Breakfast/Lunch/Dinner labels to the current meal types."""
+    db_path = _sqlite_db_path(db_uri, app_instance_path)
+    if not db_path:
+        return
+
+    from backend.utils.meal_types import RETIRED_MEAL_TYPES
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute('PRAGMA table_info(meals)')
+        columns = {row[1] for row in cursor.fetchall()}
+        if 'meal_type' not in columns:
+            return
+        changed = False
+        for retired, current in RETIRED_MEAL_TYPES.items():
+            cursor.execute(
+                'UPDATE meals SET meal_type = ? WHERE meal_type = ?',
+                (current, retired),
+            )
+            changed = changed or bool(cursor.rowcount)
+        if changed:
+            conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_schema_updates(db_uri, app_instance_path):
     """Run all lightweight migrations before ORM queries."""
     ensure_recipe_columns(db_uri, app_instance_path)
@@ -245,4 +273,5 @@ def ensure_schema_updates(db_uri, app_instance_path):
     ensure_meals_logged_at(db_uri, app_instance_path)
     ensure_meals_logged_at_save_order(db_uri, app_instance_path)
     ensure_meals_meal_type(db_uri, app_instance_path)
+    ensure_meals_meal_type_values(db_uri, app_instance_path)
     ensure_apes_archive_columns(db_uri, app_instance_path)

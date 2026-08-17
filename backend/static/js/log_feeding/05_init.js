@@ -4,19 +4,19 @@ var MEAL_TYPE_BY_PERIOD = {
     afternoon: 'Enrichment',
     evening: 'Reward'
 };
-var FEEDING_PURPOSES = ['Forage', 'Enrichment', 'Reward', 'Other'];
+var MEAL_TYPES = ['Forage', 'Enrichment', 'Reward', 'Other'];
 
 function getSelectedMealType() {
     var hidden = document.getElementById('mealType');
     var value = hidden && hidden.value ? hidden.value : 'Forage';
-    if (FEEDING_PURPOSES.indexOf(value) === -1) {
+    if (MEAL_TYPES.indexOf(value) === -1) {
         return 'Forage';
     }
     return value;
 }
 
 function setSelectedMealType(mealType) {
-    if (FEEDING_PURPOSES.indexOf(mealType) === -1) {
+    if (MEAL_TYPES.indexOf(mealType) === -1) {
         mealType = 'Forage';
     }
     var hidden = document.getElementById('mealType');

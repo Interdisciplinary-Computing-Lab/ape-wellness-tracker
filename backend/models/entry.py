@@ -230,7 +230,7 @@ class Meals(db.Model):
         date (datetime): Date and time of the meal (feeding date / period).
         logged_at (datetime): When this entry was saved in the app.
         feeding_period (str): Time period when feeding occurred (morning, afternoon, evening).
-        meal_type (str): Feeding purpose (Forage, Enrichment, Reward, Other); defaults from period.
+        meal_type (str): Meal type (Forage, Enrichment, Reward, Other); defaults from period.
         calories_logged (int): Actual calories for this feeding (scaled portion); null uses recipe.calories.
         user_id (int): Foreign key to User - tracks who entered the data.
     Relationships:
@@ -256,12 +256,12 @@ class Meals(db.Model):
 
     @property
     def resolved_meal_type(self):
-        """Current feeding purpose, including mapped historical meal labels."""
-        from backend.utils.feeding_purposes import normalize_feeding_purpose
+        """Meal type for this meal (stored or derived from the feeding period)."""
+        from backend.utils.meal_types import normalize_meal_type
 
         stored = (self.meal_type or '').strip()
         if stored:
-            return normalize_feeding_purpose(stored)
+            return normalize_meal_type(stored)
         period = self.feeding_period or ''
         if period == 'night':
             period = 'evening'
@@ -273,7 +273,7 @@ class Meals(db.Model):
     
     @property
     def feeding_period_display(self):
-        """Get the display name for the feeding period and purpose."""
+        """Get the display name for the feeding period (with meal type)."""
         period = self.feeding_period or ''
         if period == 'night':
             period = 'evening'

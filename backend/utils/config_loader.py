@@ -78,19 +78,19 @@ def get_feeding_period_hour(period):
 
 
 def get_meal_type_for_period(period):
-    """Return the default feeding purpose for a time period."""
-    from backend.utils.feeding_purposes import (
-        DEFAULT_FEEDING_PURPOSE,
-        PURPOSE_BY_PERIOD,
-        normalize_feeding_purpose,
+    """Return the default meal type for a time period."""
+    from backend.utils.meal_types import (
+        DEFAULT_MEAL_TYPE,
+        MEAL_TYPE_BY_PERIOD,
+        normalize_meal_type,
     )
 
     if period == 'night':
         period = 'evening'
     config = load_config()
     period_config = config.get('feeding_periods', {}).get(period, {})
-    configured = period_config.get('meal_type') or PURPOSE_BY_PERIOD.get(period)
-    return normalize_feeding_purpose(configured, DEFAULT_FEEDING_PURPOSE)
+    configured = period_config.get('meal_type') or MEAL_TYPE_BY_PERIOD.get(period)
+    return normalize_meal_type(configured, DEFAULT_MEAL_TYPE)
 
 
 def get_nutrition_defaults():

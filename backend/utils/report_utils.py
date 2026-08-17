@@ -4,7 +4,7 @@ Report generation utilities for the Ape Wellness Tracker application.
 
 import io
 import csv
-from backend.utils.feeding_purposes import FEEDING_PURPOSES
+from backend.utils.meal_types import MEAL_TYPES
 from datetime import datetime
 from flask import send_file
 
@@ -14,7 +14,7 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
                        meal_type_totals=None):
     """Generate CSV report"""
     meal_type_totals = meal_type_totals or {
-        purpose: 0 for purpose in FEEDING_PURPOSES
+        meal_type: 0 for meal_type in MEAL_TYPES
     }
     output = io.StringIO()
     writer = csv.writer(output)
@@ -33,10 +33,10 @@ def generate_csv_report(filename_date_range, apes, ape_stats, category_data, dai
     writer.writerow(['Active Apes', len(apes)])
     writer.writerow([])
 
-    # Facility-wide feeding-purpose calorie breakdown
-    writer.writerow(['FEEDING PURPOSE CALORIE BREAKDOWN'])
-    writer.writerow(['Feeding Purpose', 'Calories', '% of Total'])
-    for meal_type in FEEDING_PURPOSES:
+    # Facility-wide meal type calorie breakdown
+    writer.writerow(['MEAL TYPE CALORIE BREAKDOWN'])
+    writer.writerow(['Meal Type', 'Calories', '% of Total'])
+    for meal_type in MEAL_TYPES:
         cals = meal_type_totals.get(meal_type, 0)
         pct = (cals / total_calories * 100) if total_calories > 0 else 0
         writer.writerow([meal_type, cals, f"{pct:.1f}%"])
