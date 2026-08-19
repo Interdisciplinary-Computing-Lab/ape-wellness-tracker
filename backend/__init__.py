@@ -291,7 +291,7 @@ def _load_kitchen_foods_json():
 
 
 def ensure_kitchen_foods():
-    """Seed/update kitchen cheat-sheet foods with practical serving sizes (not per-100g)."""
+    """Create missing kitchen foods without overwriting staff catalog edits."""
     from backend.models.entry import FoodCategory, Recipe
     from backend.helpers import sync_recipe_category
 
@@ -315,21 +315,23 @@ def ensure_kitchen_foods():
 
         existing = Recipe.query.filter_by(meal_name=meal_name).first()
         if existing:
-            # Replace FDC / legacy rows with cheat-sheet values; keep staff customs untouched
-            # only when name collides with a non-kitchen non-FDC custom? Prefer cheat sheet.
-            existing.calories = calories
-            existing.quantity = quantity
-            existing.unit_of_measurement = unit
-            existing.description = description
-            existing.food_category = cat_name
-            existing.source = source
-            existing.fdc_id = None
-            existing.gram_weight = None
-            existing.category_id = cat.id if cat else None
-            if hasattr(existing, "is_favorite") and existing.is_favorite is None:
-                existing.is_favorite = False
-            sync_recipe_category(existing, cat_name)
-            updated_count += 1
+            # One-time legacy conversion is still needed before remove_fdc_foods().
+            # Once a row belongs to the app catalog, the database is authoritative.
+            is_fdc = bool(existing.fdc_id) or (existing.source or '').startswith(
+                "USDA Foundation Foods"
+            )
+            if is_fdc:
+                existing.calories = calories
+                existing.quantity = quantity
+                existing.unit_of_measurement = unit
+                existing.description = description
+                existing.source = source
+                existing.fdc_id = None
+                existing.gram_weight = None
+                if hasattr(existing, "is_favorite") and existing.is_favorite is None:
+                    existing.is_favorite = False
+                sync_recipe_category(existing, cat_name)
+                updated_count += 1
             continue
 
         recipe = Recipe(
