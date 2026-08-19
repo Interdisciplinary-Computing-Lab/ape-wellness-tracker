@@ -108,7 +108,10 @@ function saveFeeding() {
             recipe_quantity: catalogQty,
             unit: item.unit || '',
             source: item.source || '',
-            food_category: item.foodCategory || ''
+            food_category: item.foodCategory || '',
+            protein_g: item.proteinPerCatalog || 0,
+            fiber_g: item.fiberPerCatalog || 0,
+            description: item.description || ''
         };
     });
     

@@ -247,6 +247,8 @@
                                     data-unit="{{ recipe.unit_of_measurement or '' }}"
                                     data-source="{{ recipe.source or '' }}"
                                     data-grams="{{ recipe.gram_weight or (100 if (recipe.unit_of_measurement or '').replace(' ', '')|lower == '100g' or ((recipe.quantity or 0) >= 100 and 'g' in (recipe.unit_of_measurement or '')|lower) else 0) }}"
+                                    data-protein="{{ recipe.protein_g or 0 }}"
+                                    data-fiber="{{ recipe.fiber_g or 0 }}"
                                     data-name="{{ recipe.meal_name }}" 
                                     data-category="{{ recipe.food_category or 'Other' }}"
                                     title="{{ recipe.description or 'No description' }}"
@@ -377,6 +379,27 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group custom-food-field custom-food-field-nutrient">
+                        <label for="customProtein" class="small text-muted mb-1">Protein</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="customProtein"
+                                   placeholder="0" min="0" step="0.1">
+                            <div class="input-group-append"><span class="input-group-text">g</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group custom-food-field custom-food-field-nutrient">
+                        <label for="customFiber" class="small text-muted mb-1">Fiber</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="customFiber"
+                                   placeholder="0" min="0" step="0.1">
+                            <div class="input-group-append"><span class="input-group-text">g</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group custom-food-field custom-food-field-notes">
+                        <label for="customNotes" class="small text-muted mb-1">Notes</label>
+                        <input type="text" class="form-control" id="customNotes"
+                               maxlength="500" placeholder="Optional ingredients or nutrition details">
+                    </div>
                     <div class="form-group custom-food-field custom-food-field-add">
                         <label class="small text-muted mb-1 custom-food-add-label" aria-hidden="true">&nbsp;</label>
                         <button type="button" class="btn btn-primary btn-block custom-food-add"
@@ -443,6 +466,8 @@
                                                 data-unit="{{ recipe.unit_of_measurement or '' }}"
                                                 data-source="Custom"
                                                 data-grams="0"
+                                                data-protein="{{ recipe.protein_g or 0 }}"
+                                                data-fiber="{{ recipe.fiber_g or 0 }}"
                                                 data-name="{{ recipe.meal_name }}"
                                                 data-category="{{ recipe.food_category or 'Other' }}"
                                                 onclick="addFoodFromButton(this); return false;">

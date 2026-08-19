@@ -13,11 +13,15 @@ function addFoodFromButton(btn) {
         const unit = btn.getAttribute('data-unit') || btn.dataset.unit || '';
         const source = btn.getAttribute('data-source') || btn.dataset.source || '';
         const gramsStr = btn.getAttribute('data-grams') || btn.dataset.grams || '0';
+        const proteinStr = btn.getAttribute('data-protein') || btn.dataset.protein || '0';
+        const fiberStr = btn.getAttribute('data-fiber') || btn.dataset.fiber || '0';
         const name = btn.getAttribute('data-name') || btn.dataset.name || food;
         
         const calories = parseInt(caloriesStr, 10);
         const quantity = parseFloat(quantityStr) || 1.0;
         const gramsPerServing = parseFloat(gramsStr) || 0;
+        const proteinG = parseFloat(proteinStr) || 0;
+        const fiberG = parseFloat(fiberStr) || 0;
         
         if (!name) {
             console.error('Missing food name');
@@ -37,7 +41,7 @@ function addFoodFromButton(btn) {
             return false;
         }
         
-        addFoodItem(name, calories, quantity, unit, source, gramsPerServing);
+        addFoodItem(name, calories, quantity, unit, source, gramsPerServing, proteinG, fiberG);
         
         // Visual feedback
         btn.classList.add('btn-success');

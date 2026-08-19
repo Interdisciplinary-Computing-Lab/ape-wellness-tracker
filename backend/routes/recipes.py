@@ -10,6 +10,14 @@ from flask_security import login_required
 from backend.routes import site
 
 
+def _nonnegative_float(value, default=0.0):
+    """Parse an optional nutrition value without allowing negative amounts."""
+    try:
+        return max(0.0, float(value))
+    except (TypeError, ValueError):
+        return default
+
+
 def _recipe_json(recipe):
     """Serialize a recipe for API responses."""
     return {
@@ -69,6 +77,12 @@ def edit_recipe(recipe_id):
                 recipe.quantity = 1.0
             recipe.unit_of_measurement = request.form.get('unit_of_measurement', '')
             recipe.source = request.form.get('source', '')
+            recipe.protein_g = _nonnegative_float(
+                request.form.get('protein_g'), recipe.protein_g or 0.0
+            )
+            recipe.fiber_g = _nonnegative_float(
+                request.form.get('fiber_g'), recipe.fiber_g or 0.0
+            )
             sync_recipe_category(recipe, request.form.get('food_category', 'Other'))
             
             db.session.commit()
@@ -143,7 +157,9 @@ def create_recipe():
             quantity=quantity,
             unit_of_measurement=data.get('unit_of_measurement', ''),
             source=data.get('source', ''),
-            description=data.get('description', '')
+            description=data.get('description', ''),
+            protein_g=_nonnegative_float(data.get('protein_g')),
+            fiber_g=_nonnegative_float(data.get('fiber_g')),
         )
         sync_recipe_category(new_recipe, data.get('food_category', 'Other'))
         
@@ -201,6 +217,10 @@ def update_recipe(recipe_id):
             sync_recipe_category(recipe, data['food_category'])
         if data.get('description') is not None:
             recipe.description = data['description']
+        if data.get('protein_g') is not None:
+            recipe.protein_g = _nonnegative_float(data['protein_g'])
+        if data.get('fiber_g') is not None:
+            recipe.fiber_g = _nonnegative_float(data['fiber_g'])
         if 'is_favorite' in data:
             recipe.is_favorite = bool(data['is_favorite'])
         
@@ -304,6 +324,8 @@ def add_recipe_form():
         source = request.form.get('source', '')
         food_category = request.form.get('food_category')
         description = request.form.get('description', '')
+        protein_g = _nonnegative_float(request.form.get('protein_g'))
+        fiber_g = _nonnegative_float(request.form.get('fiber_g'))
         
         if not meal_name or not calories:
             flash('Food name and calories are required.', 'error')
@@ -326,7 +348,9 @@ def add_recipe_form():
             quantity=quantity_float,
             unit_of_measurement=unit_of_measurement,
             source=source,
-            description=description
+            description=description,
+            protein_g=protein_g,
+            fiber_g=fiber_g,
         )
         sync_recipe_category(new_recipe, food_category)
         

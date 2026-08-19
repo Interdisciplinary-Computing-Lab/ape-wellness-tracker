@@ -288,6 +288,13 @@
 .custom-food-form .custom-food-field-cal {
     width: 8.5rem;
 }
+.custom-food-form .custom-food-field-nutrient {
+    width: 8rem;
+}
+.custom-food-form .custom-food-field-notes {
+    flex: 1 1 15rem;
+    min-width: 12rem;
+}
 .custom-food-form .custom-food-field-add {
     width: 6.25rem;
 }
@@ -389,8 +396,13 @@
         width: calc(50% - 0.4rem);
     }
     .custom-food-form .custom-food-field-cal,
+    .custom-food-form .custom-food-field-nutrient,
     .custom-food-form .custom-food-field-add {
         width: calc(50% - 0.4rem);
+    }
+    .custom-food-form .custom-food-field-notes {
+        flex-basis: 100%;
+        width: 100%;
     }
 }
 .feeding-save-action {

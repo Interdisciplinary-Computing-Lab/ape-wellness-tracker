@@ -155,6 +155,9 @@
                 {% if recipe.description %}
                 <p class="text-muted small mb-2">{{ recipe.description }}</p>
                 {% endif %}
+                <p class="text-muted small mb-2">
+                    Protein {{ recipe.protein_g or 0 }} g · Fiber {{ recipe.fiber_g or 0 }} g
+                </p>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="badge category-badge"
                         data-category="{{ recipe.food_category or 'Other' }}">
@@ -178,6 +181,8 @@
                                 data-quantity="{{ recipe.quantity or 1.0 }}"
                                 data-unit="{{ recipe.unit_of_measurement or '' }}"
                                 data-source="{{ recipe.source or '' }}"
+                                data-protein="{{ recipe.protein_g or 0 }}"
+                                data-fiber="{{ recipe.fiber_g or 0 }}"
                                 data-description="{{ recipe.description or '' }}">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -231,6 +236,16 @@
                     <div class="form-group">
                         <label for="calories">Calories *</label>
                         <input type="number" class="form-control" id="calories" name="calories" min="0" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="protein_g">Protein (g)</label>
+                            <input type="number" class="form-control" id="protein_g" name="protein_g" min="0" step="0.1" value="0">
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="fiber_g">Fiber (g)</label>
+                            <input type="number" class="form-control" id="fiber_g" name="fiber_g" min="0" step="0.1" value="0">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="quantity">Quantity *</label>
@@ -302,6 +317,16 @@
                     <div class="form-group">
                         <label for="editCalories">Calories *</label>
                         <input type="number" class="form-control" id="editCalories" name="calories" min="0" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="editProtein">Protein (g)</label>
+                            <input type="number" class="form-control" id="editProtein" name="protein_g" min="0" step="0.1">
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="editFiber">Fiber (g)</label>
+                            <input type="number" class="form-control" id="editFiber" name="fiber_g" min="0" step="0.1">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="editQuantity">Quantity *</label>
