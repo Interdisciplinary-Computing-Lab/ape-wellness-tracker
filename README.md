@@ -1,10 +1,10 @@
-# Ape Diet & Wellness Tracker
+# Ape Meal Tracker
 
-A staff-facing web application that helps Ape Initiative track ape meals with consistent nutrition data and clear daily reporting.
+A staff-facing meal logging and nutrition tracking application built for Ape Initiative’s bonobo care team, designed to produce consistent, reportable feeding data.
 
 ## Problem
 
-Meal logging for animal care teams can become inconsistent when entries depend on memory, manual calculations, or ad-hoc notes. The goal of this project is to make logging fast for staff while keeping nutrition totals accurate and reportable.
+Meal logging for animal care teams can become inconsistent when entries depend on memory, manual calculations, or ad hoc notes. The goal of this project is to make logging fast for staff while keeping nutrition totals accurate and reportable.
 
 ## Solution
 
