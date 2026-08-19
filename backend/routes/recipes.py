@@ -8,6 +8,7 @@ from backend.models.entry import Recipe, FoodCategory
 from backend.helpers import add_to_db, sync_recipe_category
 from flask_security import login_required
 from backend.routes import site
+from backend.utils.authz import catalog_create_required, catalog_write_required
 
 
 def _nonnegative_float(value, default=0.0):
@@ -38,6 +39,7 @@ def _recipe_json(recipe):
 
 @site.route('/add_recipe', methods=['POST'])
 @login_required
+@catalog_create_required
 def add_recipe():
     """
     Handle submission for adding a new recipe to the database.
@@ -60,6 +62,7 @@ def add_recipe():
 
 @site.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
 @login_required
+@catalog_write_required
 def edit_recipe(recipe_id):
     """
     Display and handle the form for editing an existing recipe.
@@ -102,6 +105,7 @@ def edit_recipe(recipe_id):
 
 @site.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
 @login_required
+@catalog_write_required
 def delete_recipe_form(recipe_id):
     """
     Delete a recipe from the database via form submission.
@@ -140,6 +144,7 @@ def manage_foods():
 
 @site.route('/api/recipes', methods=['POST'])
 @login_required
+@catalog_create_required
 def create_recipe():
     """Create a new recipe via API"""
     try:
@@ -196,6 +201,7 @@ def create_recipe():
 
 @site.route('/api/recipes/<int:recipe_id>', methods=['PUT'])
 @login_required
+@catalog_write_required
 def update_recipe(recipe_id):
     """Update an existing recipe via API"""
     try:
@@ -250,30 +256,9 @@ def get_recipe(recipe_id):
         return jsonify({'success': False, 'message': str(e)})
 
 
-@site.route('/api/test/recipes/<int:recipe_id>', methods=['GET'])
-def test_get_recipe(recipe_id):
-    """Test endpoint to get a single recipe without authentication"""
-    try:
-        recipe = Recipe.query.get_or_404(recipe_id)
-        return jsonify({
-            'success': True,
-            'recipe': {
-                'id': recipe.id,
-                'meal_name': recipe.meal_name,
-                'calories': recipe.calories,
-                'quantity': recipe.quantity,
-                'unit_of_measurement': recipe.unit_of_measurement,
-                'source': recipe.source,
-                'food_category': recipe.food_category,
-                'description': recipe.description
-            }
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
-
 @site.route('/api/recipes/<int:recipe_id>/favorite', methods=['POST'])
 @login_required
+@catalog_create_required
 def toggle_recipe_favorite(recipe_id):
     """Toggle shared staff favorite flag for a recipe."""
     try:
@@ -294,6 +279,7 @@ def toggle_recipe_favorite(recipe_id):
 
 @site.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
 @login_required
+@catalog_write_required
 def delete_recipe(recipe_id):
     """Delete a recipe via API"""
     try:
@@ -314,6 +300,7 @@ def delete_recipe(recipe_id):
 
 @site.route('/recipes/add', methods=['POST'])
 @login_required
+@catalog_create_required
 def add_recipe_form():
     """Add a new recipe via form submission"""
     try:

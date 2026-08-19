@@ -36,6 +36,31 @@ This application provides a structured workflow for recording meals, managing a 
 
 ## Running locally
 
-- Install dependencies from `requirements.txt`
+- Create a virtualenv and install dependencies: `pip install -r requirements.txt`
+- For the first admin account, either set `BOOTSTRAP_ADMIN_PASSWORD` (and optional `BOOTSTRAP_ADMIN_EMAIL`) before the first start, or run:
+
+  `python misc/scripts/create_admin.py --email staff@apeinitiative.org --password '<strong-password>'`
+
+- Optional local debug: `set FLASK_DEBUG=1` (Windows) or `export FLASK_DEBUG=1`
 - Run the app: `python run.py`
 
+Public self-registration is off by default. Existing accounts without a role are granted **Researcher** on startup so current staff keep write access.
+
+## Staff roles
+
+- **Viewer**: dashboards, profiles, catalog, and on-screen reports
+- **Researcher**: Viewer plus meal logging, custom foods, favorites, and exports
+- **Admin**: Researcher plus ape management, catalog edits, and categories
+
+Assign roles with `python misc/scripts/manage_roles.py`.
+
+## Tests
+
+```
+pip install -r requirements-dev.txt
+pytest
+```
+
+## Production notes
+
+Set `SECRET_KEY` and `SECURITY_PASSWORD_SALT` in the environment. Render already generates those. Do not use a default admin password; rotate any leftover `admin123` account from older deploys.

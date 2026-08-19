@@ -8,7 +8,8 @@ from backend.models.entry import Apes, Meals, Recipe
 from backend.helpers import add_to_db
 from backend.utils.weight_units import lb_to_kg
 from backend.utils.file_utils import allowed_file, MAX_FILE_SIZE
-from flask_security import login_required, roles_required, current_user
+from flask_security import login_required, current_user
+from backend.utils.authz import ape_manage_required
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from backend.routes import site
@@ -17,6 +18,7 @@ import os
 
 @site.route('/add_ape', methods=['POST'])
 @login_required
+@ape_manage_required
 def add_ape():
     """
     Handle submission for adding a new ape to the database.
@@ -37,6 +39,7 @@ def add_ape():
 
 @site.route('/create_ape', methods=['GET', 'POST'])
 @login_required
+@ape_manage_required
 def create_ape():
     """
     Display and handle the form for creating a new ape.
@@ -90,6 +93,7 @@ def create_ape():
 
 @site.route('/apes/<int:ape_id>/edit', methods=['GET', 'POST'])
 @login_required
+@ape_manage_required
 def edit_ape(ape_id):
     """
     Display and handle the form for editing an existing ape.
@@ -141,6 +145,7 @@ def edit_ape(ape_id):
 
 @site.route('/apes/<int:ape_id>/archive', methods=['POST'])
 @login_required
+@ape_manage_required
 def archive_ape(ape_id):
     """
     Archive an ape instead of deleting it.
@@ -168,6 +173,7 @@ def archive_ape(ape_id):
 
 @site.route('/apes/<int:ape_id>/unarchive', methods=['POST'])
 @login_required
+@ape_manage_required
 def unarchive_ape(ape_id):
     """
     Unarchive an ape to restore it to active status.
@@ -183,7 +189,7 @@ def unarchive_ape(ape_id):
 
 @site.route('/apes/<int:ape_id>/delete', methods=['POST'])
 @login_required
-@roles_required("Admin")
+@ape_manage_required
 def delete_ape(ape_id):
     """
     Permanently delete an ape from the database (Admin only).

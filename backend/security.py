@@ -35,7 +35,7 @@ def init_security(app):
     @app.after_request
     def _discard_flashes_after_login_page(response):
         """Login shows no banners; discard flashes so they do not appear here or after sign-in."""
-        if request.endpoint == 'security.login':
+        if request.endpoint == 'security.login' and app.secret_key:
             session.pop('_flashes', None)
         return response
 
@@ -56,6 +56,12 @@ def init_security(app):
             # but we ensure changes are committed
             db.session.commit()
             
+            # Assign Researcher by default when optional registration is enabled
+            researcher = Role.query.filter_by(name='Researcher').first()
+            if researcher and researcher not in user.roles:
+                user.roles.append(researcher)
+                db.session.commit()
+
             print(f"[SUCCESS] User '{user.email}' registered and confirmed successfully")
         except Exception as e:
             db.session.rollback()

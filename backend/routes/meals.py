@@ -6,6 +6,7 @@ from flask import render_template, request, redirect, url_for, jsonify
 from backend.extensions import db
 from backend.models.entry import Apes, Recipe, Meals, FoodCategory
 from flask_security import login_required, current_user
+from backend.utils.authz import log_required
 from datetime import datetime
 from sqlalchemy import func
 import re
@@ -56,6 +57,7 @@ def _recipe_unit_label(unit, recipe_quantity):
 
 @site.route('/add_meal', methods=['POST'])
 @login_required
+@log_required
 def add_meal():
     """
     Handle submission for adding a new meal to the database.
@@ -88,6 +90,7 @@ def add_meal():
 
 @site.route('/meals/<int:meal_id>/edit', methods=['GET', 'POST'])
 @login_required
+@log_required
 def edit_meal(meal_id):
     """
     Display and handle the form for editing an existing meal.
@@ -107,6 +110,7 @@ def edit_meal(meal_id):
 
 @site.route('/meals/<int:meal_id>/delete', methods=['POST'])
 @login_required
+@log_required
 def delete_meal(meal_id):
     """
     Delete a meal from the database.
@@ -119,6 +123,7 @@ def delete_meal(meal_id):
 
 @site.route('/log_feeding')
 @login_required
+@log_required
 def log_feeding():
     """
     Display the log meals page for adding nutrition data.
@@ -168,6 +173,7 @@ def log_feeding():
 
 @site.route('/save_feeding', methods=['POST'])
 @login_required
+@log_required
 def save_feeding():
     """
     Handle meal log submissions from the JavaScript interface.
@@ -332,6 +338,7 @@ def api_get_meal(meal_id):
 
 @site.route('/api/meals/<int:meal_id>', methods=['PATCH'])
 @login_required
+@log_required
 def api_update_meal(meal_id):
     """Update a saved meal from the edit modal."""
     meal = get_user_meal_or_404(meal_id)
@@ -364,6 +371,7 @@ def api_update_meal(meal_id):
 
 @site.route('/api/meals/<int:meal_id>', methods=['DELETE'])
 @login_required
+@log_required
 def api_delete_meal(meal_id):
     """Delete a saved meal from the edit modal."""
     meal = get_user_meal_or_404(meal_id)

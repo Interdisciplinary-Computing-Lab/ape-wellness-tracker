@@ -7,6 +7,7 @@ from backend.extensions import db
 from backend.models.entry import FoodCategory, Recipe
 from flask_security import login_required
 from backend.routes import site
+from backend.utils.authz import catalog_write_required
 
 
 @site.route('/manage_categories')
@@ -36,6 +37,7 @@ def manage_categories():
 
 @site.route('/categories/add', methods=['POST'])
 @login_required
+@catalog_write_required
 def add_category():
     """Add a new food category"""
     try:
@@ -76,6 +78,7 @@ def add_category():
 
 @site.route('/categories/<int:category_id>/edit', methods=['GET', 'POST'])
 @login_required
+@catalog_write_required
 def edit_category(category_id):
     """Edit an existing food category"""
     category = FoodCategory.query.get_or_404(category_id)
@@ -120,6 +123,7 @@ def edit_category(category_id):
 
 @site.route('/categories/<int:category_id>/delete', methods=['POST'])
 @login_required
+@catalog_write_required
 def delete_category(category_id):
     """Delete a food category"""
     try:

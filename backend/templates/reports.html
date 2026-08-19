@@ -23,6 +23,7 @@
         </div>
     </div>
 
+    {% if can_export_reports() %}
     <!-- Raw data export (primary) -->
     <div class="row mb-3">
         <div class="col-12">
@@ -70,6 +71,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Date Range Filter -->
     <div class="row mb-3">
@@ -111,6 +113,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% if can_export_reports() %}
                         <div class="reports-download-bar mt-2 pt-3 border-top d-flex flex-wrap align-items-center">
                             <button type="button"
                                     class="btn btn-outline-success download-csv-btn"
@@ -122,6 +125,7 @@
                                 On-screen totals only — per-ape stats, categories, and daily breakdown.
                             </span>
                         </div>
+                        {% endif %}
                     </form>
                 </div>
             </div>

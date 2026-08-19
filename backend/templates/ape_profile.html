@@ -64,10 +64,13 @@
                                 </li>
                             </ul>
 
+                            {% if can_log_meals() %}
                             <a href="{{ url_for('site.log_feeding', ape=ape.id) }}" class="btn btn-primary btn-block">
                                 <b>Log Meals</b>
                             </a>
+                            {% endif %}
                             
+                            {% if can_manage_apes() %}
                             <!-- Edit and Delete Buttons -->
                             <div class="mt-3">
                                 <a href="{{ url_for('site.edit_ape', ape_id=ape.id) }}" class="btn btn-warning btn-block">
@@ -89,6 +92,7 @@
                                 </a>
                                 {% endif %}
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

@@ -41,9 +41,15 @@
                         <div class="icon">
                             <i class="fas fa-utensils"></i>
                         </div>
+                        {% if can_log_meals() %}
                         <a href="{{ url_for('site.log_feeding') }}" class="small-box-footer">
                             Log Meals <i class="fas fa-arrow-circle-right"></i>
                         </a>
+                        {% else %}
+                        <a href="{{ url_for('site.reports') }}" class="small-box-footer">
+                            View Details <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-lg-3 col-6">
@@ -89,9 +95,11 @@
                                 <button type="button" class="btn btn-outline-secondary btn-sm mr-2" onclick="resetHelpAlerts()">
                                     <i class="fas fa-question-circle mr-1"></i>Reset Help
                                 </button>
+                                {% if can_manage_apes() %}
                                 <a href="{{ url_for('site.create_ape') }}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-plus mr-1"></i>Add New Ape
                                 </a>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="card-body">
@@ -164,10 +172,12 @@
                                                    class="btn btn-primary btn-sm">
                                                     <i class="fas fa-user mr-1"></i>View Profile
                                                 </a>
+                                                {% if can_log_meals() %}
                                                 <a href="{{ url_for('site.log_feeding', ape=ape.id) }}" 
                                                    class="btn btn-success btn-sm">
                                                     <i class="fas fa-plus mr-1"></i>Log Meals
                                                 </a>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>

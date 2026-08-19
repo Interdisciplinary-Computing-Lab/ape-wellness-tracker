@@ -7,6 +7,7 @@ from backend.extensions import db
 from backend.models.entry import Apes, DEFAULT_APE_IMAGE
 from backend.utils.file_utils import allowed_file, MAX_FILE_SIZE
 from flask_security import login_required
+from backend.utils.authz import ape_manage_required
 from werkzeug.utils import secure_filename
 from backend.routes import site
 import io
@@ -35,6 +36,7 @@ def ape_image(ape_id):
 
 @site.route('/ape/<int:ape_id>/upload_image', methods=['POST'])
 @login_required
+@ape_manage_required
 def upload_ape_image(ape_id):
     """Upload image for an ape"""
     from flask import request

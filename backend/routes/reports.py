@@ -13,6 +13,7 @@ from datetime import datetime
 
 from flask import flash, redirect, render_template, request, send_file, url_for
 from flask_security import login_required
+from backend.utils.authz import export_required
 
 from backend.models.entry import Apes
 from backend.routes import site
@@ -88,6 +89,7 @@ def reports():
 
 @site.route('/reports/download/<format>')
 @login_required
+@export_required
 def download_reports(format):
     """Download meal reports data in CSV format."""
     start_date, end_date, _, _, _, _ = calculate_date_range()
@@ -126,6 +128,7 @@ def download_reports(format):
 
 @site.route('/reports/download/raw', methods=['GET'])
 @login_required
+@export_required
 def download_raw_data():
     """Download raw database data as CSV files in a zip archive."""
     try:
@@ -144,6 +147,7 @@ def download_raw_data():
 
 @site.route('/reports/download/excel', methods=['GET'])
 @login_required
+@export_required
 def download_excel_reports():
     """Download Excel reports (Individual Summary and Group Breakdown)."""
     try:

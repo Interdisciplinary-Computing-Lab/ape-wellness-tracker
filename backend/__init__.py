@@ -4,7 +4,6 @@ import secrets
 import uuid
 import warnings
 from datetime import datetime
-from pathlib import Path
 from flask import Flask
 from flask_security.utils import hash_password
 from dotenv import load_dotenv
@@ -16,6 +15,14 @@ from backend.helpers import get_time_period_display
 # Load environment variables from .env file if it exists
 # This allows local development to use .env while production uses system env vars
 load_dotenv()
+
+
+def _env_flag(name, default=False):
+    """Parse a boolean environment flag (1/true/yes/on)."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on")
 
 
 def _load_or_create_instance_secret(instance_path, filename, env_var, nbytes=32):
@@ -38,7 +45,7 @@ def _load_or_create_instance_secret(instance_path, filename, env_var, nbytes=32)
     return value
 
 
-def create_app(*, sync_fdc_catalog: bool = False):
+def create_app(*, sync_fdc_catalog: bool = False, testing: bool = False, config_overrides=None):
     template_folder = os.path.join(os.path.dirname(__file__), 'templates')
     static_folder = os.path.join(os.path.dirname(__file__), 'static')
 
@@ -50,59 +57,54 @@ def create_app(*, sync_fdc_catalog: bool = False):
         static_url_path='/static'
     )
     
-    # Ensure instance folder exists
     os.makedirs(app.instance_path, exist_ok=True)
 
-    # Ensure instance directory exists
-    os.makedirs(app.instance_path, exist_ok=True)
-    
-    # Ensure SQLite DB path resolves to the instance directory for cross-OS consistency
+    if config_overrides:
+        app.config.update(config_overrides)
+    testing = testing or bool(app.config.get("TESTING"))
+
     db_path = os.path.join(app.instance_path, 'database.db').replace('\\', '/')
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+    app.config.setdefault("SQLALCHEMY_DATABASE_URI", f"sqlite:///{db_path}")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
-    # Security Configuration - Load from environment variables
-    # SECRET_KEY: Used for session management, CSRF protection, and signing cookies
-    # SECURITY_PASSWORD_SALT: Used for password hashing to prevent rainbow table attacks
-    # 
-    # Best Practice: Never hardcode secrets in source code. Use environment variables
-    # or a secrets management service (AWS Secrets Manager, Azure Key Vault, etc.)
-    # Reference: OWASP Flask Security Cheat Sheet, 12-Factor App methodology
-    # 
-    # For local development: optional .env; otherwise secrets persist in instance/
-    # For production: set SECRET_KEY and SECURITY_PASSWORD_SALT as environment variables
-    secret_key = _load_or_create_instance_secret(
-        app.instance_path, ".secret_key", "SECRET_KEY", nbytes=32
-    )
-    password_salt = _load_or_create_instance_secret(
-        app.instance_path, ".password_salt", "SECURITY_PASSWORD_SALT", nbytes=16
-    )
-    if not os.getenv("SECRET_KEY"):
-        warnings.warn(
-            "SECRET_KEY not set in environment; using instance/.secret_key. "
-            "For production, set SECRET_KEY in .env or environment variables.",
-            UserWarning,
-            stacklevel=1,
+    if testing:
+        app.config["TESTING"] = True
+        if not app.config.get("SECRET_KEY"):
+            app.config["SECRET_KEY"] = "test-secret-key"
+        if not app.config.get("SECURITY_PASSWORD_SALT"):
+            app.config["SECURITY_PASSWORD_SALT"] = "test-password-salt"
+        app.config.setdefault("WTF_CSRF_ENABLED", False)
+    else:
+        secret_key = _load_or_create_instance_secret(
+            app.instance_path, ".secret_key", "SECRET_KEY", nbytes=32
         )
-    if not os.getenv("SECURITY_PASSWORD_SALT"):
-        warnings.warn(
-            "SECURITY_PASSWORD_SALT not set in environment; using instance/.password_salt. "
-            "If login suddenly fails after an upgrade, run: "
-            "python misc/scripts/reset_password.py <email> <new-password>",
-            UserWarning,
-            stacklevel=1,
+        password_salt = _load_or_create_instance_secret(
+            app.instance_path, ".password_salt", "SECURITY_PASSWORD_SALT", nbytes=16
         )
-    
-    app.config["SECRET_KEY"] = secret_key
-    app.config["SECURITY_PASSWORD_SALT"] = password_salt
+        if not os.getenv("SECRET_KEY"):
+            warnings.warn(
+                "SECRET_KEY not set in environment; using instance/.secret_key. "
+                "For production, set SECRET_KEY in .env or environment variables.",
+                UserWarning,
+                stacklevel=1,
+            )
+        if not os.getenv("SECURITY_PASSWORD_SALT"):
+            warnings.warn(
+                "SECURITY_PASSWORD_SALT not set in environment; using instance/.password_salt. "
+                "If login suddenly fails after an upgrade, run: "
+                "python misc/scripts/reset_password.py <email> <new-password>",
+                UserWarning,
+                stacklevel=1,
+            )
+        app.config["SECRET_KEY"] = secret_key
+        app.config["SECURITY_PASSWORD_SALT"] = password_salt
+        app.config.setdefault("WTF_CSRF_ENABLED", True)
+
     app.config["SECURITY_PASSWORD_HASH"] = "bcrypt"
-    app.config["SECURITY_REGISTERABLE"] = True
+    app.config["SECURITY_REGISTERABLE"] = _env_flag("SECURITY_REGISTERABLE", default=False)
     app.config["SECURITY_SEND_REGISTER_EMAIL"] = False
-    app.config["SECURITY_CONFIRMABLE"] = False  # Auto-confirm users on registration
-    
-    # Ensure CSRF protection is enabled for Flask-Security forms
-    app.config["WTF_CSRF_ENABLED"] = True
-    app.config["WTF_CSRF_TIME_LIMIT"] = None  # No time limit for CSRF tokens
+    app.config["SECURITY_CONFIRMABLE"] = False
+    app.config["WTF_CSRF_TIME_LIMIT"] = None
 
     db.init_app(app)
     init_security(app)
@@ -112,6 +114,14 @@ def create_app(*, sync_fdc_catalog: bool = False):
     # Add helper functions to template context
     @app.context_processor
     def utility_processor():
+        from backend.utils.authz import (
+            can_create_foods,
+            can_export_reports,
+            can_log_meals,
+            can_manage_apes,
+            can_manage_catalog,
+            is_admin,
+        )
         from backend.utils.meal_nutrition import meal_calories, meal_protein_g, meal_fiber_g
         from backend.utils.password_policy import PASSWORD_POLICY_REQUIREMENTS
         from backend.utils.weight_units import kg_to_lb
@@ -122,6 +132,12 @@ def create_app(*, sync_fdc_catalog: bool = False):
             meal_fiber_g=meal_fiber_g,
             password_policy_requirements=PASSWORD_POLICY_REQUIREMENTS,
             kg_to_lb=kg_to_lb,
+            can_log_meals=can_log_meals,
+            can_manage_apes=can_manage_apes,
+            can_manage_catalog=can_manage_catalog,
+            can_create_foods=can_create_foods,
+            can_export_reports=can_export_reports,
+            is_admin=is_admin,
         )
 
     with app.app_context():
@@ -133,28 +149,27 @@ def create_app(*, sync_fdc_catalog: bool = False):
         )
         _ensure_users_confirmed()
         ensure_bootstrap_users()
+        _ensure_default_staff_roles()
 
-        # Ensure standard apes exist when app starts
-        ensure_standard_apes()
-        
-        # Kitchen cheat sheet is the food catalog (USDA FDC foods are removed)
-        ensure_standard_food_data()
-        ensure_kitchen_foods()
-        remove_fdc_foods()
-        # Do not import USDA FDC catalog — cheat sheet only
-        if sync_fdc_catalog:
-            warnings.warn(
-                "sync_fdc_catalog=True is ignored; food catalog is kitchen cheat sheet only.",
-                UserWarning,
-                stacklevel=2,
-            )
+        if not testing:
+            ensure_standard_apes()
+            ensure_standard_food_data()
+            ensure_kitchen_foods()
+            remove_fdc_foods()
+            if sync_fdc_catalog:
+                warnings.warn(
+                    "sync_fdc_catalog=True is ignored; food catalog is kitchen cheat sheet only.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
     return app
 
 
 def ensure_bootstrap_users():
-    """Create default roles/admin on fresh deploys; promote first user if no admin exists."""
+    """Create roles and an optional first admin from environment variables."""
     from backend.models.entry import User, Role
+    from backend.utils.password_policy import validate_password
 
     roles_to_create = [
         ('Admin', 'Administrator with full access to all features'),
@@ -174,24 +189,63 @@ def ensure_bootstrap_users():
         return
 
     users = User.query.order_by(User.id).all()
-    if not users:
-        admin_user = User(
-            email='admin@apeinitiative.org',
-            password=hash_password('admin123'),
-            active=True,
-            confirmed_at=datetime.utcnow(),
-            fs_uniquifier=str(uuid.uuid4()),
-        )
-        admin_user.roles.append(admin_role)
-        db.session.add(admin_user)
-        db.session.commit()
-        print('[SUCCESS] Bootstrap admin created: admin@apeinitiative.org / admin123')
+    if users:
+        if not any(admin_role in user.roles for user in users):
+            print(
+                '[WARNING] No Admin user exists. Create one with: '
+                'python misc/scripts/create_admin.py --email <email> --password <password>'
+            )
         return
 
-    if not any(admin_role in user.roles for user in users):
-        users[0].roles.append(admin_role)
+    bootstrap_password = os.getenv('BOOTSTRAP_ADMIN_PASSWORD')
+    if not bootstrap_password:
+        print(
+            '[WARNING] No users exist. Set BOOTSTRAP_ADMIN_PASSWORD to create the '
+            'initial admin, or run: python misc/scripts/create_admin.py --email '
+            '<email> --password <password>'
+        )
+        return
+
+    policy_errors = validate_password(bootstrap_password)
+    if policy_errors:
+        print(
+            '[ERROR] BOOTSTRAP_ADMIN_PASSWORD does not meet the password policy: '
+            + '; '.join(policy_errors)
+        )
+        return
+
+    bootstrap_email = (
+        os.getenv('BOOTSTRAP_ADMIN_EMAIL', 'admin@apeinitiative.org').strip()
+        or 'admin@apeinitiative.org'
+    )
+    admin_user = User(
+        email=bootstrap_email,
+        password=hash_password(bootstrap_password),
+        active=True,
+        confirmed_at=datetime.utcnow(),
+        fs_uniquifier=str(uuid.uuid4()),
+    )
+    admin_user.roles.append(admin_role)
+    db.session.add(admin_user)
+    db.session.commit()
+    print(f'[SUCCESS] Bootstrap admin created: {bootstrap_email}')
+
+
+def _ensure_default_staff_roles():
+    """Give existing accounts Researcher if they were created without a role."""
+    from backend.models.entry import User, Role
+
+    researcher = Role.query.filter_by(name='Researcher').first()
+    if not researcher:
+        return
+
+    changed = False
+    for user in User.query.all():
+        if not user.roles:
+            user.roles.append(researcher)
+            changed = True
+    if changed:
         db.session.commit()
-        print(f'[SUCCESS] Promoted {users[0].email} to Admin (no admin user existed)')
 
 
 def _ensure_users_confirmed():
@@ -381,179 +435,3 @@ def remove_fdc_foods():
     db.session.commit()
     print(f"[SUCCESS] Removed {removed} USDA FDC food(s); catalog is kitchen cheat sheet only")
     return removed
-
-
-def ensure_fdc_food_catalog():
-    """Deprecated: USDA FDC import disabled — kitchen cheat sheet is the catalog."""
-    remove_fdc_foods()
-
-
-
-_RETIRED_STAFF_FOODS = {
-    "Trash Lettuce": "Brussels sprouts, raw",
-    "Cheese Toothpaste": "Cream cheese, full fat, block",
-}
-
-
-def _apply_fdc_record_to_recipe(recipe, record, categories) -> None:
-    cat = categories.get(record.app_category)
-    recipe.meal_name = record.meal_name
-    recipe.description = record.description
-    recipe.calories = record.calories
-    recipe.protein_g = record.protein_g
-    recipe.fiber_g = record.fiber_g
-    recipe.quantity = record.quantity
-    recipe.unit_of_measurement = record.unit_of_measurement
-    recipe.source = record.source
-    recipe.fdc_id = record.fdc_id
-    recipe.food_category = record.app_category
-    if hasattr(record, "gram_weight"):
-        recipe.gram_weight = record.gram_weight
-    if cat:
-        recipe.category_id = cat.id
-
-
-def ensure_custom_display_foods():
-    """Optional staff names from custom_foods.json; restore USDA labels for retired nicknames."""
-    from backend.models.entry import FoodCategory, Meals, Recipe
-
-    custom_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "data", "fdc", "custom_foods.json"
-    )
-    raw_ff = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "data", "fdc", "raw", "foundation_food.csv"
-    )
-    if not os.path.isfile(raw_ff):
-        return
-
-    custom = {}
-    if os.path.isfile(custom_path):
-        try:
-            with open(custom_path, encoding="utf-8") as f:
-                custom = json.load(f).get("custom_display_names", {})
-        except (OSError, json.JSONDecodeError):
-            custom = {}
-
-    try:
-        from backend.utils.fdc_loader import FdcFoundationLoader, _normalize_desc, load_category_map
-
-        loader = FdcFoundationLoader()
-        category_map = load_category_map()
-        categories = {c.name: c for c in FoodCategory.query.filter_by(is_active=True).all()}
-        changed = False
-
-        fdc_by_desc = {}
-        for record in loader.iter_records(category_map, include_excluded_categories=True):
-            fdc_by_desc[_normalize_desc(record.description)] = record
-
-        def _remove_recipe(recipe: Recipe) -> None:
-            nonlocal changed
-            Meals.query.filter_by(recipe_id=recipe.id).delete(synchronize_session=False)
-            db.session.delete(recipe)
-            changed = True
-
-        for staff_name, fdc_desc in _RETIRED_STAFF_FOODS.items():
-            if staff_name in custom:
-                continue
-            record = fdc_by_desc.get(_normalize_desc(fdc_desc))
-            if not record:
-                continue
-            staff_recipe = Recipe.query.filter_by(meal_name=staff_name).first()
-            usda_recipe = Recipe.query.filter_by(fdc_id=record.fdc_id).first()
-            if staff_recipe and usda_recipe and staff_recipe.id != usda_recipe.id:
-                Meals.query.filter_by(recipe_id=staff_recipe.id).update(
-                    {"recipe_id": usda_recipe.id},
-                    synchronize_session=False,
-                )
-                _remove_recipe(staff_recipe)
-                _apply_fdc_record_to_recipe(usda_recipe, record, categories)
-            elif staff_recipe:
-                _apply_fdc_record_to_recipe(staff_recipe, record, categories)
-                changed = True
-            elif not usda_recipe:
-                cat = categories.get(record.app_category)
-                recipe = Recipe(
-                    meal_name=record.meal_name,
-                    description=record.description,
-                    calories=record.calories,
-                    quantity=record.quantity,
-                    unit_of_measurement=record.unit_of_measurement,
-                    food_category=record.app_category,
-                    protein_g=record.protein_g,
-                    fiber_g=record.fiber_g,
-                    source=record.source,
-                    fdc_id=record.fdc_id,
-                    category_id=cat.id if cat else None,
-                )
-                if hasattr(record, "gram_weight"):
-                    recipe.gram_weight = record.gram_weight
-                db.session.add(recipe)
-                changed = True
-
-        if not custom:
-            if changed:
-                db.session.commit()
-            return
-
-        targets = {_normalize_desc(m["fdc_description"]): (name, m) for name, m in custom.items()}
-        records = {}
-        for record in loader.iter_records(category_map, include_excluded_categories=True):
-            key = _normalize_desc(record.description)
-            if key in targets:
-                records[targets[key][0]] = record
-
-        for meal_name, meta in custom.items():
-            record = records.get(meal_name)
-            if not record:
-                continue
-            desc = meta.get("description", "")
-            fdc_desc_norm = _normalize_desc(meta["fdc_description"])
-            for other in Recipe.query.filter(Recipe.meal_name != meal_name).all():
-                if other.fdc_id == record.fdc_id:
-                    _remove_recipe(other)
-                elif _normalize_desc(other.meal_name) == fdc_desc_norm:
-                    _remove_recipe(other)
-            recipe = Recipe.query.filter_by(meal_name=meal_name).first()
-            cat = categories.get(meta["food_category"])
-            if not recipe:
-                recipe = Recipe(
-                    meal_name=meal_name,
-                    description=desc,
-                    calories=record.calories,
-                    quantity=record.quantity,
-                    unit_of_measurement=record.unit_of_measurement,
-                    food_category=meta["food_category"],
-                    protein_g=record.protein_g,
-                    fiber_g=record.fiber_g,
-                    source=record.source,
-                    fdc_id=record.fdc_id,
-                    category_id=cat.id if cat else None,
-                )
-                if hasattr(record, "gram_weight"):
-                    recipe.gram_weight = record.gram_weight
-                db.session.add(recipe)
-                changed = True
-            else:
-                if recipe.fdc_id != record.fdc_id or recipe.calories != record.calories:
-                    recipe.calories = record.calories
-                    recipe.protein_g = record.protein_g
-                    recipe.fiber_g = record.fiber_g
-                    recipe.quantity = record.quantity
-                    recipe.unit_of_measurement = record.unit_of_measurement
-                    recipe.source = record.source
-                    recipe.fdc_id = record.fdc_id
-                    changed = True
-                if recipe.description != desc:
-                    recipe.description = desc
-                    changed = True
-                if recipe.food_category != meta["food_category"]:
-                    recipe.food_category = meta["food_category"]
-                    changed = True
-                if cat and recipe.category_id != cat.id:
-                    recipe.category_id = cat.id
-                    changed = True
-
-        if changed:
-            db.session.commit()
-    except FileNotFoundError:
-        pass

@@ -4,6 +4,7 @@ Complete System Setup Script for Ape Wellness Tracker
 Sets up roles, users, and ensures ape population is ready.
 """
 
+import os
 import sys
 import uuid
 from run import app
@@ -104,33 +105,42 @@ def setup_apes():
         return len(created_apes)
 
 def setup_admin_user():
-    """Set up admin user if none exists"""
+    """Set up admin user if none exists (requires BOOTSTRAP_ADMIN_PASSWORD)."""
     with app.app_context():
         existing_users = User.query.all()
-        
+
         if not existing_users:
+            password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD")
+            email = os.getenv("BOOTSTRAP_ADMIN_EMAIL", "admin@apeinitiative.org")
+            if not password:
+                print(
+                    "No users found. Set BOOTSTRAP_ADMIN_PASSWORD or run "
+                    "python misc/scripts/create_admin.py --email <email> --password <password>"
+                )
+                return False
+            from backend.utils.password_policy import validate_password
+            errors = validate_password(password)
+            if errors:
+                print("BOOTSTRAP_ADMIN_PASSWORD does not meet the password policy:")
+                for error in errors:
+                    print(f"  - {error}")
+                return False
+
             print("No users found. Creating admin user...")
-            
             admin_user = User(
-                email='admin@apeinitiative.org',
-                password=hash_password('admin123'),
+                email=email,
+                password=hash_password(password),
                 active=True,
-                fs_uniquifier=str(uuid.uuid4())
+                fs_uniquifier=str(uuid.uuid4()),
             )
-            
-            # Assign admin role
-            admin_role = Role.query.filter_by(name='Admin').first()
+            admin_role = Role.query.filter_by(name="Admin").first()
             if admin_role:
                 admin_user.roles.append(admin_role)
-            
             db.session.add(admin_user)
             db.session.commit()
-            
-            print("Admin user created successfully!")
-            print("Email: admin@apeinitiative.org")
-            print("Password: admin123")
-            print("Role: Admin")
+            print(f"Admin user created: {email}")
             return True
+
         else:
             print(f"{len(existing_users)} users already exist")
             
