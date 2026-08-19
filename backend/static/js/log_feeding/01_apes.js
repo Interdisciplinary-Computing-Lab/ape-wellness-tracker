@@ -67,11 +67,12 @@ function getSavedMealBreakdown(apeId) {
     var cfg = window.LOG_FEEDING_CONFIG || {};
     var map = cfg.apeMealCaloriesToday || {};
     var raw = map[apeId] || map[String(apeId)] || {};
-    return {
-        Breakfast: Math.round(raw.Breakfast || 0),
-        Lunch: Math.round(raw.Lunch || 0),
-        Dinner: Math.round(raw.Dinner || 0)
-    };
+    var labels = cfg.mealTypeLabels || ['Forage', 'Enrichment', 'Reward', 'Other'];
+    var breakdown = {};
+    labels.forEach(function(label) {
+        breakdown[label] = Math.round(raw[label] || 0);
+    });
+    return breakdown;
 }
 
 function isLoggingForToday() {
@@ -91,12 +92,10 @@ function updateStats() {
     var includeSession = hasFoods && isLoggingForToday();
     var mealType = (typeof getSelectedMealType === 'function')
         ? getSelectedMealType()
-        : 'Breakfast';
-    if (mealType !== 'Breakfast' && mealType !== 'Lunch' && mealType !== 'Dinner') {
-        mealType = 'Breakfast';
-    }
+        : 'Forage';
     var labels = (window.LOG_FEEDING_CONFIG && window.LOG_FEEDING_CONFIG.mealTypeLabels)
-        || ['Breakfast', 'Lunch', 'Dinner'];
+        || ['Forage', 'Enrichment', 'Reward', 'Other'];
+    if (labels.indexOf(mealType) === -1) mealType = 'Forage';
 
     document.querySelectorAll('[data-ape-calories-block]').forEach(function(block) {
         var apeId = parseInt(block.getAttribute('data-ape-calories-block'), 10);
@@ -104,11 +103,10 @@ function updateStats() {
         var savedTotal = getSavedApeCalories(apeId);
         var breakdown = getSavedMealBreakdown(apeId);
         var displayTotal = savedTotal;
-        var displayBreakdown = {
-            Breakfast: breakdown.Breakfast,
-            Lunch: breakdown.Lunch,
-            Dinner: breakdown.Dinner
-        };
+        var displayBreakdown = {};
+        labels.forEach(function(label) {
+            displayBreakdown[label] = breakdown[label] || 0;
+        });
 
         if (includeSession && isSelected) {
             displayTotal += sessionCal;

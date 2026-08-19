@@ -34,17 +34,17 @@ def get_default_config():
             "morning": {
                 "display_name": "Morning (6 AM - 12 PM)",
                 "default_hour": 9,
-                "meal_type": "Breakfast"
+                "meal_type": "Forage"
             },
             "afternoon": {
                 "display_name": "Afternoon (12 PM - 6 PM)",
                 "default_hour": 15,
-                "meal_type": "Lunch"
+                "meal_type": "Enrichment"
             },
             "evening": {
                 "display_name": "Evening (6 PM - 12 AM)",
                 "default_hour": 21,
-                "meal_type": "Dinner"
+                "meal_type": "Reward"
             }
         },
         "nutrition_defaults": {
@@ -78,17 +78,19 @@ def get_feeding_period_hour(period):
 
 
 def get_meal_type_for_period(period):
-    """Return kitchen meal label for a feeding period (Breakfast/Lunch/Dinner)."""
+    """Return the default meal type for a time period."""
+    from backend.utils.meal_types import (
+        DEFAULT_MEAL_TYPE,
+        MEAL_TYPE_BY_PERIOD,
+        normalize_meal_type,
+    )
+
     if period == 'night':
         period = 'evening'
     config = load_config()
     period_config = config.get('feeding_periods', {}).get(period, {})
-    defaults = {
-        'morning': 'Breakfast',
-        'afternoon': 'Lunch',
-        'evening': 'Dinner',
-    }
-    return period_config.get('meal_type') or defaults.get(period, 'Breakfast')
+    configured = period_config.get('meal_type') or MEAL_TYPE_BY_PERIOD.get(period)
+    return normalize_meal_type(configured, DEFAULT_MEAL_TYPE)
 
 
 def get_nutrition_defaults():

@@ -168,7 +168,7 @@
         document.getElementById('mealEditPeriod').value = period;
         var mealTypeEl = document.getElementById('mealEditMealType');
         if (mealTypeEl) {
-            var mt = meal.meal_type || MEAL_TYPE_BY_PERIOD[period] || 'Breakfast';
+            var mt = meal.meal_type || MEAL_TYPE_BY_PERIOD[period] || 'Forage';
             mealTypeEl.value = mt;
         }
         document.getElementById('mealEditId').value = meal.id;
@@ -267,7 +267,7 @@
             food_name: editItem.name,
             date: document.getElementById('mealEditDate').value,
             feeding_period: document.getElementById('mealEditPeriod').value,
-            meal_type: (document.getElementById('mealEditMealType') || {}).value || 'Breakfast',
+            meal_type: (document.getElementById('mealEditMealType') || {}).value || 'Forage',
             calories: Math.round(editItem.totalCalories || 0),
             quantity: 1.0,
             unit: editItem.unit || '',
@@ -361,9 +361,9 @@
     }
 
     var MEAL_TYPE_BY_PERIOD = {
-        morning: 'Breakfast',
-        afternoon: 'Lunch',
-        evening: 'Dinner'
+        morning: 'Forage',
+        afternoon: 'Enrichment',
+        evening: 'Reward'
     };
 
     function updateMealEditMealTypeLabel() {
@@ -375,7 +375,7 @@
             period = 'evening';
             periodEl.value = 'evening';
         }
-        mealTypeEl.value = MEAL_TYPE_BY_PERIOD[period] || 'Breakfast';
+        mealTypeEl.value = MEAL_TYPE_BY_PERIOD[period] || 'Forage';
     }
 
     function bindControls() {

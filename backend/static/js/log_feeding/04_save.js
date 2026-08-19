@@ -130,7 +130,7 @@ function saveFeeding() {
     }
     const mealType = (typeof getSelectedMealType === 'function')
         ? getSelectedMealType()
-        : 'Breakfast';
+        : 'Forage';
     const feedingData = {
         ape_ids: Array.from(selectedApes),
         feeding_items: transformedItems,

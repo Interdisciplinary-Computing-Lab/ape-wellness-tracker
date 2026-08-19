@@ -12,17 +12,15 @@ import re
 from backend.routes import site
 from backend.utils.meal_queries import get_user_meal_or_404
 from backend.utils.meal_nutrition import meal_calories
-
-
-MEAL_TYPE_LABELS = (
-    ('Breakfast', 'Breakfast'),
-    ('Lunch', 'Lunch'),
-    ('Dinner', 'Dinner'),
+from backend.utils.meal_types import (
+    DEFAULT_MEAL_TYPE,
+    MEAL_TYPES,
+    MEAL_TYPE_LABELS,
 )
 
 
 def _facility_meal_calories_for_date(day):
-    """Per-ape total + Breakfast/Lunch/Dinner calories for a calendar day (all staff)."""
+    """Per-ape total and per-meal-type calories for a calendar day (all staff)."""
     facility_meals = Meals.query.filter(func.date(Meals.date) == day).all()
     ape_calories = {}
     ape_meal_calories = {}
@@ -30,11 +28,11 @@ def _facility_meal_calories_for_date(day):
         cal = meal_calories(meal)
         ape_calories[meal.ape_id] = ape_calories.get(meal.ape_id, 0) + cal
         meal_label = meal.resolved_meal_type
-        if meal_label not in ('Breakfast', 'Lunch', 'Dinner'):
-            meal_label = 'Breakfast'
+        if meal_label not in MEAL_TYPES:
+            meal_label = DEFAULT_MEAL_TYPE
         by_meal = ape_meal_calories.setdefault(
             meal.ape_id,
-            {'Breakfast': 0, 'Lunch': 0, 'Dinner': 0},
+            {label: 0 for label in MEAL_TYPES},
         )
         by_meal[meal_label] += cal
     return ape_calories, ape_meal_calories
@@ -188,7 +186,7 @@ def save_feeding():
             feeding_period = 'evening'
         from backend.utils.config_loader import get_meal_type_for_period
         meal_type = (data.get('meal_type') or '').strip()
-        if meal_type not in ('Breakfast', 'Lunch', 'Dinner'):
+        if meal_type not in MEAL_TYPES:
             meal_type = get_meal_type_for_period(feeding_period)
         
         if not ape_ids:

@@ -230,7 +230,7 @@ class Meals(db.Model):
         date (datetime): Date and time of the meal (feeding date / period).
         logged_at (datetime): When this entry was saved in the app.
         feeding_period (str): Time period when feeding occurred (morning, afternoon, evening).
-        meal_type (str): Kitchen meal label (Breakfast, Lunch, Dinner); defaults from period.
+        meal_type (str): Meal type (Forage, Enrichment, Reward, Other); defaults from period.
         calories_logged (int): Actual calories for this feeding (scaled portion); null uses recipe.calories.
         user_id (int): Foreign key to User - tracks who entered the data.
     Relationships:
@@ -245,7 +245,7 @@ class Meals(db.Model):
     date = db.Column(db.DateTime, nullable=False, default=sa.func.now())
     logged_at = db.Column(db.DateTime, nullable=False, default=sa.func.now())
     feeding_period = db.Column(db.String(20), nullable=True)  # morning, afternoon, evening
-    meal_type = db.Column(db.String(20), nullable=True)  # Breakfast, Lunch, Dinner
+    meal_type = db.Column(db.String(20), nullable=True)  # Forage, Enrichment, Reward, Other
     calories_logged = db.Column(db.Integer, nullable=True)
     user_id = db.Column(db.Integer, sa.ForeignKey('user.id'), nullable=False)
 
@@ -256,10 +256,12 @@ class Meals(db.Model):
 
     @property
     def resolved_meal_type(self):
-        """Breakfast / Lunch / Dinner for this meal (stored or derived from period)."""
+        """Meal type for this meal (stored or derived from the feeding period)."""
+        from backend.utils.meal_types import normalize_meal_type
+
         stored = (self.meal_type or '').strip()
-        if stored in ('Breakfast', 'Lunch', 'Dinner'):
-            return stored
+        if stored:
+            return normalize_meal_type(stored)
         period = self.feeding_period or ''
         if period == 'night':
             period = 'evening'
@@ -267,7 +269,7 @@ class Meals(db.Model):
             from backend.utils.config_loader import get_meal_type_for_period
             return get_meal_type_for_period(period)
         except Exception:
-            return 'Breakfast'
+            return 'Forage'
     
     @property
     def feeding_period_display(self):

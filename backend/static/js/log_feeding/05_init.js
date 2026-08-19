@@ -1,22 +1,23 @@
 /** @file DOM ready, keyboard shortcuts, dates, global exports. */
 var MEAL_TYPE_BY_PERIOD = {
-    morning: 'Breakfast',
-    afternoon: 'Lunch',
-    evening: 'Dinner'
+    morning: 'Forage',
+    afternoon: 'Enrichment',
+    evening: 'Reward'
 };
+var MEAL_TYPES = ['Forage', 'Enrichment', 'Reward', 'Other'];
 
 function getSelectedMealType() {
     var hidden = document.getElementById('mealType');
-    var value = hidden && hidden.value ? hidden.value : 'Breakfast';
-    if (value !== 'Breakfast' && value !== 'Lunch' && value !== 'Dinner') {
-        return 'Breakfast';
+    var value = hidden && hidden.value ? hidden.value : 'Forage';
+    if (MEAL_TYPES.indexOf(value) === -1) {
+        return 'Forage';
     }
     return value;
 }
 
 function setSelectedMealType(mealType) {
-    if (mealType !== 'Breakfast' && mealType !== 'Lunch' && mealType !== 'Dinner') {
-        mealType = 'Breakfast';
+    if (MEAL_TYPES.indexOf(mealType) === -1) {
+        mealType = 'Forage';
     }
     var hidden = document.getElementById('mealType');
     var labelEl = document.getElementById('mealTypeLabel');
@@ -39,7 +40,7 @@ function updateMealTypeLabel() {
         period = 'evening';
         periodEl.value = 'evening';
     }
-    setSelectedMealType(MEAL_TYPE_BY_PERIOD[period] || 'Breakfast');
+    setSelectedMealType(MEAL_TYPE_BY_PERIOD[period] || 'Forage');
 }
 
 function onFeedingPeriodChange() {
