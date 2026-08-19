@@ -117,5 +117,5 @@
   {"meal_name": "Popcorn (no oil)", "quantity": 1, "unit_of_measurement": "cup", "calories": 24, "food_category": "Enrichment Treats", "source": "Kitchen cheat sheet"},
   {"meal_name": "Raisins", "quantity": 1, "unit_of_measurement": "1/4 cup", "calories": 120, "food_category": "Dried Fruits", "source": "Kitchen cheat sheet"},
   {"meal_name": "Sugarcane", "quantity": 1, "unit_of_measurement": "piece", "calories": 40, "food_category": "Enrichment Treats", "source": "Kitchen cheat sheet"},
-  {"meal_name": "Cheerios", "quantity": 1, "unit_of_measurement": "cup", "calories": 100, "food_category": "Grains & Starches", "source": "Kitchen cheat sheet"}
+  {"meal_name": "Cheerios", "quantity": 1, "unit_of_measurement": "cup", "calories": 93, "food_category": "Grains & Starches", "source": "Kitchen cheat sheet"}
 ]
